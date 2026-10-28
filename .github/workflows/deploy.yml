@@ -1,0 +1,62 @@
+name: サイトの転送
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "check＝転送先の確認だけ／deploy＝確認のあと転送"
+        required: true
+        default: check
+        type: choice
+        options:
+          - check
+          - deploy
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: src
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      FTP_DIR: ${{ secrets.FTP_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: 転送先の確認
+        run: python -m newcomics.ftpcheck
+      - name: ページ生成
+        if: inputs.mode == 'deploy'
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          GA4_ID: ${{ vars.GA4_ID }}
+          AMAZON_TAG: ${{ vars.AMAZON_TAG }}
+          PRIVACY_DATE: ${{ vars.PRIVACY_DATE }}
+        run: python -m newcomics.build --out dist
+      - name: 転送
+        if: inputs.mode == 'deploy'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./dist/
+          server-dir: ${{ secrets.FTP_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            feature/**
