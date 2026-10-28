@@ -1,0 +1,64 @@
+name: 出版社サイトの取得
+
+on:
+  workflow_dispatch:
+    inputs:
+      publisher:
+        description: "対象の出版社（空欄ですべて。例: shonengahosha）"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-update
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    if: github.event_name != 'push' || contains(github.event.head_commit.message, '[fetch]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: 単体テスト
+        run: python -m unittest discover -s tests
+        env:
+          PYTHONPATH: src
+      - name: 取得
+        id: fetch
+        continue-on-error: true
+        env:
+          PYTHONPATH: src
+          PUBLISHER: ${{ github.event.inputs.publisher }}
+        run: |
+          if [ -n "$PUBLISHER" ]; then
+            python -m newcomics.fetch --publisher "$PUBLISHER"
+          else
+            python -m newcomics.fetch
+          fi
+      - name: データベースをコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add db/newcomics.sqlite
+          if git diff --cached --quiet; then
+            echo "変更なし"
+          else
+            git commit -m "data: 出版社サイトの取得 $(TZ=Asia/Tokyo date +%Y-%m-%d) [skip ci]"
+            git pull --rebase
+            git push
+          fi
+      - name: 取得の失敗を通知
+        if: steps.fetch.outcome == 'failure'
+        run: |
+          echo "取得に失敗した出版社があります。ログと fetch_runs を確認してください。"
+          exit 1
