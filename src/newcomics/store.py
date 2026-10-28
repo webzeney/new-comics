@@ -62,16 +62,51 @@ def link_rakuten(conn, existing, rec, run_at):
     return "updated" if changed else "same"
 
 
+def find_publisher_copy(conn, publisher_id, series_id, rec, exclude_id=None):
+    """楽天の本と同じ本を、出版社サイトから取った本の中から探す。"""
+    if rec.isbn13:
+        row = conn.execute("SELECT * FROM books WHERE isbn13 = ? AND origin = 'publisher'", (rec.isbn13,)).fetchone()
+        if row is not None:
+            return row
+    return db.find_same_volume(conn, publisher_id, series_id, rec.volume, rec.edition, rec.isbn13, origin="publisher", exclude_id=exclude_id)
+
+
 def save(conn, publisher_id, rec, run_at):
     rec.finalize()
     label_id = db.ensure_label(conn, publisher_id, rec.label)
     series_id = db.ensure_series(conn, publisher_id, series_name(rec.title_raw), normalized_series(rec.title_raw))
-    existing = db.find_book(conn, rec.source_key, rec.isbn13)
-    if existing is None and series_id:
-        existing = db.find_same_volume(conn, publisher_id, series_id, rec.volume, rec.edition, rec.isbn13)
     origin = origin_of(rec.source_key)
-    if existing is not None and origin == "rakuten" and existing["origin"] == "publisher":
-        return link_rakuten(conn, existing, rec, run_at)
+    if origin == "rakuten":
+        own = conn.execute("SELECT * FROM books WHERE source_key = ?", (rec.source_key,)).fetchone()
+        copy = find_publisher_copy(conn, publisher_id, series_id, rec, exclude_id=own["id"] if own else None)
+        if copy is not None:
+            if own is not None:
+                db.delete_book(conn, own["id"])
+            return link_rakuten(conn, copy, rec, run_at)
+        existing = own
+    else:
+        existing = conn.execute("SELECT * FROM books WHERE source_key = ?", (rec.source_key,)).fetchone()
+        if existing is None and rec.isbn13:
+            existing = conn.execute("SELECT * FROM books WHERE isbn13 = ?", (rec.isbn13,)).fetchone()
+        if existing is None:
+            existing = db.find_same_volume(conn, publisher_id, series_id, rec.volume, rec.edition, rec.isbn13)
+        if rec.isbn13:
+            other = conn.execute(
+                "SELECT * FROM books WHERE isbn13 = ? AND id != ?", (rec.isbn13, existing["id"] if existing else -1)
+            ).fetchone()
+            if other is not None:
+                if other["origin"] == "rakuten":
+                    if rec.rakuten_url is None:
+                        rec.rakuten_url = other["rakuten_url"]
+                    db.delete_book(conn, other["id"])
+                else:
+                    rec.isbn13 = None
+        if existing is not None and existing["origin"] == "publisher":
+            dup = db.find_same_volume(conn, publisher_id, series_id, rec.volume, rec.edition, rec.isbn13 or existing["isbn13"], origin="rakuten", exclude_id=existing["id"])
+            if dup is not None:
+                if rec.rakuten_url is None and existing["rakuten_url"] is None:
+                    rec.rakuten_url = dup["rakuten_url"]
+                db.delete_book(conn, dup["id"])
     takeover = existing is not None and origin == "publisher" and existing["origin"] == "rakuten"
     values = {
         "source_key": rec.source_key,

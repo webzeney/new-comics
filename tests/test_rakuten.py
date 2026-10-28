@@ -127,6 +127,32 @@ class MergeTest(unittest.TestCase):
         self.assertEqual(b["rakuten_url"], "https://books.rakuten.co.jp/rb/9784785900002/")
         self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM books").fetchone()[0], 1)
 
+    def test_isbn_found_later_merges_rakuten_copy(self):
+        rec = rakuten.to_record(item("9784045002953", "別題名の本（3）", "2026年10月01日"), False)
+        store.save(self.conn, self.pid, rec, "t1")
+        own = store.BookRecord(source_key="kadokawa:1", title_raw="呪われた仮面公爵 3", release_date="2026-10-01")
+        store.save(self.conn, self.pid, own, "t2")
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM books").fetchone()[0], 2)
+        own2 = store.BookRecord(source_key="kadokawa:1", title_raw="呪われた仮面公爵 3", release_date="2026-10-01", isbn13="9784045002953")
+        store.save(self.conn, self.pid, own2, "t3")
+        rows = self.conn.execute("SELECT * FROM books").fetchall()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["origin"], "publisher")
+        self.assertEqual(rows[0]["isbn13"], "9784045002953")
+        self.assertEqual(rows[0]["rakuten_url"], "https://books.rakuten.co.jp/rb/9784045002953/")
+        again = rakuten.to_record(item("9784045002953", "別題名の本（3）", "2026年10月01日"), False)
+        self.assertEqual(store.save(self.conn, self.pid, again, "t4"), "same")
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM books").fetchone()[0], 1)
+
+    def test_existing_rakuten_row_removed_when_publisher_copy_exists(self):
+        rec = rakuten.to_record(item("9784098000009", "作品X（5）", "2026年11月01日"), False)
+        store.save(self.conn, self.pid, rec, "t1")
+        own = store.BookRecord(source_key="shogakukan:x", title_raw="作品X 5", release_date="2026-11-01")
+        store.save(self.conn, self.pid, own, "t2")
+        rows = self.conn.execute("SELECT * FROM books").fetchall()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["origin"], "publisher")
+
     def test_rakuten_only_book(self):
         rec = rakuten.to_record(item("9784098000002", "新作（1）", "2026年12月01日"), False)
         self.assertEqual(store.save(self.conn, self.pid, rec, "t1"), "new")
