@@ -20,12 +20,13 @@ class PoliteClient:
         self.interval = interval
         self._last = {}
         self._robots = {}
+        self._delay = {}
         self.request_count = 0
 
     def _wait(self, host):
         last = self._last.get(host)
         if last is not None:
-            wait = self.interval - (time.monotonic() - last)
+            wait = max(self.interval, self._delay.get(host, 0)) - (time.monotonic() - last)
             if wait > 0:
                 time.sleep(wait)
         self._last[host] = time.monotonic()
@@ -45,6 +46,9 @@ class PoliteClient:
             else:
                 rp.allow_all = True
             self._robots[base] = rp
+            delay = rp.crawl_delay(USER_AGENT)
+            if delay:
+                self._delay[parts.netloc] = float(delay)
         return self._robots[base]
 
     def get(self, url):
