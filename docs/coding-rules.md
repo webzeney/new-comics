@@ -24,7 +24,7 @@ tests/visual/         見た目の照合（モックアップとの差分）
 | ファイル | 扱い |
 | --- | --- |
 | templates/・static/・src/ | 編集してよい |
-| db/newcomics.sqlite | GitHub Actions が更新する。手で編集しない |
+| データベース | 非公開リポジトリ new-comics-data にあり、GitHub Actions が更新する。手で編集しない |
 | dist/ | 生成物。直接編集しない |
 | dist/index.html（トップページ） | 生成物だが、公開前に必ず運営者の確認を取る |
 

@@ -4,5 +4,6 @@ __pycache__/
 .env
 dist/
 reports/
-db/*.sqlite-journal
+db/
+data/
 .DS_Store

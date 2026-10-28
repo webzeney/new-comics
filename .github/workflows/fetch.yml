@@ -22,8 +22,21 @@ jobs:
     if: github.event_name != 'push' || contains(github.event.head_commit.message, '[fetch]')
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      NEWCOMICS_DB: ${{ github.workspace }}/data/newcomics.sqlite
+      DATA_REPO: ${{ github.repository_owner }}/new-comics-data
+      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: データベースの取り出し（非公開リポジトリ）
+        run: |
+          git clone --quiet "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
+          if [ ! -f data/newcomics.sqlite ]; then
+            git show 91b7c47:db/newcomics.sqlite > data/newcomics.sqlite
+            echo "データベースを初期化しました"
+          fi
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -52,17 +65,18 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m newcomics.build --out dist
-      - name: データベースをコミット
+      - name: データベースを保存（非公開リポジトリ）
+        working-directory: data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add db/newcomics.sqlite
+          git checkout -q -B main
+          git add newcomics.sqlite
           if git diff --cached --quiet; then
             echo "変更なし"
           else
-            git commit -m "data: 出版社サイトの取得 $(TZ=Asia/Tokyo date +%Y-%m-%d) [skip ci]"
-            git pull --rebase
-            git push
+            git commit -q -m "data: 取得 $(TZ=Asia/Tokyo date +%Y-%m-%d)"
+            git push -q -u origin main
           fi
       - name: 取得の失敗を通知
         if: steps.fetch.outcome == 'failure'

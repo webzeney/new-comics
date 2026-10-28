@@ -29,8 +29,16 @@ jobs:
       FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       FTP_DIR: ${{ secrets.FTP_DIR }}
+      NEWCOMICS_DB: ${{ github.workspace }}/data/newcomics.sqlite
+      DATA_REPO: ${{ github.repository_owner }}/new-comics-data
+      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+      - name: データベースの取り出し（非公開リポジトリ）
+        if: inputs.mode == 'deploy'
+        run: |
+          git clone --quiet --depth 1 "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
+          test -f data/newcomics.sqlite
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -60,3 +68,4 @@ jobs:
             **/.git*
             **/.git*/**
             feature/**
+            data/**
