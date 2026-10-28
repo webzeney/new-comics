@@ -1,3 +1,3 @@
-from . import shogakukan, shonengahosha, takeshobo
+from . import rakuten, shogakukan, shonengahosha, takeshobo
 
-FETCHERS = {m.SLUG: m for m in (shonengahosha, takeshobo, shogakukan)}
+FETCHERS = {m.SLUG: m for m in (shonengahosha, takeshobo, shogakukan, rakuten)}

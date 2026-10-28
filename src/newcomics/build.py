@@ -48,7 +48,7 @@ def parse(d):
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "first_seen", "tags", "key",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "first_seen", "tags", "key",
     )
 
     def __init__(self, row, tags):
@@ -68,6 +68,7 @@ class Book:
         self.edition = row["edition"]
         self.is_final = bool(row["is_final"])
         self.asin = row["asin"]
+        self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.first_seen = row["first_seen_at"]
         self.tags = tags
         self.key = self.isbn13 or f"b{self.id}"
@@ -128,7 +129,7 @@ class Site:
             amazon = f"https://www.amazon.co.jp/s?k={quote(q)}&i=stripbooks"
             if tag:
                 amazon += f"&tag={quote(tag)}"
-        rakuten = f"https://books.rakuten.co.jp/search?sitem={quote(q)}"
+        rakuten = b.rakuten_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}"
         seven = f"https://7net.omni7.jp/search/?keyword={quote(q)}"
         return [
             {"name": "Amazon", "short": "Amazon", "kind": "amazon", "button": "Amazon", "url": amazon},

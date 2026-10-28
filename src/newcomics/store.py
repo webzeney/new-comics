@@ -27,6 +27,9 @@ class BookRecord:
     title: str = None
     edition: str = None
     is_final: bool = None
+    rakuten_url: str = None
+    image_url: str = None
+    publisher_name: str = None
 
     def finalize(self):
         self.title = self.title or clean_title(self.title_raw)
@@ -41,11 +44,47 @@ class BookRecord:
         return self
 
 
+SUPPLEMENT_SOURCES = ("rakuten:",)
+
+
+def is_supplement(source_key):
+    return source_key.startswith(SUPPLEMENT_SOURCES)
+
+
+def supplement(conn, existing, rec, label_id, run_at):
+    """出版社サイトから取った本に、楽天などの情報で空いている項目だけを足す。"""
+    fill = {
+        "isbn13": rec.isbn13,
+        "price": rec.price,
+        "label_id": label_id,
+        "volume": rec.volume,
+        "authors": db.dumps(rec.authors) if rec.authors else None,
+    }
+    values = {k: v for k, v in fill.items() if v is not None and existing[k] in (None, "[]")}
+    if rec.isbn13 and existing["isbn13"] is None:
+        other = conn.execute("SELECT id FROM books WHERE isbn13 = ? AND id != ?", (rec.isbn13, existing["id"])).fetchone()
+        if other is not None:
+            values.pop("isbn13", None)
+    values["rakuten_url"] = rec.rakuten_url
+    values["image_url"] = rec.image_url
+    changed = [k for k in values if values[k] != existing[k]]
+    sets = ", ".join(f"{k} = ?" for k in values)
+    conn.execute(
+        f"UPDATE books SET {sets}, last_seen_at = ?{', updated_at = ?' if changed else ''} WHERE id = ?",
+        list(values.values()) + [run_at] + ([run_at] if changed else []) + [existing["id"]],
+    )
+    return "updated" if changed else "same"
+
+
 def save(conn, publisher_id, rec, run_at):
     rec.finalize()
     label_id = db.ensure_label(conn, publisher_id, rec.label)
     series_id = db.ensure_series(conn, publisher_id, series_name(rec.title_raw), normalized_series(rec.title_raw))
     existing = db.find_book(conn, rec.source_key, rec.isbn13)
+    if existing is None and series_id:
+        existing = db.find_same_volume(conn, publisher_id, series_id, rec.volume, rec.edition, rec.isbn13)
+    if existing is not None and is_supplement(rec.source_key) and not is_supplement(existing["source_key"]):
+        return supplement(conn, existing, rec, label_id, run_at)
     values = {
         "source_key": rec.source_key,
         "isbn13": rec.isbn13,
@@ -63,6 +102,8 @@ def save(conn, publisher_id, rec, run_at):
         "edition": rec.edition,
         "is_final": int(bool(rec.is_final)),
         "source_url": rec.source_url,
+        "rakuten_url": rec.rakuten_url,
+        "image_url": rec.image_url,
     }
     if existing is None:
         cols = list(values) + ["first_seen_at", "last_seen_at", "updated_at"]
@@ -75,7 +116,7 @@ def save(conn, publisher_id, rec, run_at):
         status = "new"
     else:
         book_id = existing["id"]
-        for key in ("isbn13", "price", "has_ebook", "label_id", "volume"):
+        for key in ("isbn13", "price", "has_ebook", "label_id", "volume", "rakuten_url", "image_url"):
             if values[key] is None:
                 values[key] = existing[key]
         if values["authors"] == "[]":

@@ -22,7 +22,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 300
     env:
       PYTHONPATH: src
       FTP_SERVER: ${{ secrets.FTP_SERVER }}

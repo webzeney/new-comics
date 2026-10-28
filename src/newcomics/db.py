@@ -88,6 +88,12 @@ CREATE TABLE IF NOT EXISTS fetch_runs (
 """
 
 
+MIGRATIONS = [
+    ("books", "image_url", "TEXT"),
+    ("books", "rakuten_url", "TEXT"),
+]
+
+
 def now_iso():
     return datetime.now(JST).isoformat(timespec="seconds")
 
@@ -99,6 +105,10 @@ def connect(path=DEFAULT_PATH):
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    for table, column, kind in MIGRATIONS:
+        cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in cols:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
     return conn
 
 
@@ -140,6 +150,18 @@ def find_book(conn, source_key, isbn13):
     if row is None and isbn13:
         row = conn.execute("SELECT * FROM books WHERE isbn13 = ?", (isbn13,)).fetchone()
     return row
+
+
+def find_same_volume(conn, publisher_id, series_id, volume, edition, isbn13):
+    """ISBN で結び付けられないとき、同じ出版社・シリーズ・巻・版の本を探す（片方に ISBN がない場合だけ）。"""
+    if volume is None:
+        return None
+    rows = conn.execute(
+        "SELECT * FROM books WHERE publisher_id = ? AND series_id = ? AND volume = ? AND edition = ?",
+        (publisher_id, series_id, volume, edition),
+    ).fetchall()
+    rows = [r for r in rows if r["isbn13"] is None or isbn13 is None]
+    return rows[0] if len(rows) == 1 else None
 
 
 def log_change(conn, book_id, kind, old_value, new_value, detected_at):
