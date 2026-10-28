@@ -61,6 +61,13 @@ jobs:
           else
             python -m newcomics.fetch
           fi
+      - name: 件数の集計
+        env:
+          PYTHONPATH: src
+        run: |
+          FROM=$(TZ=Asia/Tokyo date +%Y-%m-01)
+          TO=$(TZ=Asia/Tokyo date -d "$FROM +2 month -1 day" +%Y-%m-%d)
+          python -m newcomics.stats --from "$FROM" --to "$TO"
       - name: ページ生成の確認
         env:
           PYTHONPATH: src
