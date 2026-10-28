@@ -41,7 +41,7 @@ def parse_sales_date(text):
     """salesDate を (YYYY-MM-DD または None, 並べ替え用の YYYY-MM) にする。"""
     t = nfkc(text)
     m = DATE_FULL.search(t)
-    if m and not re.search(r"頃|以降|上旬|中旬|下旬", t):
+    if m and not re.search(r"以降|上旬|中旬|下旬", t):
         return f"{int(m.group(1)):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}", f"{int(m.group(1)):04d}-{int(m.group(2)):02d}"
     m = DATE_MONTH.search(t)
     if m:
@@ -50,6 +50,13 @@ def parse_sales_date(text):
     if m:
         return None, f"{int(m.group(1)):04d}-12"
     return None, None
+
+
+def label_name(series):
+    """楽天の seriesName はレーベル名。末尾にレーベル内の通し番号が付くことがあるので外す。"""
+    t = clean_title(nfkc(series))
+    t = re.sub(r"\s+\d+$", "", t)
+    return t or None
 
 
 def parse_authors(text):
@@ -74,10 +81,12 @@ def to_record(item, affiliate):
         release_date=release,
         isbn13=isbn,
         authors=parse_authors(item.get("author")),
-        label=clean_title(item.get("seriesName")) or None,
+        label=label_name(item.get("seriesName")),
         price=int(item["itemPrice"]) if item.get("itemPrice") else None,
         source_url=item.get("itemUrl"),
     )
+    if release and "頃" in nfkc(item.get("salesDate")):
+        rec.date_status = "予定"
     rec.rakuten_url = (item.get("affiliateUrl") if affiliate else None) or item.get("itemUrl")
     rec.image_url = re.sub(r"\?_ex=\d+x\d+$", "", item.get("largeImageUrl") or "") or None
     rec.publisher_name = item.get("publisherName")

@@ -12,6 +12,7 @@ VOLUME_PATTERNS = [
     re.compile(r"[（(]\s*(\d+)\s*[）)]\s*$"),
     re.compile(r"\s(\d+)\s*$"),
     re.compile(r"(\d+)\s*巻\s*$"),
+    re.compile(r"[〜~!」』]\s*(\d+)\s*$"),
 ]
 EDITION_STRIP = re.compile(r"[\s　]*[（(【\[]?[^（(【\[\s　]*(特装版|限定版|特別版|豪華版)[^）)】\]\s　]*[）)】\]]?[\s　]*$")
 SPACE = re.compile(r"[\s　]+")
@@ -54,6 +55,7 @@ def series_name(title):
     t = re.sub(r"[\s]*[（(]\s*\d+\s*[）)]\s*$", "", t)
     t = re.sub(r"\s+\d+\s*$", "", t)
     t = re.sub(r"\d+\s*巻\s*$", "", t)
+    t = re.sub(r"(?<=[〜~!」』])\s*\d+\s*$", "", t)
     return clean_title(t)
 
 

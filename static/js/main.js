@@ -103,7 +103,7 @@ $('[data-field="title"]', li).textContent = b.title;
 $('[data-field="meta"]', li).textContent = b.meta;
 if (!b.ebook) $('[data-field="ebook"]', li).remove();
 if (!b.first) $('[data-field="first"]', li).remove();
-$$('[data-store]', li).forEach(function (a) { a.href = b.stores[a.dataset.store] || '#'; });
+$$('[data-store]', li).forEach(function (a) { var url = b.stores[a.dataset.store]; if (url) { a.href = url; } else { a.remove(); } });
 return li;
 }
 

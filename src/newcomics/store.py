@@ -44,34 +44,20 @@ class BookRecord:
         return self
 
 
-SUPPLEMENT_SOURCES = ("rakuten:",)
+RAKUTEN_PREFIX = "rakuten:"
 
 
-def is_supplement(source_key):
-    return source_key.startswith(SUPPLEMENT_SOURCES)
+def origin_of(source_key):
+    """データの出どころ。楽天ウェブサービスで取った本は "rakuten"、出版社サイトで取った本は "publisher"。"""
+    return "rakuten" if source_key.startswith(RAKUTEN_PREFIX) else "publisher"
 
 
-def supplement(conn, existing, rec, label_id, run_at):
-    """出版社サイトから取った本に、楽天などの情報で空いている項目だけを足す。"""
-    fill = {
-        "isbn13": rec.isbn13,
-        "price": rec.price,
-        "label_id": label_id,
-        "volume": rec.volume,
-        "authors": db.dumps(rec.authors) if rec.authors else None,
-    }
-    values = {k: v for k, v in fill.items() if v is not None and existing[k] in (None, "[]")}
-    if rec.isbn13 and existing["isbn13"] is None:
-        other = conn.execute("SELECT id FROM books WHERE isbn13 = ? AND id != ?", (rec.isbn13, existing["id"])).fetchone()
-        if other is not None:
-            values.pop("isbn13", None)
-    values["rakuten_url"] = rec.rakuten_url
-    values["image_url"] = rec.image_url
-    changed = [k for k in values if values[k] != existing[k]]
-    sets = ", ".join(f"{k} = ?" for k in values)
+def link_rakuten(conn, existing, rec, run_at):
+    """出版社サイトの本には、楽天の情報を混ぜず、楽天の商品ページへのリンクだけを付ける。"""
+    changed = existing["rakuten_url"] != rec.rakuten_url
     conn.execute(
-        f"UPDATE books SET {sets}, last_seen_at = ?{', updated_at = ?' if changed else ''} WHERE id = ?",
-        list(values.values()) + [run_at] + ([run_at] if changed else []) + [existing["id"]],
+        f"UPDATE books SET rakuten_url = ?, last_seen_at = ?{', updated_at = ?' if changed else ''} WHERE id = ?",
+        [rec.rakuten_url, run_at] + ([run_at] if changed else []) + [existing["id"]],
     )
     return "updated" if changed else "same"
 
@@ -83,8 +69,10 @@ def save(conn, publisher_id, rec, run_at):
     existing = db.find_book(conn, rec.source_key, rec.isbn13)
     if existing is None and series_id:
         existing = db.find_same_volume(conn, publisher_id, series_id, rec.volume, rec.edition, rec.isbn13)
-    if existing is not None and is_supplement(rec.source_key) and not is_supplement(existing["source_key"]):
-        return supplement(conn, existing, rec, label_id, run_at)
+    origin = origin_of(rec.source_key)
+    if existing is not None and origin == "rakuten" and existing["origin"] == "publisher":
+        return link_rakuten(conn, existing, rec, run_at)
+    takeover = existing is not None and origin == "publisher" and existing["origin"] == "rakuten"
     values = {
         "source_key": rec.source_key,
         "isbn13": rec.isbn13,
@@ -104,6 +92,7 @@ def save(conn, publisher_id, rec, run_at):
         "source_url": rec.source_url,
         "rakuten_url": rec.rakuten_url,
         "image_url": rec.image_url,
+        "origin": origin,
     }
     if existing is None:
         cols = list(values) + ["first_seen_at", "last_seen_at", "updated_at"]
@@ -116,10 +105,11 @@ def save(conn, publisher_id, rec, run_at):
         status = "new"
     else:
         book_id = existing["id"]
-        for key in ("isbn13", "price", "has_ebook", "label_id", "volume", "rakuten_url", "image_url"):
+        keep = ("rakuten_url",) if takeover else ("isbn13", "price", "has_ebook", "label_id", "volume", "rakuten_url", "image_url")
+        for key in keep:
             if values[key] is None:
                 values[key] = existing[key]
-        if values["authors"] == "[]":
+        if values["authors"] == "[]" and not takeover:
             values["authors"] = existing["authors"]
         changed = [k for k in values if values[k] != existing[k]]
         if existing["release_date"] != rec.release_date and rec.release_date:

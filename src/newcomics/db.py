@@ -1,10 +1,11 @@
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 JST = timezone(timedelta(hours=9))
-DEFAULT_PATH = Path(__file__).resolve().parents[2] / "db" / "newcomics.sqlite"
+DEFAULT_PATH = Path(os.environ.get("NEWCOMICS_DB") or Path(__file__).resolve().parents[2] / "db" / "newcomics.sqlite")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS publishers (
@@ -91,6 +92,8 @@ CREATE TABLE IF NOT EXISTS fetch_runs (
 MIGRATIONS = [
     ("books", "image_url", "TEXT"),
     ("books", "rakuten_url", "TEXT"),
+    ("books", "origin", "TEXT NOT NULL DEFAULT 'publisher'"),
+    ("publishers", "is_adult", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 

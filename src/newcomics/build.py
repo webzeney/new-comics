@@ -48,7 +48,7 @@ def parse(d):
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "first_seen", "tags", "key",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "first_seen", "tags", "key",
     )
 
     def __init__(self, row, tags):
@@ -69,6 +69,7 @@ class Book:
         self.is_final = bool(row["is_final"])
         self.asin = row["asin"]
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
+        self.origin = row["origin"] if "origin" in row.keys() else "publisher"
         self.first_seen = row["first_seen_at"]
         self.tags = tags
         self.key = self.isbn13 or f"b{self.id}"
@@ -90,7 +91,7 @@ class Site:
         rows = conn.execute(
             "SELECT b.*, p.name AS publisher, p.slug AS publisher_slug, l.name AS label "
             "FROM books b JOIN publishers p ON p.id = b.publisher_id LEFT JOIN labels l ON l.id = b.label_id "
-            "WHERE l.is_adult IS NULL OR l.is_adult = 0"
+            "WHERE (l.is_adult IS NULL OR l.is_adult = 0) AND p.is_adult = 0"
         ).fetchall()
         self.books = [Book(r, tag_rows[r["id"]]) for r in rows]
         self.by_key = {b.key: b for b in self.books}
@@ -131,6 +132,8 @@ class Site:
                 amazon += f"&tag={quote(tag)}"
         rakuten = b.rakuten_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}"
         seven = f"https://7net.omni7.jp/search/?keyword={quote(q)}"
+        if b.origin == "rakuten":
+            return [{"name": "楽天ブックス", "short": "楽天", "kind": "rakuten", "button": "楽天ブックス", "url": rakuten}]
         return [
             {"name": "Amazon", "short": "Amazon", "kind": "amazon", "button": "Amazon", "url": amazon},
             {"name": "楽天ブックス", "short": "楽天", "kind": "rakuten", "button": "楽天ブックス", "url": rakuten},
@@ -580,7 +583,7 @@ def build_listings(site, w):
         page = page_defaults(title=f"{p['name']}の漫画新刊発売予定｜{SITE_NAME}", description=f"{p['name']}から発売される漫画（コミック）の新刊を、発売日順に紹介しています。", menu="publisher")
         w.write(f"publisher/{p['slug']}/index.html", "listing.html", page, **ctx)
     # レーベル
-    label_rows = site.conn.execute("SELECT l.id, l.name, p.name AS pub, p.slug FROM labels l JOIN publishers p ON p.id = l.publisher_id WHERE l.is_adult = 0").fetchall()
+    label_rows = site.conn.execute("SELECT l.id, l.name, p.name AS pub, p.slug FROM labels l JOIN publishers p ON p.id = l.publisher_id WHERE l.is_adult = 0 AND p.is_adult = 0").fetchall()
     for l in label_rows:
         books = [b for b in site.dated if b.label_id == l["id"]]
         if not books:
@@ -723,8 +726,7 @@ def main(argv=None):
     parser.add_argument("--out", default=str(Path(__file__).resolve().parents[2] / "dist"))
     parser.add_argument("--today", help="基準日（YYYY-MM-DD、確認用）")
     args = parser.parse_args(argv)
-    conn = sqlite3.connect(args.db)
-    conn.row_factory = sqlite3.Row
+    conn = db.connect(args.db)
     today = date.fromisoformat(args.today) if args.today else jst_today()
     out = Path(args.out)
     if out.exists():

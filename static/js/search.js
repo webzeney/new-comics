@@ -92,7 +92,7 @@ $('[data-field="pub"]', li).textContent = item.p;
 $('[data-field="title"]', li).textContent = item.t;
 $('[data-field="meta"]', li).textContent = item.m;
 if (!item.e) $('[data-field="ebook"]', li).remove();
-$$('[data-store]', li).forEach(function (a) { a.href = (item.s && item.s[a.dataset.store]) || '#'; });
+$$('[data-store]', li).forEach(function (a) { var url = item.s && item.s[a.dataset.store]; if (url) { a.href = url; } else { a.remove(); } });
 return li;
 }
 

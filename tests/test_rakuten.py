@@ -28,13 +28,16 @@ class RakutenTest(unittest.TestCase):
     def test_sales_date(self):
         self.assertEqual(rakuten.parse_sales_date("2026年11月04日"), ("2026-11-04", "2026-11"))
         self.assertEqual(rakuten.parse_sales_date("2026年11月上旬"), (None, "2026-11"))
-        self.assertEqual(rakuten.parse_sales_date("2026年11月04日頃"), (None, "2026-11"))
+        self.assertEqual(rakuten.parse_sales_date("2026年11月04日頃"), ("2026-11-04", "2026-11"))
+        self.assertEqual(rakuten.label_name("ヴァルキリーコミックス　457"), "ヴァルキリーコミックス")
         self.assertEqual(rakuten.parse_sales_date("2027年"), (None, "2027-12"))
 
     def test_record(self):
         rec = rakuten.to_record(item("9784098000001", "作品（3）", "2026年11月04日"), True)
         self.assertEqual(rec.source_key, "rakuten:9784098000001")
         self.assertEqual(rec.label, "少年サンデーコミックス")
+        self.assertEqual(rec.date_status, "確定")
+        self.assertEqual(rakuten.to_record(item("9784098000003", "作品（4）", "2026年11月04日頃"), True).date_status, "予定")
         self.assertEqual([a["name"] for a in rec.authors], ["作者A", "作者B"])
         self.assertEqual(rec.rakuten_url, "https://hb.afl.rakuten.co.jp/x/9784098000001")
         self.assertEqual(rec.image_url, "https://thumbnail.image.rakuten.co.jp/9784098000001.jpg")
@@ -69,7 +72,7 @@ class MergeTest(unittest.TestCase):
         self.conn.close()
         self.tmp.cleanup()
 
-    def test_supplement_keeps_publisher_data(self):
+    def test_publisher_book_gets_only_rakuten_link(self):
         own = store.BookRecord(source_key="shogakukan:1", title_raw="作品 3", release_date="2026-11-18", isbn13="9784098000001", has_ebook=True)
         store.save(self.conn, self.pid, own, "t1")
         rec = rakuten.to_record(item("9784098000001", "作品（3）", "2026年11月20日"), True)
@@ -77,7 +80,8 @@ class MergeTest(unittest.TestCase):
         b = self.conn.execute("SELECT * FROM books").fetchone()
         self.assertEqual(b["source_key"], "shogakukan:1")
         self.assertEqual(b["release_date"], "2026-11-18")
-        self.assertEqual(b["price"], 594)
+        self.assertIsNone(b["price"])
+        self.assertEqual(b["origin"], "publisher")
         self.assertEqual(b["rakuten_url"], "https://hb.afl.rakuten.co.jp/x/9784098000001")
         self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM books").fetchone()[0], 1)
         self.assertEqual([r["kind"] for r in self.conn.execute("SELECT kind FROM change_log")], ["NEW"])
@@ -89,8 +93,22 @@ class MergeTest(unittest.TestCase):
         store.save(self.conn, self.pid, rec, "t2")
         rows = self.conn.execute("SELECT * FROM books").fetchall()
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["isbn13"], "9784785900001")
+        self.assertIsNone(rows[0]["isbn13"])
         self.assertEqual(rows[0]["source_key"], "shonengahosha:1")
+        self.assertEqual(rows[0]["rakuten_url"], "https://books.rakuten.co.jp/rb/9784785900001/")
+
+    def test_publisher_takes_over_rakuten_book(self):
+        rec = rakuten.to_record(item("9784785900002", "サンプル作品B 4", "2026年11月09日"), False)
+        store.save(self.conn, self.pid, rec, "t1")
+        own = store.BookRecord(source_key="shonengahosha:2", title_raw="サンプル作品B 第4巻", release_date="2026-11-10")
+        store.save(self.conn, self.pid, own, "t2")
+        b = self.conn.execute("SELECT * FROM books").fetchone()
+        self.assertEqual(b["origin"], "publisher")
+        self.assertIsNone(b["isbn13"])
+        self.assertIsNone(b["price"])
+        self.assertEqual(b["authors"], "[]")
+        self.assertEqual(b["rakuten_url"], "https://books.rakuten.co.jp/rb/9784785900002/")
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM books").fetchone()[0], 1)
 
     def test_rakuten_only_book(self):
         rec = rakuten.to_record(item("9784098000002", "新作（1）", "2026年12月01日"), False)
