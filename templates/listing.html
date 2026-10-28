@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb, bookrow %}
+{% block content %}
+<section aria-labelledby="pub-title" class="panel panel--head">
+{{ breadcrumb(crumbs) }}
+<div class="heading">
+<span class="heading__en">{{ listing.en }}</span>
+<h1 id="pub-title" class="heading__title">{{ listing.title }}</h1>
+{% if listing.lead %}<p class="heading__lead">{{ listing.lead }}</p>{% endif %}
+</div>
+<div class="stats stats--wide">
+<div class="stat stat--main">
+<span class="stat__label">次の発売日</span>
+{% if next_release %}
+<span class="stat__value stat__value--wrap"><span class="stat__num stat__num--34">{{ next_release.md }}</span><span class="stat__unit">（{{ next_release.dow }}）<span class="en">{{ next_release.count }}</span>点</span></span>
+{% else %}
+<span class="stat__value stat__value--wrap"><span class="stat__num stat__num--34">—</span></span>
+{% endif %}
+</div>
+<div class="stat">
+<span class="stat__label">発売予定（<span class="en">{{ upcoming.until }}</span>月まで）</span>
+<span class="stat__value"><span class="stat__num stat__num--34">{{ upcoming.count }}</span><span class="stat__unit">点</span></span>
+</div>
+</div>
+{% if label_links %}
+<div class="filter">
+<span class="filter__label">レーベル別に見る</span>
+{% for l in label_links %}
+<a href="{{ l.url }}" class="chip_link">{{ l.name }}</a>
+{% endfor %}
+</div>
+{% endif %}
+</section>
+<section aria-labelledby="list-title" class="panel">
+{% set current = months|selectattr('current')|first %}
+<div class="section_head section_head--title">
+<h2 id="list-title" class="section_head__title" data-month-heading><span class="en" data-month-no>{{ current.no }}</span>月の発売予定<span class="heading__count" data-month-count>{{ current.count }}点</span></h2>
+<div role="tablist" aria-label="表示する月" class="monthtab">
+{% for m in months %}
+<button type="button" role="tab" id="month-tab-{{ m.no }}" aria-controls="month-panel-{{ m.no }}" aria-selected="{{ 'true' if m.current else 'false' }}" class="monthtab__item{% if m.current %} monthtab__item--current{% endif %}" data-month="{{ m.no }}" data-count="{{ m.count }}"><span class="en">{{ m.no }}</span>月</button>
+{% endfor %}
+</div>
+</div>
+{% for m in months %}
+<div role="tabpanel" id="month-panel-{{ m.no }}" aria-labelledby="month-tab-{{ m.no }}" class="monthpanel"{% if not m.current %} hidden{% endif %}>
+{% for g in m.dates %}
+<div class="group">
+<h3 class="group__title"><span class="group__date">{{ g.md }}</span>（{{ g.dow }}）<span class="group__count">{{ g.books|length }}点</span>{% if g.on_sale %}<span class="group__onsale">発売中</span>{% endif %}</h3>
+<ul class="booklist">
+{% for b in g.books %}
+{% if listing.kind == 'tag' %}
+{{ bookrow(b, b.pub, b.meta, final_badge=listing.final_badge) }}
+{% else %}
+{{ bookrow(b, b.label or b.pub, b.meta) }}
+{% endif %}
+{% endfor %}
+</ul>
+</div>
+{% else %}
+<p class="empty">この月の発売予定はまだありません</p>
+{% endfor %}
+</div>
+{% endfor %}
+</section>
+{% if others %}
+<section aria-labelledby="other-title" class="panel">
+<h2 id="other-title" class="others__title">{{ others.title }}</h2>
+<div class="others">
+{% for o in others.links %}
+<a href="{{ o.url }}" class="others__link">{{ o.name }}</a>
+{% endfor %}
+</div>
+</section>
+{% endif %}
+{{ ad() }}
+{% endblock %}

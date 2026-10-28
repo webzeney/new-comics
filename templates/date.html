@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, arrow, breadcrumb, stat, bookrow %}
+{% block content %}
+<section aria-labelledby="day-title" class="panel panel--head" data-daypage>
+{{ breadcrumb(crumbs) }}
+<div class="page_head">
+<div class="heading">
+<span class="heading__en">RELEASE</span>
+<h1 id="day-title" class="heading__title"><span class="en">{{ day.md }}</span>（{{ day.dow }}）発売の新刊</h1>
+<span class="heading__sub">{{ day.long }}に発売予定のコミック</span>
+</div>
+{{ self.daynav() }}
+</div>
+<div class="stats">
+{{ stat('この日の発売点数', stats.total, '点', main=True) }}
+<div class="stat daypage__stat">
+<span class="stat__label">新シリーズ1巻</span>
+<span class="stat__value"><span class="stat__num">{{ stats.first }}</span><span class="stat__unit">点</span></span>
+</div>
+<div class="stat daypage__stat">
+<span class="stat__label">出版社</span>
+<span class="stat__value"><span class="stat__num">{{ stats.publishers }}</span><span class="stat__unit">社</span></span>
+</div>
+</div>
+<div class="filter">
+<span class="filter__label">出版社で絞り込む</span>
+<button type="button" aria-pressed="true" class="chip" data-pub="">すべて<span class="chip__count">{{ stats.total }}</span></button>
+{% for g in groups %}
+<button type="button" aria-pressed="false" class="chip" data-pub="{{ g.name }}">{{ g.name }}<span class="chip__count">{{ g.books|length }}</span></button>
+{% endfor %}
+</div>
+</section>
+<section aria-labelledby="list-title" class="panel">
+<div class="section_head">
+<h2 id="list-title" class="section_head__title">出版社別の一覧<span class="heading__count" data-shown-count>{{ stats.total }}点</span></h2>
+<span class="section_head__note" data-filter-note>すべての出版社</span>
+</div>
+{% for g in groups %}
+<div class="group" data-group="{{ g.name }}" data-count="{{ g.books|length }}">
+<h3 class="group__title">{{ g.name }}<span class="group__count">{{ g.books|length }}点</span></h3>
+<ul class="booklist">
+{% for b in g.books %}
+{{ bookrow(b, b.label, b.meta) }}
+{% endfor %}
+</ul>
+</div>
+{% endfor %}
+<div class="daypage__foot">
+{{ self.daynav() }}
+<a href="{{ calendar_url }}" class="arrow_button">{{ day.month }}月の新刊カレンダーへ{{ arrow() }}</a>
+</div>
+</section>
+{{ ad() }}
+{% endblock %}
+{% block daynav %}
+<nav aria-label="前後の発売日" class="daynav">
+{% if prev %}<a href="{{ prev.url }}" class="daynav__item"><span aria-hidden="true">‹</span><span class="en">{{ prev.md }}</span>（{{ prev.dow }}）</a>{% endif %}
+{% if next %}<a href="{{ next.url }}" class="daynav__item"><span class="en">{{ next.md }}</span>（{{ next.dow }}）<span aria-hidden="true">›</span></a>{% endif %}
+</nav>
+{% endblock %}

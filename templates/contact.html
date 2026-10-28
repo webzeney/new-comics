@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import breadcrumb %}
+{% block content %}
+<article aria-labelledby="page-title" class="panel">
+{{ breadcrumb(crumbs, 'breadcrumb--wide') }}
+<div class="doc doc--form">
+<div class="doc__head">
+<span class="heading__en">CONTACT</span>
+<h1 id="page-title" class="heading__title">お問い合わせ</h1>
+<p class="doc__lead">掲載内容の誤りや削除のご依頼、そのほかのお問い合わせは、こちらのフォームからお送りください。<span class="doc__strong">必須</span>の項目は必ずご入力ください。</p>
+</div>
+<form class="contact" action="{{ form_action }}" method="post">
+<fieldset class="contact__kinds">
+<legend class="contact__legend">お問い合わせの種類<span class="contact__required">必須</span></legend>
+<label class="contact__kind"><input type="radio" name="kind" value="修正" checked class="contact__radio">掲載内容の修正</label>
+<label class="contact__kind"><input type="radio" name="kind" value="削除" class="contact__radio">掲載の削除依頼</label>
+<label class="contact__kind"><input type="radio" name="kind" value="その他" class="contact__radio">その他</label>
+</fieldset>
+<div class="contact__field">
+<label for="c-name" class="contact__label">お名前<span class="contact__optional">任意</span></label>
+<input id="c-name" name="name" type="text" autocomplete="name" class="contact__input">
+</div>
+<div class="contact__field">
+<label for="c-mail" class="contact__label">メールアドレス<span class="contact__required">必須</span></label>
+<input id="c-mail" name="email" type="email" autocomplete="email" required class="contact__input">
+</div>
+<div class="contact__field">
+<label for="c-url" class="contact__label">対象ページのURL<span class="contact__optional">任意</span></label>
+<input id="c-url" name="url" type="url" placeholder="https://new-comics.jp/book/..." class="contact__input">
+<span class="contact__help">修正・削除のご依頼の場合は、対象のページのURLをご記入ください。</span>
+</div>
+<div class="contact__field">
+<label for="c-body" class="contact__label">お問い合わせ内容<span class="contact__required">必須</span></label>
+<textarea id="c-body" name="body" rows="8" required class="contact__textarea"></textarea>
+</div>
+<div class="contact__honeypot" aria-hidden="true"><label for="c-website">ウェブサイト</label><input id="c-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+<label class="contact__agree"><input type="checkbox" name="agree" value="1" required class="search_form__checkbox"><span><a href="{{ root }}privacy/" class="contact__agree_link">プライバシーポリシー</a>に同意する</span></label>
+<button type="submit" class="contact__submit">確認画面へ進む</button>
+</form>
+</div>
+</article>
+{% endblock %}

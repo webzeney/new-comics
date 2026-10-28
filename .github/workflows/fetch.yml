@@ -45,6 +45,10 @@ jobs:
           else
             python -m newcomics.fetch
           fi
+      - name: ページ生成の確認
+        env:
+          PYTHONPATH: src
+        run: python -m newcomics.build --out dist
       - name: データベースをコミット
         run: |
           git config user.name "github-actions[bot]"

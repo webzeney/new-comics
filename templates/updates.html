@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb, kind_badge %}
+{% block content %}
+<section aria-labelledby="upd-title" class="panel panel--head">
+{{ breadcrumb(crumbs) }}
+<div class="heading">
+<span class="heading__en">UPDATE</span>
+<h1 id="upd-title" class="heading__title">新着・更新情報</h1>
+<p class="heading__lead">新しく追加された新刊と、発売日の変更・決定をお知らせします。データ更新：<span class="en">{{ updated_at }}</span></p>
+</div>
+<dl class="legend">
+<div class="legend__item"><dt class="legend__term">NEW</dt><dd class="legend__desc">新しく発売予定に追加</dd></div>
+<div class="legend__item"><dt class="legend__term legend__term--change">日付変更</dt><dd class="legend__desc">発売日が変わった（延期など）</dd></div>
+<div class="legend__item"><dt class="legend__term legend__term--fixed">日付決定</dt><dd class="legend__desc">未定だった発売日が決まった</dd></div>
+</dl>
+</section>
+<section aria-labelledby="list-title" class="panel">
+<div class="section_head">
+<h2 id="list-title" class="result_head__title" data-list-title>すべての更新<span class="result_head__count"><span class="en" data-list-count>{{ shown_count }}</span>件</span></h2>
+<div role="group" aria-label="種類で絞り込む" class="kindtab">
+<button type="button" aria-pressed="true" class="toggle_button" data-kind="all">すべて</button>
+<button type="button" aria-pressed="false" class="toggle_button" data-kind="NEW">NEW</button>
+<button type="button" aria-pressed="false" class="toggle_button" data-kind="日付変更">日付変更</button>
+<button type="button" aria-pressed="false" class="toggle_button" data-kind="日付決定">日付決定</button>
+</div>
+</div>
+{% for g in groups %}
+<div class="updates">
+<h3 class="updates__title"><span class="updates__date">{{ g.md }}</span>（{{ g.dow }}）の更新</h3>
+<ul class="updates__list">
+{% for u in g['items'] %}
+<li class="updates__item" data-item-kind="{{ u.kind }}">
+{{ kind_badge(u.kind) }}
+<a href="{{ u.url }}" class="updates__link">{{ u.title }}</a>
+<span class="updates__pub">{{ u.pub }}</span>
+<span class="updates__detail">{{ u.detail }}</span>
+</li>
+{% endfor %}
+</ul>
+</div>
+{% endfor %}
+{% if pager %}
+<nav aria-label="ページ送り" class="pager">
+{% for p in pager %}
+<a href="{{ p.url }}" class="pager__item pager__item--plain{% if p.current %} pager__item--current{% endif %}{% if p.next %} pager__item--next{% endif %}"{% if p.current %} aria-current="page"{% endif %}>{{ p.label }}</a>
+{% endfor %}
+</nav>
+{% endif %}
+</section>
+{{ ad() }}
+{% endblock %}

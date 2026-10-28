@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import breadcrumb %}
+{% block content %}
+<article aria-labelledby="page-title" class="panel">
+{{ breadcrumb(crumbs, 'breadcrumb--wide') }}
+<div class="doc">
+<div class="doc__head">
+<span class="heading__en">PRIVACY POLICY</span>
+<h1 id="page-title" class="heading__title">プライバシーポリシー</h1>
+<p class="doc__lead">漫画新刊JP（以下「当サイト」）における、個人情報の取り扱いと広告について定めます。</p>
+</div>
+<section class="doc__section">
+<h2 class="doc__title">個人情報の利用目的</h2>
+<p class="doc__text">お問い合わせの際にご入力いただいたお名前・メールアドレスなどの個人情報は、お問い合わせへの回答と必要なご連絡のためにのみ利用します。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">広告・アフィリエイトについて</h2>
+<p class="doc__text">当サイトは、Amazonアソシエイト・プログラム、楽天アフィリエイトなどのアフィリエイトプログラムに参加しています。当サイトのリンクから商品を購入された場合、当サイトが紹介料を受け取ることがあります。</p>
+<p class="doc__box">Amazonのアソシエイトとして、漫画新刊JPは適格販売により収入を得ています。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">アクセス解析ツールについて</h2>
+<p class="doc__text">当サイトでは、Googleによるアクセス解析ツール「Googleアナリティクス」を利用しています。Googleアナリティクスはデータの収集にCookieを使用します。このデータは匿名で収集されており、個人を特定するものではありません。Cookieはブラウザの設定で無効にできます。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">第三者への提供</h2>
+<p class="doc__text">法令に基づく場合を除き、ご本人の同意なく個人情報を第三者に提供することはありません。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">改定について</h2>
+<p class="doc__text">本ポリシーの内容は、必要に応じて予告なく改定することがあります。改定後の内容は、このページに掲載した時点から適用します。</p>
+<p class="doc__date">制定日：<span class="en">{{ established }}</span></p>
+</section>
+</div>
+</article>
+{% endblock %}

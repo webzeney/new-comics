@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb %}
+{% block content %}
+<section aria-labelledby="page-title" class="panel panel--head">
+{{ breadcrumb(crumbs) }}
+<div class="heading">
+<span class="heading__en">{{ heading.en }}</span>
+<h1 id="page-title" class="heading__title">{{ heading.title }}</h1>
+<p class="heading__lead">{{ heading.lead }}</p>
+</div>
+</section>
+{% for g in groups %}
+<section class="panel">
+<h2 class="others__title">{{ g.title }}</h2>
+<div class="others">
+{% for o in g.links %}
+<a href="{{ o.url }}" class="others__link">{{ o.name }}</a>
+{% endfor %}
+</div>
+</section>
+{% endfor %}
+{{ ad() }}
+{% endblock %}

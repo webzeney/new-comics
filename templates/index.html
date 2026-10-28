@@ -1,0 +1,158 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, arrow, store_tiles, kind_badge %}
+{% block content %}
+<div aria-label="本日発売" class="ticker">
+<span class="ticker__label">TODAY</span>
+<div class="ticker__viewport">
+<div class="ticker__track">
+{% for t in ticker %}
+<span>★ {{ t }}</span>
+{% endfor %}
+</div>
+</div>
+</div>
+<div class="top_row">
+<section aria-labelledby="search-title" class="top_search">
+<div class="top_search__frame">
+<div class="heading">
+<span class="heading__en">SEARCH</span>
+<h1 id="search-title" class="heading__title">読みたい新刊、<br>すぐ見つかる。</h1>
+</div>
+<form role="search" class="search_form" action="{{ root }}search/" method="get">
+<div class="search_form__row">
+<label for="q" class="visually_hidden">フリーワード</label>
+<input id="q" name="q" type="search" placeholder="作品名・出版社・レーベルなど" class="search_form__input">
+<button type="submit" class="search_form__button">検索する</button>
+</div>
+<div class="search_form__filters">
+<div class="search_form__field">
+<label for="f-pub" class="search_form__label">出版社</label>
+<select id="f-pub" name="pub" class="search_form__select">
+<option value="">すべて</option>
+{% for p in search.publishers %}
+<option value="{{ p }}">{{ p }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="search_form__field">
+<label for="f-label" class="search_form__label">レーベル</label>
+<select id="f-label" name="label" class="search_form__select">
+<option value="">すべて</option>
+{% for l in search.labels %}
+<option value="{{ l }}">{{ l }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="search_form__field">
+<label for="f-month" class="search_form__label">発売月</label>
+<select id="f-month" name="month" class="search_form__select">
+<option value="">すべて</option>
+{% for m in search.months %}
+<option value="{{ m.value }}">{{ m.label }}</option>
+{% endfor %}
+</select>
+</div>
+</div>
+<label class="search_form__check"><input type="checkbox" name="ebook" value="1" class="search_form__checkbox">電子書籍版ありのみ</label>
+</form>
+</div>
+</section>
+<div class="top_side">
+<a href="{{ calendar.url }}" class="calendar_card">
+<span class="calendar_card__en">CALENDAR</span>
+<span class="calendar_card__month"><span class="calendar_card__num">{{ calendar.month }}</span><span class="calendar_card__text">月の新刊<br>カレンダー</span></span>
+<span class="calendar_card__link">日付から探す{{ arrow('#222222', 18) }}</span>
+</a>
+<a href="{{ tomorrow.url }}" class="tomorrow_card">
+<span class="tomorrow_card__en">TOMORROW</span>
+<span class="tomorrow_card__text">明日 {{ tomorrow.label }}発売の新刊をチェック</span>
+</a>
+</div>
+</div>
+<section aria-labelledby="new-title" class="panel">
+<div class="release__head">
+<div class="heading">
+<span class="heading__en">NEW RELEASE</span>
+<h2 id="new-title" class="release__title">今日・明日発売の新刊</h2>
+</div>
+<div role="tablist" aria-label="発売日" class="release__tabs">
+{% for r in releases %}
+<button type="button" role="tab" id="release-tab-{{ loop.index }}" aria-controls="release-panel-{{ loop.index }}" aria-selected="{{ 'true' if loop.first else 'false' }}" class="release__tab">{{ r.word }} <span class="en">{{ r.date }}</span></button>
+{% endfor %}
+</div>
+</div>
+{% for r in releases %}
+<div role="tabpanel" id="release-panel-{{ loop.index }}" aria-labelledby="release-tab-{{ loop.index }}" class="release__grid"{% if not loop.first %} hidden{% endif %}>
+{% for b in r.books %}
+<article class="card">
+<a href="{{ b.url }}" class="card__cover">
+<div class="card__image">書影</div>
+<span class="card__bubble{% if b.bubble_kind %} card__bubble--{{ b.bubble_kind }}{% endif %}">{{ b.bubble }}</span>
+</a>
+<div class="card__badges">
+<span class="card__badge">{{ b.pub }}</span>
+{% if b.ebook %}<span class="card__badge card__badge--ebook">電子版あり</span>{% endif %}
+</div>
+<h3 class="card__title"><a href="{{ b.url }}" class="card__link">{{ b.title }}</a></h3>
+<p class="card__meta">{{ b.author }}<br>{{ b.label_price }}</p>
+<div class="card__stores">
+{{ store_tiles(b.stores, '') }}
+</div>
+</article>
+{% endfor %}
+</div>
+{% endfor %}
+<div class="release__more">
+{% for r in releases %}
+<a href="{{ r.more_url }}" class="release__more_link" data-panel="release-panel-{{ loop.index }}"{% if not loop.first %} hidden{% endif %}>{{ r.date }}発売の新刊をすべて見る{{ arrow() }}</a>
+{% endfor %}
+</div>
+</section>
+{{ ad() }}
+<div class="top_row top_row--start">
+<section aria-labelledby="upd-title" class="panel updates_panel">
+<div class="updates_panel__head">
+<div class="heading">
+<span class="heading__en">UPDATE</span>
+<h2 id="upd-title" class="updates_panel__title">新着・更新情報</h2>
+</div>
+<a href="{{ root }}updates/" class="updates_panel__all">すべて見る</a>
+</div>
+<ul class="updates_panel__list">
+{% for u in updates %}
+<li class="updates_panel__item">
+<span class="updates_panel__date">{{ u.date }}</span>
+{{ kind_badge(u.kind) }}
+<a href="{{ u.url }}" class="updates_panel__link">{{ u.title }}</a>
+<span class="updates_panel__detail">{{ u.detail }}</span>
+</li>
+{% endfor %}
+</ul>
+</section>
+<div class="top_side top_side--start">
+<section aria-labelledby="feat-title" class="panel">
+<div class="feature_panel__head">
+<span class="heading__en">FEATURE</span>
+<h2 id="feat-title" class="feature_panel__title">特集</h2>
+</div>
+<ul class="feature_panel__list">
+{% if not features %}
+<li class="feature_panel__item feature_panel__empty">特集記事は準備中です。</li>
+{% endif %}
+{% for f in features %}
+<li class="feature_panel__item">
+<a href="{{ f.url }}" class="feature_panel__link">
+<span class="feature_panel__no">{{ f.no }}</span>
+<span class="feature_panel__body">
+<span class="feature_panel__tag">{{ f.tag }}</span>
+<span class="feature_panel__text">{{ f.title }}</span>
+</span>
+</a>
+</li>
+{% endfor %}
+</ul>
+</section>
+{{ ad(rect=True) }}
+</div>
+</div>
+{% endblock %}

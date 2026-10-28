@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import breadcrumb %}
+{% block content %}
+<article aria-labelledby="page-title" class="panel">
+{{ breadcrumb(crumbs, 'breadcrumb--wide') }}
+<div class="doc">
+<div class="heading">
+<span class="heading__en">ABOUT</span>
+<h1 id="page-title" class="heading__title">運営者情報</h1>
+</div>
+<dl class="profile">
+<dt class="profile__term">サイト名</dt><dd class="profile__desc">漫画新刊JP</dd>
+<dt class="profile__term">URL</dt><dd class="profile__desc profile__desc--en">https://new-comics.jp/</dd>
+<dt class="profile__term">運営者</dt><dd class="profile__desc">漫画新刊JP</dd>
+<dt class="profile__term">お問い合わせ</dt><dd class="profile__desc"><a href="{{ root }}contact/" class="doc__link">お問い合わせフォーム</a>よりご連絡ください</dd>
+</dl>
+<section class="doc__section">
+<h2 class="doc__title">このサイトについて</h2>
+<p class="doc__text">漫画新刊JPは、漫画（コミック）の新刊発売日を、カレンダーや出版社・作品ごとに探せる情報サイトです。各出版社や書店の公開情報をもとに、発売予定を毎日自動で更新しています。</p>
+<p class="doc__text">発売日は出版社の都合により変更されることがあります。購入の際は、各販売店のページで最新の情報をご確認ください。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">掲載情報と書影について</h2>
+<p class="doc__text">書影（表紙画像）は、Amazonが提供する画像を表示しています。掲載内容の修正・削除のご依頼は、<a href="{{ root }}contact/" class="doc__link">お問い合わせフォーム</a>からお願いいたします。</p>
+</section>
+</div>
+</article>
+{% endblock %}

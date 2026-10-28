@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title }}</title>
+<meta name="description" content="{{ page.description }}">
+{% if page.canonical %}<link rel="canonical" href="{{ page.canonical }}">{% endif %}
+
+<meta property="og:type" content="{{ 'website' if page.is_top else 'article' }}">
+<meta property="og:title" content="{{ page.title }}">
+<meta property="og:description" content="{{ page.description }}">
+<meta property="og:site_name" content="漫画新刊JP">
+{% if page.canonical %}<meta property="og:url" content="{{ page.canonical }}">{% endif %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Noto+Sans+JP:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ root }}assets/css/style.css">
+
+<script src="{{ root }}assets/js/main.js" defer></script>
+{% if ga4_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ ga4_id }}');</script>
+{% endif %}
+</head>
+<body>
+<div class="page">
+<div class="page__inner">
+<aside aria-label="サイドメニュー" class="sidemenu">
+<a href="{{ root or './' }}" class="sidemenu__logo">
+<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><rect x="3" y="3" width="58" height="58" rx="10" fill="#FFFFFF" stroke="#222222" stroke-width="3"></rect><path d="M3 30h31M34 3v58M34 40h27" stroke="#222222" stroke-width="3"></path><rect x="8" y="8" width="21" height="17" rx="3" fill="#D9483B"></rect><rect x="39" y="8" width="17" height="27" rx="3" fill="#FFD15C"></rect><rect x="8" y="35" width="21" height="21" rx="3" fill="#FFD15C"></rect><rect x="39" y="45" width="17" height="11" rx="3" fill="#D9483B"></rect></svg>
+<span class="sidemenu__name">漫画新刊JP</span>
+<span class="sidemenu__en">NEW COMICS JP</span>
+</a>
+<button type="button" class="sidemenu__toggle" aria-expanded="false" aria-controls="sidemenu-body" data-open-label="メニューを閉じる" data-closed-label="メニューを開く"><span class="sidemenu__toggle_label">メニューを開く</span><span aria-hidden="true" class="sidemenu__arrow">▼</span></button>
+<div id="sidemenu-body" class="sidemenu__body sidemenu__body--closed">
+<nav aria-label="メインメニュー">
+<ul class="sidemenu__list">
+{% for item in site.menu %}
+<li class="sidemenu__item"><a href="{{ item.url }}" class="sidemenu__link{% if item.key == page.menu %} sidemenu__link--current{% endif %}"{% if item.key == page.menu %} aria-current="page"{% endif %}>{{ item.label }}<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h9M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="#B5302A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></li>
+{% endfor %}
+</ul>
+</nav>
+<div class="sidemenu__tags">
+<span class="sidemenu__heading">TAGS</span>
+<div class="sidemenu__taglist">
+{% for tag in site.tags %}
+<a href="{{ tag.url }}" class="sidemenu__tag{% if tag.key == page.tag %} sidemenu__tag--current{% endif %}"{% if tag.key == page.tag %} aria-current="page"{% endif %}>#{{ tag.label }}</a>
+{% endfor %}
+</div>
+</div>
+<a href="{{ root }}contact/" class="sidemenu__contact"{% if page.footer == 'contact' %} aria-current="page"{% endif %}>お問い合わせ</a>
+</div>
+<p class="sidemenu__note">当サイトはアフィリエイト広告（Amazonアソシエイト・楽天アフィリエイト等）を利用しています。</p>
+</aside>
+<main class="page__main">
+{% block content %}{% endblock %}
+<footer class="footer page__footer">
+<div class="footer__inner">
+<span class="footer__brand"><span class="footer__name">漫画新刊JP</span><span class="footer__en">NEW COMICS JP</span></span>
+<nav aria-label="フッターメニュー" class="footer__nav">
+{% for item in site.footer %}
+<a href="{{ item.url }}" class="footer__link{% if item.key == page.footer %} footer__link--current{% endif %}"{% if item.key == page.footer %} aria-current="page"{% endif %}>{{ item.label }}</a>
+{% endfor %}
+</nav>
+<p class="footer__text">当サイトのリンクにはアフィリエイトリンク（Amazonアソシエイト・楽天アフィリエイト等）が含まれます。発売日・価格は変更される場合があります。最新情報は各出版社・販売店でご確認ください。</p>
+<p class="footer__copy">© {{ site.year }} NEW COMICS JP</p>
+</div>
+</footer>
+</main>
+</div>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

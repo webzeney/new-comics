@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import breadcrumb %}
+{% block content %}
+<article aria-labelledby="page-title" class="panel">
+{{ breadcrumb(crumbs, 'breadcrumb--wide') }}
+<div class="doc">
+<div class="heading">
+<span class="heading__en">DISCLAIMER</span>
+<h1 id="page-title" class="heading__title">免責事項</h1>
+</div>
+<section class="doc__section">
+<h2 class="doc__title">掲載情報について</h2>
+<p class="doc__text">当サイトの発売日・価格などの情報は、各出版社や書店の公開情報をもとに自動で収集・更新しています。正確な情報の掲載に努めていますが、その正確性・最新性を保証するものではありません。発売日は出版社の都合により変更・延期されることがあります。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">ご購入について</h2>
+<p class="doc__text">商品のご購入は、リンク先の各販売店で行っていただくものです。価格・在庫・配送などは各販売店のページでご確認ください。販売店とのお取引で生じたトラブルについて、当サイトは責任を負いかねます。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">著作権について</h2>
+<p class="doc__text">作品名・書影などの著作権・商標権は、各権利者に帰属します。掲載内容に問題がある場合は、<a href="{{ root }}contact/" class="doc__link">お問い合わせフォーム</a>からご連絡ください。確認のうえ、速やかに修正・削除いたします。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">損害について</h2>
+<p class="doc__text">当サイトの情報を利用したことで生じた損害について、当サイトは一切の責任を負いかねます。あらかじめご了承ください。</p>
+</section>
+</div>
+</article>
+{% endblock %}

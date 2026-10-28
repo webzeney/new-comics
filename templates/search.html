@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb, bookrow %}
+{% block content %}
+<section aria-labelledby="search-title" class="panel panel--head" data-search data-index="{{ root }}search/index.json">
+{{ breadcrumb(crumbs) }}
+<div class="heading">
+<span class="heading__en">SEARCH</span>
+<h1 id="search-title" class="search_title"><span data-search-heading>{{ search.heading }}</span><span class="search_title__count"><span class="en" data-search-total>{{ search.total }}</span>件</span></h1>
+</div>
+<form role="search" class="search_form search_form--page" action="./" method="get" data-search-form>
+<div class="search_form__row">
+<label for="q" class="visually_hidden">フリーワード</label>
+<input id="q" name="q" type="search" value="{{ search.q }}" class="search_form__input search_form__input--page">
+<button type="submit" class="search_form__button">再検索</button>
+</div>
+<div class="search_form__filters">
+<div class="search_form__field">
+<label for="f-pub" class="search_form__label">出版社</label>
+<select id="f-pub" name="pub" class="search_form__select"><option value="">すべて</option>{% for p in options.publishers %}<option value="{{ p }}"{% if p == search.pub %} selected{% endif %}>{{ p }}</option>{% endfor %}</select>
+</div>
+<div class="search_form__field">
+<label for="f-label" class="search_form__label">レーベル</label>
+<select id="f-label" name="label" class="search_form__select"><option value="">すべて</option>{% for l in options.labels %}<option value="{{ l }}"{% if l == search.label %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+</div>
+<div class="search_form__field">
+<label for="f-month" class="search_form__label">発売月</label>
+<select id="f-month" name="month" class="search_form__select"><option value="">すべて</option>{% for m in options.months %}<option value="{{ m.value }}"{% if m.value == search.month %} selected{% endif %}>{{ m.label }}</option>{% endfor %}</select>
+</div>
+</div>
+<label class="search_form__check"><input type="checkbox" name="ebook" value="1" class="search_form__checkbox"{% if search.ebook %} checked{% endif %}>電子書籍版ありのみ</label>
+</form>
+<div class="conditions" data-conditions{% if not search.conditions %} hidden{% endif %}>
+<span class="conditions__label">検索条件</span>
+{% for c in search.conditions %}
+<span class="conditions__item">{{ c.label }}<button type="button" aria-label="{{ c.name }}の条件を外す" class="conditions__remove" data-remove="{{ c.key }}">×</button></span>
+{% endfor %}
+</div>
+</section>
+<section aria-labelledby="result-title" class="panel">
+<div class="section_head">
+<h2 id="result-title" class="result_head__title">検索結果<span class="result_head__count"><span class="en" data-search-range>{{ search.range }}</span>件を表示</span></h2>
+<div role="group" aria-label="並び順" class="toggle_group">
+<button type="button" aria-pressed="{{ 'true' if search.sort == 'date' else 'false' }}" class="toggle_button" data-search-sort="date">発売日が近い順</button>
+<button type="button" aria-pressed="{{ 'true' if search.sort == 'added' else 'false' }}" class="toggle_button" data-search-sort="added">新しく追加された順</button>
+</div>
+</div>
+<p class="empty" data-search-empty hidden>条件に合う新刊は見つかりませんでした</p>
+<ul class="booklist" data-search-results>
+{% for b in search.results %}
+{{ bookrow(b, b.pub, b.meta, date_badge=True) }}
+{% endfor %}
+</ul>
+<nav aria-label="ページ送り" class="pager" data-search-pager>
+{% for p in search.pages %}
+<button type="button" class="pager__item{% if p.current %} pager__item--current{% endif %}"{% if p.current %} aria-current="page"{% endif %} data-page="{{ p.page }}">{{ p.label }}</button>
+{% endfor %}
+</nav>
+</section>
+{{ ad() }}
+<template id="search-row-template">
+<li class="bookrow">
+<a href="#" class="bookrow__cover" data-book-url>
+<span class="bookrow__image">書影</span>
+</a>
+<div class="bookrow__info">
+<div class="badges badges--center">
+<span class="badge" data-field="date"></span>
+<span class="badge" data-field="pub"></span>
+<span class="badge badge--ebook" data-field="ebook">電子版あり</span>
+</div>
+<a href="#" class="bookrow__title" data-book-url data-field="title"></a>
+<span class="bookrow__meta" data-field="meta"></span>
+</div>
+<div class="bookrow__stores">
+<a href="#" class="store_tile bookrow__store" aria-label="Amazonで購入" title="Amazon" rel="sponsored noopener" target="_blank" data-store="amazon">Amazon</a>
+<a href="#" class="store_tile store_tile--rakuten bookrow__store" aria-label="楽天ブックスで購入" title="楽天ブックス" rel="sponsored noopener" target="_blank" data-store="rakuten">楽天</a>
+<a href="#" class="store_tile store_tile--seven bookrow__store" aria-label="セブンネットショッピングで購入" title="セブンネットショッピング" rel="sponsored noopener" target="_blank" data-store="seven">セブン
+ネット</a>
+</div>
+</li>
+</template>
+{% endblock %}
+{% block scripts %}
+{% if search_js %}<script src="{{ root }}assets/js/search.js" defer></script>{% endif %}
+{% endblock %}

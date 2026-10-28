@@ -1,0 +1,61 @@
+{% macro breadcrumb(items, cls='') -%}
+<nav aria-label="パンくずリスト" class="breadcrumb{% if cls %} {{ cls }}{% endif %}">{% for item in items %}{% if not loop.first %}<span class="breadcrumb__sep">›</span>{% endif %}{% if item.get('url') %}<a href="{{ item.url }}" class="breadcrumb__link">{{ item.label }}</a>{% else %}<span>{{ item.label }}</span>{% endif %}{% endfor %}</nav>
+{%- endmacro %}
+
+{% macro arrow(color='#FFD15C', size=14) -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h9M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="{{ color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+{%- endmacro %}
+
+{% macro ad(rect=False, extra='') -%}
+<aside aria-label="広告" class="ad{% if rect %} ad--rect{% endif %}{% if extra %} {{ extra }}{% endif %}">
+<span class="ad__label">PR</span>
+<span>{% if rect %}広告枠 300×250{% else %}広告枠（楽天ブックス・Amazonのバナー等／レスポンシブ）{% endif %}</span>
+</aside>
+{%- endmacro %}
+
+{% macro store_tiles(stores, cls) -%}
+{% for s in stores %}
+<a href="{{ s.url }}" class="store_tile{% if s.kind != 'amazon' %} store_tile--{{ s.kind }}{% endif %}{% if cls %} {{ cls }}{% endif %}" aria-label="{{ s.name }}で購入" title="{{ s.name }}" rel="sponsored noopener" target="_blank">{{ s.short }}</a>
+{% endfor %}
+{%- endmacro %}
+
+{% macro store_buttons(stores, cls) -%}
+<div class="store_buttons{% if cls %} {{ cls }}{% endif %}">
+{% for s in stores %}
+<a href="{{ s.url }}" class="store_button{% if s.kind != 'amazon' %} store_button--{{ s.kind }}{% endif %}" aria-label="{{ s.name }}で予約・購入" rel="sponsored noopener" target="_blank">{{ s.button }}</a>
+{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro bookrow(b, chip, meta, top=False, final_badge=False, date_badge=False) -%}
+<li class="bookrow{% if top %} bookrow--top{% endif %}" data-pub="{{ b.pub }}">
+<a href="{{ b.url }}" class="bookrow__cover{% if final_badge %} bookrow__cover--badge{% endif %}">
+<span class="bookrow__image">書影</span>
+{% if final_badge %}<span class="bookrow__final">完結</span>{% endif %}
+</a>
+<div class="bookrow__info">
+<div class="badges{% if date_badge %} badges--center{% endif %}">
+{% if date_badge %}<span class="badge {{ 'badge--onsale' if b.on_sale else 'badge--date' }}">{{ b.date_badge }}</span>{% endif %}
+<span class="badge">{{ chip }}</span>
+{% if b.ebook %}<span class="badge badge--ebook">電子版あり</span>{% endif %}
+{% if b.first and not final_badge and not date_badge %}<span class="badge badge--first">新シリーズ</span>{% endif %}
+</div>
+<a href="{{ b.url }}" class="bookrow__title">{{ b.title }}</a>
+<span class="bookrow__meta">{{ meta }}</span>
+</div>
+<div class="bookrow__stores">
+{{ store_tiles(b.stores, 'bookrow__store') }}
+</div>
+</li>
+{%- endmacro %}
+
+{% macro stat(label, num, unit, main=False, size='', value_cls='') -%}
+<div class="stat{% if main %} stat--main{% endif %}">
+<span class="stat__label">{{ label }}</span>
+<span class="stat__value{% if value_cls %} {{ value_cls }}{% endif %}"><span class="stat__num{% if size %} stat__num--{{ size }}{% endif %}">{{ num }}</span><span class="stat__unit">{{ unit }}</span></span>
+</div>
+{%- endmacro %}
+
+{% macro kind_badge(kind) -%}
+<span class="kind{% if kind == '日付変更' %} kind--change{% elif kind == '日付決定' %} kind--fixed{% endif %}">{{ kind }}</span>
+{%- endmacro %}

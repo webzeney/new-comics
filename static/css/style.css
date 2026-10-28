@@ -1,0 +1,492 @@
+/* ==========================================================================
+基本
+========================================================================== */
+body{margin:0;background:#D9483B}
+a{color:#222222}
+a:where(:hover){color:#B5302A}
+input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid #222222;outline-offset:2px}
+.visually_hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.en{font-family:Fredoka,sans-serif}
+.ja{font-family:'Noto Sans JP',sans-serif;font-size:13px}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* ==========================================================================
+ページ全体
+========================================================================== */
+.page{font-family:'Noto Sans JP',system-ui,sans-serif;color:#222222;background:#D9483B;min-height:100vh;font-size:14px;line-height:1.6;padding:12px;box-sizing:border-box}
+.page__inner{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch}
+.page__main{flex:999 1 600px;min-width:0;display:flex;flex-direction:column;gap:12px}
+/* ==========================================================================
+サイドメニュー
+========================================================================== */
+.sidemenu{flex:1 1 220px;max-width:100%;background:#FFFFFF;border-radius:20px;padding:28px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px}
+.sidemenu__logo{display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;color:#222222}
+.sidemenu__name{font-size:22px;font-weight:900;letter-spacing:0.04em;line-height:1.2}
+.sidemenu__en{font-family:Fredoka,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.24em;line-height:1}
+.sidemenu__toggle{display:none;align-items:center;justify-content:center;gap:8px;min-height:44px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.sidemenu__arrow{display:inline-block;font-size:10px;transform:rotate(0deg)}
+.sidemenu__toggle[aria-expanded="true"] .sidemenu__arrow{transform:rotate(180deg)}
+.sidemenu__body{display:flex;flex-direction:column;gap:24px}
+.sidemenu__list{list-style:none;margin:0;padding:0}
+.sidemenu__item{border-bottom:1px dashed #EBCFC9}
+.sidemenu__link{display:flex;align-items:center;justify-content:space-between;min-height:44px;text-decoration:none;font-weight:700;font-size:14px;color:#222222}
+.sidemenu__link--current{color:#B5302A}
+.sidemenu__tags{display:flex;flex-direction:column;gap:10px}
+.sidemenu__heading{font-family:Fredoka,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.16em;color:#B5302A}
+.sidemenu__taglist{display:flex;flex-wrap:wrap;gap:6px}
+.sidemenu__tag{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;border-radius:999px;background:#FFF0EC;color:#222222;text-decoration:none;font-size:12px;font-weight:500}
+.sidemenu__tag--current{font-weight:700;background:#222222;color:#FFFFFF}
+.sidemenu__contact{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border-radius:999px;background:#222222;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px}
+.sidemenu__note{margin:0;font-size:11px;color:#5A5148;line-height:1.7}
+/* ==========================================================================
+パネル・見出し・パンくず
+========================================================================== */
+.panel{background:#FFFFFF;border-radius:20px;padding:28px 24px}
+.panel--head{padding:24px}
+.breadcrumb{font-size:12px;color:#5A5148;margin-bottom:16px}
+.breadcrumb--wide{margin-bottom:20px}
+.breadcrumb__link{color:#5A5148}
+.breadcrumb__sep{margin:0 8px}
+.breadcrumb--sp{display:none}
+.heading{display:flex;flex-direction:column;gap:2px}
+.heading__en{font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.16em;color:#B5302A}
+.heading__title{margin:0;font-size:30px;font-weight:900;line-height:1.3}
+.heading__sub{font-size:13px;color:#5A5148}
+.heading__lead{margin:6px 0 0;font-size:13px;color:#5A5148}
+.heading__count{font-size:15px;margin-left:8px}
+.page_head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.section_head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:8px}
+.section_head--title{gap:16px}
+.section_head__title{margin:0;font-size:22px;font-weight:900}
+.section_head__note{font-size:12px;color:#5A5148}
+.section_head__link{font-size:13px;font-weight:700}
+/* ==========================================================================
+数値の枠
+========================================================================== */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:20px}
+.stats--wide{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.stats--series{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.stat{background:#FFF6EC;border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;gap:2px}
+.stat--main{background:#FFD15C}
+.stat__label{font-size:12px;font-weight:700}
+.stat__value{display:flex;align-items:baseline;gap:4px}
+.stat__value--wrap{flex-wrap:wrap}
+.stat__value--loose{gap:6px}
+.stat__value--tight{gap:2px}
+.stat__num{font-family:Fredoka,sans-serif;font-size:36px;font-weight:700;line-height:1.1}
+.stat__num--34{font-size:34px}
+.stat__unit{font-weight:700}
+/* ==========================================================================
+絞り込み・切り替えボタン
+========================================================================== */
+.filter{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:20px}
+.filter__label{font-size:12px;font-weight:700;margin-right:4px}
+.chip{min-height:36px;padding:0 14px;border-radius:999px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #222222;background:#FFFFFF;color:#222222}
+.chip[aria-pressed="true"]{background:#222222;color:#FFFFFF}
+.chip__count{font-family:Fredoka,sans-serif;margin-left:6px}
+.chip_link{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border:2px solid #222222;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none}
+.toggle_button{min-height:40px;padding:0 16px;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
+.toggle_button[aria-pressed="true"]{background:#222222;color:#FFFFFF}
+.toggle_group{display:flex;gap:6px}
+.pill_nav{display:flex;gap:6px}
+.pill_nav__item{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;box-sizing:border-box;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-weight:700;text-decoration:none}
+.pill_nav__item--current{background:#222222;color:#FFFFFF}
+.daynav{display:flex;gap:8px}
+.daynav__item{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 18px;box-sizing:border-box;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-weight:700;text-decoration:none}
+.monthtab{display:flex;gap:6px}
+.monthtab__item{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 18px;box-sizing:border-box;border:2px solid #222222;border-radius:999px;font-family:inherit;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
+.monthtab__item--current{background:#222222;color:#FFFFFF}
+.arrow_button{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:48px;padding:0 28px;border-radius:999px;background:#222222;color:#FFFFFF;font-weight:700;text-decoration:none}
+.pager{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:24px}
+.pager__item{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:44px;min-height:44px;padding:0 12px;border:2px solid #222222;border-radius:999px;font-family:Fredoka,sans-serif;font-size:15px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222;text-decoration:none}
+.pager__item--current{background:#222222;color:#FFFFFF}
+/* ==========================================================================
+バッジ
+========================================================================== */
+.badges{display:flex;flex-wrap:wrap;gap:4px}
+.badges--center{align-items:center}
+.badge{font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:#FFF0EC}
+.badge--ebook{padding:0 8px;background:none;border:1px solid #222222}
+.badge--first{font-weight:900;padding:0 8px;border:2px solid #222222;background:#FFD15C}
+.badge--date{font-weight:900;background:#FFD15C;color:#222222;border:1px solid #222222}
+.badge--onsale{font-weight:900;background:#222222;color:#FFFFFF}
+.kind{flex:0 0 auto;font-size:11px;font-weight:900;padding:2px 10px;border-radius:999px;background:#FFD15C;color:#222222;border:2px solid #222222}
+.kind--change{background:#FFFFFF;color:#B5302A;border-color:#B5302A}
+.kind--fixed{background:#222222;color:#FFFFFF;border-color:#222222}
+.tag_link{font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;background:#FFF0EC;text-decoration:none}
+.tag_badge{font-size:12px;font-weight:700;padding:1px 10px;border-radius:999px;border:1px solid #222222}
+.tag_badge--status{font-weight:900;border:2px solid #222222;background:#FFD15C}
+/* ==========================================================================
+購入ボタン
+========================================================================== */
+.store_tile{min-height:44px;box-sizing:border-box;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre-line;font-size:10px;font-weight:700;line-height:1.15;text-decoration:none;background:#FFFFFF;color:#222222;border:1px solid #D9CFC6}
+.store_tile--rakuten{color:#BF0000}
+.store_tile--seven{color:#00704A}
+.store_button{min-height:52px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:900;line-height:1.3;text-decoration:none;background:#FFFFFF;color:#222222;border:2px solid #222222;box-shadow:3px 3px 0 #222222;letter-spacing:0.08em}
+.store_button--rakuten{color:#BF0000}
+.store_button--seven{color:#00704A}
+.store_buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+/* ==========================================================================
+書籍の行（一覧）
+========================================================================== */
+.booklist{list-style:none;margin:0;padding:0}
+.bookrow{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;padding:14px 0;border-bottom:1px dashed #EBCFC9}
+.bookrow--top{border-bottom:0;border-top:1px dashed #EBCFC9}
+.bookrow__cover{flex:0 0 auto;display:block;text-decoration:none}
+.bookrow__cover--badge{position:relative}
+.bookrow__image{display:flex;align-items:center;justify-content:center;width:48px;height:72px;box-sizing:border-box;background:#F3EEE8;border:2px solid #222222;border-radius:4px;box-shadow:3px 3px 0 #222222;color:#5A5148;font-size:10px}
+.bookrow__final{position:absolute;top:-8px;left:-8px;padding:0 6px;border:2px solid #222222;border-radius:999px;background:#222222;color:#FFFFFF;font-size:10px;font-weight:900}
+.bookrow__info{flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:4px}
+.bookrow__title{font-size:15px;font-weight:900;text-decoration:none;line-height:1.45}
+.bookrow__meta{font-size:12px;color:#5A5148}
+.bookrow__stores{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,64px);gap:6px}
+.group{margin-top:20px}
+.group__title{display:flex;align-items:center;gap:10px;margin:0;padding:8px 14px;border-radius:10px;background:#FFF6EC;font-size:16px;font-weight:900}
+.group__date{font-family:Fredoka,sans-serif;font-size:20px}
+.group__count{font-family:Fredoka,sans-serif;font-size:13px;font-weight:700;padding:0 10px;border-radius:999px;background:#FFFFFF}
+.group__onsale{font-size:11px;font-weight:900;padding:1px 10px;border-radius:999px;background:#222222;color:#FFFFFF}
+.empty{margin:16px 0 0;padding:24px;border-radius:14px;background:#FFF6EC;text-align:center;font-weight:700}
+/* ==========================================================================
+書影
+========================================================================== */
+.cover{aspect-ratio:2 / 3;display:flex;align-items:center;justify-content:center;background:#F3EEE8;border:2px solid #222222;border-radius:4px;box-shadow:3px 3px 0 #222222;color:#5A5148;font-size:11px}
+.cover--current{border:3px solid #D9483B;box-shadow:3px 3px 0 #D9483B}
+/* ==========================================================================
+広告
+========================================================================== */
+.ad{background:#FFF6EC;border-radius:20px;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#5A5148;font-size:13px}
+.ad--rect{min-height:250px}
+.ad__label{font-family:Fredoka,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.16em}
+/* ==========================================================================
+フッター
+========================================================================== */
+.footer{background:#222222;border-radius:20px;color:#D6D0CA}
+.footer__inner{padding:32px 28px;display:flex;flex-direction:column;gap:16px;font-size:13px}
+.footer__brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.footer__name{font-size:18px;font-weight:900;color:#FFFFFF}
+.footer__en{font-family:Fredoka,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.24em;color:#FFD15C}
+.footer__nav{display:flex;flex-wrap:wrap;gap:4px 24px}
+.footer__link{color:#D6D0CA;padding:10px 0}
+.footer__link--current{color:#FFFFFF;font-weight:700}
+.footer__text{margin:0;line-height:1.7}
+.footer__copy{margin:0;font-family:Fredoka,sans-serif;font-size:12px}
+/* ==========================================================================
+トップ：本日発売の帯
+========================================================================== */
+.ticker{background:#222222;border-radius:20px;overflow:hidden;display:flex;align-items:center;min-height:52px}
+.ticker__label{flex:0 0 auto;align-self:stretch;display:flex;align-items:center;padding:0 20px;background:#FFD15C;color:#222222;font-family:Fredoka,sans-serif;font-weight:700;font-size:15px;letter-spacing:0.08em}
+.ticker__viewport{flex:1 1 auto;overflow:hidden;white-space:nowrap}
+.ticker__track{display:inline-flex;gap:40px;padding-left:24px;animation:ticker 40s linear infinite;color:#FFFFFF;font-weight:700;font-size:15px}
+/* ==========================================================================
+トップ：検索
+========================================================================== */
+.top_row{display:flex;flex-wrap:wrap;gap:12px}
+.top_row--start{align-items:flex-start}
+.top_search{flex:2 1 520px;min-width:0;background:#FFFFFF;border-radius:20px;padding:12px}
+.top_search__frame{height:100%;box-sizing:border-box;border:2px dashed #EFA59B;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:16px}
+.search_form{display:flex;flex-direction:column;gap:12px}
+.search_form--page{margin-top:20px;padding:18px;border:2px dashed #EFA59B;border-radius:14px}
+.search_form__row{display:flex;flex-wrap:wrap;gap:8px}
+.search_form__input{flex:1 1 260px;min-width:0;height:52px;padding:0 20px;border:2px solid #222222;border-radius:999px;font-size:16px;font-family:inherit;color:#222222;background:#FFFFFF}
+.search_form__input--page{flex:1 1 240px}
+.search_form__button{flex:0 0 auto;height:52px;padding:0 32px;border:0;border-radius:999px;background:#222222;color:#FFFFFF;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer}
+.search_form__filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.search_form__field{display:flex;flex-direction:column;gap:4px}
+.search_form__label{font-size:12px;font-weight:700}
+.search_form__select{height:44px;padding:0 12px;border:1px solid #D9CFC6;border-radius:10px;font-size:14px;font-family:inherit;color:#222222;background:#FFF8F5}
+.search_form__check{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;font-weight:500;cursor:pointer}
+.search_form__checkbox{width:18px;height:18px;accent-color:#222222}
+/* ==========================================================================
+トップ：カレンダー・明日の案内
+========================================================================== */
+.top_side{flex:1 1 260px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.top_side--start{flex:1 1 280px}
+.calendar_card{flex:1 1 auto;background:#FFD15C;border-radius:20px;padding:24px;text-decoration:none;color:#222222;display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:180px}
+.calendar_card__en{font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.16em}
+.calendar_card__month{display:flex;align-items:flex-end;gap:8px}
+.calendar_card__num{font-family:Fredoka,sans-serif;font-size:88px;font-weight:700;line-height:0.85}
+.calendar_card__text{font-size:18px;font-weight:900;padding-bottom:4px}
+.calendar_card__link{display:flex;align-items:center;justify-content:space-between;border-top:2px solid #222222;padding-top:10px;font-weight:700}
+.tomorrow_card{background:#FFF6EC;border-radius:20px;padding:20px 24px;text-decoration:none;color:#222222;display:flex;flex-direction:column;gap:6px}
+.tomorrow_card__en{font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.16em;color:#B5302A}
+.tomorrow_card__text{font-size:16px;font-weight:900}
+/* ==========================================================================
+トップ：今日・明日発売の新刊
+========================================================================== */
+.release__head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px}
+.release__title{margin:0;font-size:26px;font-weight:900}
+.release__tabs{display:flex;gap:6px}
+.release__tab{min-height:44px;padding:0 20px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}
+.release__tab[aria-selected="true"]{background:#222222;color:#FFFFFF}
+.release__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:28px 18px}
+.release__grid[hidden]{display:none}
+.release__more{display:flex;justify-content:center;margin-top:28px}
+.release__more_link{display:inline-flex;align-items:center;gap:12px;min-height:48px;padding:0 32px;border-radius:999px;background:#222222;color:#FFFFFF;font-weight:700;text-decoration:none}
+.release__more_link[hidden]{display:none}
+.card{display:flex;flex-direction:column;gap:8px;position:relative}
+.card__cover{display:block;text-decoration:none;position:relative}
+.card__image{aspect-ratio:2 / 3;background:#F3EEE8;border:2px solid #222222;border-radius:6px;box-shadow:4px 4px 0 #222222;display:flex;align-items:center;justify-content:center;color:#5A5148;font-size:13px}
+.card__bubble{position:absolute;top:-10px;left:-6px;padding:3px 10px;border:2px solid #222222;border-radius:999px;font-size:11px;font-weight:900;line-height:1.4;background:#FFD15C;color:#222222}
+.card__bubble--tomorrow{background:#FFFFFF}
+.card__bubble--first{background:#FFFFFF}
+.card__bubble--final{background:#222222;color:#FFFFFF}
+.card__badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.card__badge{font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:#FFF0EC;color:#222222}
+.card__badge--ebook{padding:0 8px;background:none;border:1px solid #222222}
+.card__title{margin:0;font-size:15px;font-weight:900;line-height:1.45}
+.card__link{text-decoration:none}
+.card__meta{margin:0;font-size:12px;color:#5A5148;line-height:1.5}
+.card__stores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:auto}
+/* ==========================================================================
+トップ：新着・更新情報・特集
+========================================================================== */
+.updates_panel{flex:2 1 520px;min-width:0}
+.updates_panel__head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
+.updates_panel__title{margin:0;font-size:22px;font-weight:900}
+.updates_panel__all{font-size:13px;font-weight:700}
+.updates_panel__list{list-style:none;margin:0;padding:0}
+.updates_panel__item{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:12px 0;border-top:1px dashed #EBCFC9}
+.updates_panel__date{flex:0 0 auto;width:44px;font-family:Fredoka,sans-serif;font-size:14px;font-weight:600;color:#5A5148}
+.updates_panel__link{flex:1 1 200px;min-width:0;text-decoration:none;font-weight:700}
+.updates_panel__detail{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:14px;font-weight:500;color:#5A5148}
+.feature_panel__head{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+.feature_panel__title{margin:0;font-size:22px;font-weight:900}
+.feature_panel__list{list-style:none;margin:0;padding:0}
+.feature_panel__item{border-top:1px dashed #EBCFC9}
+.feature_panel__link{display:flex;align-items:center;gap:14px;padding:12px 0;text-decoration:none}
+.feature_panel__no{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:30px;font-weight:700;line-height:1;color:#D9483B}
+.feature_panel__body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.feature_panel__tag{font-size:11px;font-weight:700;color:#B5302A}
+.feature_panel__text{font-size:14px;font-weight:700;line-height:1.45}
+.feature_panel__empty{padding:12px 0;font-size:13px;color:#5A5148}
+/* ==========================================================================
+カレンダー
+========================================================================== */
+.calendar__head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.calendar__stat{display:flex}
+.calendar__grid{margin-top:20px}
+.calendar__weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px}
+.calendar__weekday{text-align:center;font-size:12px;font-weight:900;padding:6px 0;border-radius:8px;background:#FFF6EC;color:#222222}
+.calendar__weekday--sun{color:#B5302A}
+.calendar__weekday--sat{color:#2F5C9E}
+.calendar__cells{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.calendar__blank{min-height:118px;border-radius:12px;background:#FAF6F3}
+.calendar__day{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-height:118px;min-width:0;padding:8px 10px;box-sizing:border-box;text-align:left;font-family:inherit;color:#222222;border-radius:12px;cursor:pointer;background:#FFFFFF;border:1px solid #EBCFC9}
+.calendar__day--empty{cursor:default;background:#FAF6F3;border:1px dashed #EBCFC9}
+.calendar__day[aria-pressed="true"]{background:#FFF1C2;border:2px solid #222222;box-shadow:3px 3px 0 #222222}
+.calendar__day_head{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.calendar__num{font-family:Fredoka,sans-serif;font-size:20px;font-weight:700;line-height:1;color:#222222}
+.calendar__num--red{color:#B5302A}
+.calendar__num--blue{color:#2F5C9E}
+.calendar__count{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;line-height:1.5;background:#FFF0EC;border:2px solid #FFF0EC}
+.calendar__count--big{background:#FFD15C;border:2px solid #222222}
+.calendar__holiday{font-size:10px;font-weight:700;color:#B5302A;line-height:1.2}
+.calendar__title{display:block;font-size:11px;font-weight:500;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calendar__more{font-size:11px;font-weight:700;color:#B5302A;margin-top:auto}
+.calendar__list{display:none;margin-top:20px}
+.calendar__list_note{margin:0 0 8px;font-size:12px;color:#5A5148}
+.calendar__list_items{list-style:none;margin:0;padding:0}
+.calendar__list_item{border-top:1px dashed #EBCFC9;padding:12px 0;display:flex;flex-direction:column;gap:6px}
+.calendar__list_head{display:flex;align-items:center;gap:8px}
+.calendar__list_num{font-family:Fredoka,sans-serif;font-size:22px;font-weight:700;line-height:1;color:#222222}
+.calendar__list_dow{font-size:13px;font-weight:700;color:#222222}
+.calendar__list_num--red,.calendar__list_dow--red{color:#B5302A}
+.calendar__list_num--blue,.calendar__list_dow--blue{color:#2F5C9E}
+.calendar__list_holiday{font-size:11px;font-weight:700;color:#B5302A}
+.calendar__list_count{margin-left:auto;font-family:Fredoka,sans-serif;font-size:12px;font-weight:700;padding:1px 10px;border-radius:999px;background:#FFF0EC;border:2px solid #FFF0EC}
+.calendar__list_count--big{background:#FFD15C;border:2px solid #222222}
+.calendar__list_title{display:block;font-size:14px;font-weight:700;line-height:1.5;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calendar__list_title[hidden]{display:none}
+.calendar__list_more{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0;border:0;background:none;font-family:inherit;font-size:13px;font-weight:700;color:#B5302A;cursor:pointer}
+.calendar__list_arrow{display:inline-block;font-size:10px;transform:rotate(0deg)}
+.calendar__list_more[aria-expanded="true"] .calendar__list_arrow{transform:rotate(180deg)}
+.calendar__legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:12px;color:#5A5148}
+.calendar__legend_item{display:inline-flex;align-items:center;gap:6px}
+.calendar__legend_mark{display:inline-block;padding:0 8px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-family:Fredoka,sans-serif;font-weight:700;color:#222222}
+.dayrelease__title{margin:0;font-size:24px;font-weight:900}
+.dayrelease__count{font-size:16px;margin-left:8px}
+/* ==========================================================================
+日別一覧
+========================================================================== */
+.daypage__stat{display:flex}
+.daypage__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:28px}
+/* ==========================================================================
+書籍（各巻）
+========================================================================== */
+.book{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.book__cover{flex:0 0 260px;position:relative}
+.book__image{aspect-ratio:2 / 3;background:#F3EEE8;border:2px solid #222222;border-radius:6px;box-shadow:6px 6px 0 #222222;display:flex;align-items:center;justify-content:center;color:#5A5148;font-size:14px}
+.book__bubble{position:absolute;top:-12px;left:-8px;padding:4px 12px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-size:12px;font-weight:900}
+.book__bubble--onsale{background:#222222;color:#FFFFFF}
+.book__info{flex:1 1 360px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.book__tags{display:flex;flex-wrap:wrap;gap:6px}
+.book__titles{display:flex;flex-direction:column;gap:4px}
+.book__title{margin:0;font-size:30px;font-weight:900;line-height:1.35}
+.book__authors{font-size:14px;color:#5A5148}
+.book__author{color:#5A5148}
+.book__facts{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
+.book__fact{flex:1 1 160px;background:#FFF6EC;border-radius:14px;padding:12px 18px;display:flex;flex-direction:column;gap:2px}
+.book__fact--date{flex:1 1 200px;background:#FFD15C}
+.book__fact_label{font-size:12px;font-weight:700}
+.book__fact_value{display:flex;align-items:baseline;gap:2px}
+.book__fact_value--date{gap:4px;flex-wrap:wrap}
+.book__fact_num{font-family:Fredoka,sans-serif;font-size:32px;font-weight:700;line-height:1.1}
+.book__fact_unit{font-weight:700}
+.book__notice{margin:0;padding:10px 14px;border:2px solid #B5302A;border-radius:10px;font-size:13px;font-weight:700;color:#B5302A}
+.book__buy{display:flex;flex-direction:column;gap:8px}
+.book__buy_title{font-size:13px;font-weight:900}
+.book__buy_note{font-size:11px;color:#5A5148}
+.book__data{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;padding-top:14px;border-top:1px dashed #EBCFC9;font-size:13px}
+.book__data_term{font-weight:700;color:#5A5148}
+.book__data_desc{margin:0}
+.book__data_desc--en{font-family:Fredoka,sans-serif}
+.series_head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+.slider{display:flex;align-items:center;gap:10px}
+.slider__button{flex:0 0 44px;height:44px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-size:18px;font-weight:900;font-family:inherit;cursor:pointer}
+.slider__viewport{flex:1 1 auto;min-width:0;overflow:hidden;padding:4px 4px 12px;touch-action:pan-y}
+.slider__track{list-style:none;margin:0;padding:0;display:flex;gap:14px;transition:transform 0.5s ease}
+.slider__item{flex:0 0 calc((100% - 42px) / 4)}
+.slider__link{display:flex;flex-direction:column;gap:6px;text-decoration:none}
+.slider__label{text-align:center;font-family:Fredoka,sans-serif;font-size:13px;font-weight:700;color:#222222}
+.slider__label--current{color:#B5302A}
+.forecast{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:8px;padding:14px 18px;border-radius:14px;background:#FFF6EC}
+.forecast__badge{font-size:12px;font-weight:900;padding:2px 10px;border:2px solid #222222;border-radius:999px;background:#FFFFFF}
+.forecast__text{font-size:16px;font-weight:900}
+.forecast__note{font-size:12px;color:#5A5148}
+.sameday{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:20px 14px}
+.sameday__item{display:flex;flex-direction:column;gap:6px;text-decoration:none}
+.sameday__pub{font-size:11px;font-weight:700;color:#5A5148}
+.sameday__title{font-size:13px;font-weight:900;line-height:1.4}
+/* ==========================================================================
+作品（シリーズ）
+========================================================================== */
+.series{display:flex;flex-direction:column;gap:8px}
+.series__title{margin:0;font-size:32px;font-weight:900;line-height:1.3}
+.series__note{margin:10px 0 0;font-size:11px;color:#5A5148}
+.latest{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.latest__head{display:flex;flex-direction:column;gap:2px;margin-bottom:16px}
+.latest__cover{flex:0 0 160px;position:relative;display:block;text-decoration:none}
+.latest__image{aspect-ratio:2 / 3;display:flex;align-items:center;justify-content:center;background:#F3EEE8;border:2px solid #222222;border-radius:6px;box-shadow:5px 5px 0 #222222;color:#5A5148;font-size:13px}
+.latest__bubble{position:absolute;top:-12px;left:-8px;padding:3px 10px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-size:11px;font-weight:900}
+.latest__bubble--onsale{background:#222222;color:#FFFFFF}
+.latest__info{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.latest__title{font-size:22px;font-weight:900;line-height:1.4;text-decoration:none}
+.latest__meta{font-size:13px;color:#5A5148}
+.latest__date{font-family:Fredoka,sans-serif;font-weight:700;color:#222222}
+.latest__stores{margin-top:4px}
+.volumes__head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:20px}
+.volumes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:24px 16px}
+.volumes__link{position:relative;display:flex;flex-direction:column;gap:6px;text-decoration:none}
+.volumes__latest{position:absolute;top:-10px;left:-6px;padding:2px 8px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-size:10px;font-weight:900}
+.volumes__no{font-family:Fredoka,sans-serif;font-size:16px;font-weight:700}
+.volumes__date{font-size:12px;color:#5A5148}
+/* ==========================================================================
+出版社別・レーベル別・タグ別
+========================================================================== */
+.others__title{margin:0 0 14px;font-size:18px;font-weight:900}
+.others{display:flex;flex-wrap:wrap;gap:8px}
+.others__link{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;background:#FFF0EC;font-size:13px;font-weight:700;text-decoration:none}
+.monthpanel[hidden]{display:none}
+/* ==========================================================================
+検索
+========================================================================== */
+.search_title{margin:0;font-size:28px;font-weight:900;line-height:1.35}
+.search_title__count{font-size:16px;margin-left:10px}
+.conditions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px}
+.conditions[hidden]{display:none}
+.conditions__label{font-size:12px;font-weight:700}
+.conditions__item{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 6px 0 12px;border-radius:999px;background:#FFF0EC;font-size:12px;font-weight:700}
+.conditions__remove{width:24px;height:24px;border:0;border-radius:999px;background:#FFFFFF;font-family:inherit;font-weight:900;cursor:pointer}
+.result_head__title{margin:0;font-size:20px;font-weight:900}
+.result_head__count{font-size:14px;margin-left:8px}
+/* ==========================================================================
+新着・更新情報
+========================================================================== */
+.legend{margin:18px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;font-size:12px}
+.legend__item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:#FFF6EC}
+.legend__term{flex:0 0 auto;font-weight:900;padding:1px 10px;border-radius:999px;background:#FFD15C;border:2px solid #222222}
+.legend__term--change{background:#FFFFFF;color:#B5302A;border:2px solid #B5302A}
+.legend__term--fixed{background:#222222;color:#FFFFFF;border:2px solid #222222}
+.legend__desc{margin:0}
+.kindtab{display:flex;flex-wrap:wrap;gap:6px}
+.updates{margin-top:18px}
+.updates[hidden]{display:none}
+.updates__title{margin:0;padding:6px 14px;border-radius:10px;background:#FFF6EC;font-size:14px;font-weight:900}
+.updates__date{font-family:Fredoka,sans-serif;font-size:17px}
+.updates__list{list-style:none;margin:0;padding:0}
+.updates__item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:12px 4px;border-bottom:1px dashed #EBCFC9}
+.updates__item[hidden]{display:none}
+.updates__link{flex:1 1 220px;min-width:0;font-weight:700;text-decoration:none}
+.updates__pub{flex:0 0 auto;font-size:12px;color:#5A5148}
+.updates__detail{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:14px;font-weight:600}
+.pager__item--plain{padding:1px 6px;line-height:normal}
+.pager__item--next{padding:0 16px;font-family:inherit;font-size:14px}
+/* ==========================================================================
+固定ページ
+========================================================================== */
+.doc{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+.doc--form{gap:24px}
+.doc__head{display:flex;flex-direction:column;gap:8px}
+.doc__lead{margin:0;font-size:15px;line-height:1.9}
+.doc__section{display:flex;flex-direction:column;gap:10px}
+.doc__title{margin:0;padding-bottom:6px;border-bottom:3px solid #FFD15C;font-size:19px;font-weight:900}
+.doc__text{margin:0;font-size:15px;line-height:1.9}
+.doc__strong{color:#B5302A;font-weight:700}
+.doc__box{margin:0;padding:14px 18px;border-radius:12px;background:#FFF6EC;font-size:15px;font-weight:700;line-height:1.8}
+.doc__date{margin:0;font-size:13px;color:#5A5148}
+.doc__link{font-weight:700}
+.profile{margin:0;display:grid;grid-template-columns:minmax(96px,max-content) minmax(0,1fr);border-top:2px solid #222222;font-size:15px}
+.profile__term{padding:14px 16px;background:#FFF6EC;font-weight:700;border-bottom:1px dashed #EBCFC9}
+.profile__desc{margin:0;padding:14px 16px;border-bottom:1px dashed #EBCFC9}
+.profile__desc--en{font-family:Fredoka,sans-serif}
+/* ==========================================================================
+お問い合わせ
+========================================================================== */
+.contact{display:flex;flex-direction:column;gap:20px}
+.contact__kinds{margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:8px}
+.contact__legend{padding:0;margin-bottom:8px;font-size:14px;font-weight:900}
+.contact__kind{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 14px;border:2px solid #222222;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer}
+.contact__radio{width:18px;height:18px;accent-color:#222222}
+.contact__field{display:flex;flex-direction:column;gap:6px}
+.contact__label{font-size:14px;font-weight:900}
+.contact__required{margin-left:8px;font-size:11px;padding:1px 8px;border-radius:999px;background:#B5302A;color:#FFFFFF}
+.contact__optional{margin-left:8px;font-size:11px;padding:1px 8px;border-radius:999px;background:#D9CFC6;color:#222222}
+.contact__input{height:48px;padding:0 14px;border:2px solid #D9CFC6;border-radius:12px;font-size:16px;font-family:inherit;color:#222222;background:#FFF8F5}
+.contact__textarea{padding:12px 14px;border:2px solid #D9CFC6;border-radius:12px;font-size:16px;font-family:inherit;line-height:1.7;color:#222222;background:#FFF8F5;resize:vertical}
+.contact__help{font-size:12px;color:#5A5148}
+.contact__agree{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px;font-weight:700;cursor:pointer}
+.contact__agree_link{color:#B5302A}
+.contact__submit{align-self:center;min-width:260px;min-height:56px;padding:0 32px;border:0;border-radius:999px;background:#222222;color:#FFFFFF;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.contact__honeypot{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+@media (max-width: 720px){
+.sidemenu__toggle{display:flex}
+.sidemenu__body--closed{display:none}
+.breadcrumb--pc{display:none}
+.breadcrumb--sp{display:block}
+.calendar__grid{display:none}
+.calendar__list{display:block}
+.calendar__stat{display:none}
+.daypage__stat{display:none}
+.pill_nav{width:100%}
+.pill_nav__item{flex:1 1 0;padding:0 8px}
+.pill_nav__item--current{flex:1.6 1 0;min-height:56px;font-size:20px}
+.daynav{width:100%}
+.daynav__item{flex:1 1 0;padding:0 8px}
+.monthtab{width:100%}
+.monthtab__item{flex:1 1 0;padding:0 8px}
+.monthtab__item--current{flex:1.6 1 0;min-height:56px;font-size:18px}
+.dayrelease{order:1}
+.calendar{order:2}
+.page__ad{order:3}
+.page__footer{order:4}
+.bookrow__info{flex:1 1 0}
+.bookrow__stores{flex:1 1 100%;grid-template-columns:repeat(3,minmax(0,1fr))}
+.bookrow__store{letter-spacing:0.15em}
+.book__cover{flex:1 1 100%;max-width:200px;margin:0 auto}
+.book__info{flex:1 1 100%}
+.store_button{letter-spacing:0.15em}
+.slider__item{flex:0 0 calc((100% - 14px) / 2)}
+.latest__cover{flex:0 0 120px}
+.latest__info{flex:1 1 100%}
+.kindtab{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+}

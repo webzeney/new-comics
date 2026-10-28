@@ -1,0 +1,105 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb, store_buttons %}
+{% block content %}
+<section aria-labelledby="book-title" class="panel panel--head">
+{{ breadcrumb(crumbs, 'breadcrumb--wide') }}
+<div class="book">
+<div class="book__cover">
+<div class="book__image">書影</div>
+<span class="book__bubble{% if book.on_sale %} book__bubble--onsale{% endif %}">{{ book.bubble }}</span>
+</div>
+<div class="book__info">
+<div class="book__tags">
+<a href="{{ book.pub_url }}" class="tag_link">{{ book.pub }}</a>
+{% if book.label %}<a href="{{ book.label_url }}" class="tag_link">{{ book.label }}</a>{% endif %}
+{% if book.ebook %}<span class="tag_badge">電子版あり</span>{% endif %}
+</div>
+<div class="book__titles">
+<h1 id="book-title" class="book__title">{{ book.title_main }}{% if book.volume %} <span class="en">{{ book.volume }}</span>巻{% endif %}{% if book.title_rest %} {{ book.title_rest }}{% endif %}</h1>
+{% if book.authors %}<span class="book__authors">{% for a in book.authors %}{% if not loop.first %}／{% endif %}{% if a.role %}{{ a.role }}：{% endif %}<a href="{{ a.url }}" class="book__author">{{ a.name }}</a>{% endfor %}</span>{% endif %}
+</div>
+<div class="book__facts">
+<div class="book__fact book__fact--date">
+<span class="book__fact_label">発売日</span>
+<span class="book__fact_value book__fact_value--date">{% if book.date %}<span class="book__fact_num">{{ book.date }}</span><span class="book__fact_unit">（{{ book.dow }}）</span>{% else %}<span class="book__fact_num">未定</span>{% endif %}</span>
+</div>
+{% if book.price %}
+<div class="book__fact">
+<span class="book__fact_label">定価（税込）</span>
+<span class="book__fact_value"><span class="book__fact_unit">¥</span><span class="book__fact_num">{{ book.price }}</span></span>
+</div>
+{% endif %}
+</div>
+{% if book.change %}<p class="book__notice">発売日が変更されました（<span class="en">{{ book.change.old }}</span> → <span class="en">{{ book.change.new }}</span>）</p>{% endif %}
+<div class="book__buy">
+<span class="book__buy_title">予約・購入する</span>
+{{ store_buttons(book.stores, '') }}
+<span class="book__buy_note">価格・発売日・在庫は各販売店のページでご確認ください。</span>
+</div>
+<dl class="book__data">
+<dt class="book__data_term">出版社</dt><dd class="book__data_desc"><a href="{{ book.pub_url }}">{{ book.pub }}</a></dd>
+{% if book.label %}<dt class="book__data_term">レーベル</dt><dd class="book__data_desc"><a href="{{ book.label_url }}">{{ book.label }}</a></dd>{% endif %}
+{% if book.isbn %}<dt class="book__data_term">ISBN</dt><dd class="book__data_desc book__data_desc--en">{{ book.isbn }}</dd>{% endif %}
+{% if book.ebook is not none %}<dt class="book__data_term">電子書籍</dt><dd class="book__data_desc">{{ 'あり' if book.ebook else 'なし' }}</dd>{% endif %}
+</dl>
+</div>
+</div>
+</section>
+{% if series %}
+<section aria-labelledby="series-title" class="panel">
+<div class="series_head">
+<div class="heading">
+<span class="heading__en">SERIES</span>
+<h2 id="series-title" class="section_head__title">{{ series.name }}の既刊<span class="heading__count">全<span class="en">{{ series.count }}</span>巻</span></h2>
+</div>
+<a href="{{ series.url }}" class="section_head__link">作品ページを見る</a>
+</div>
+{% if series.volumes %}
+<div role="region" aria-roledescription="スライダー" aria-label="既刊の一覧" class="slider" data-start="{{ series.start }}">
+<button type="button" aria-label="前へ" class="slider__button" data-slide="prev">‹</button>
+<div class="slider__viewport">
+<ol class="slider__track">
+{% for v in series.volumes %}
+<li class="slider__item">
+<a href="{{ v.url }}" class="slider__link">
+<span class="cover">書影</span>
+<span class="slider__label">{{ v.label }}</span>
+</a>
+</li>
+{% endfor %}
+</ol>
+</div>
+<button type="button" aria-label="次へ" class="slider__button" data-slide="next">›</button>
+</div>
+{% endif %}
+{% if series.forecast %}
+<div class="forecast">
+<span class="forecast__badge">次巻予測</span>
+<span class="forecast__text"><span class="en">{{ series.forecast.volume }}</span>巻は<span class="en">{{ series.forecast.year }}</span>年<span class="en">{{ series.forecast.month }}</span>月頃</span>
+<span class="forecast__note">過去の発売間隔（平均約<span class="en">{{ series.forecast.interval }}</span>か月）からの目安です</span>
+</div>
+{% endif %}
+</section>
+{% endif %}
+{{ ad() }}
+{% if sameday %}
+<section aria-labelledby="sameday-title" class="panel">
+<div class="series_head">
+<div class="heading">
+<span class="heading__en">SAME DAY</span>
+<h2 id="sameday-title" class="section_head__title"><span class="en">{{ sameday.md }}</span>（{{ sameday.dow }}）発売のほかの新刊</h2>
+</div>
+<a href="{{ sameday.url }}" class="section_head__link">この日の新刊をすべて見る（<span class="en">{{ sameday.count }}</span>点）</a>
+</div>
+<div class="sameday">
+{% for b in sameday.books %}
+<a href="{{ b.url }}" class="sameday__item">
+<span class="cover">書影</span>
+<span class="sameday__pub">{{ b.pub }}</span>
+<span class="sameday__title">{{ b.title }}</span>
+</a>
+{% endfor %}
+</div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb, store_buttons %}
+{% block content %}
+<section aria-labelledby="series-title" class="panel panel--head">
+{{ breadcrumb(crumbs) }}
+<div class="series">
+<span class="heading__en">SERIES</span>
+<div class="book__tags">
+<a href="{{ series.pub_url }}" class="tag_link">{{ series.pub }}</a>
+{% if series.label %}<a href="{{ series.label_url }}" class="tag_link">{{ series.label }}</a>{% endif %}
+<span class="tag_badge tag_badge--status">{{ series.status }}</span>
+</div>
+<h1 id="series-title" class="series__title">{{ series.name }}</h1>
+{% if series.authors %}<span class="book__authors">{% for a in series.authors %}{% if not loop.first %}／{% endif %}{% if a.role %}{{ a.role }}：{% endif %}<a href="{{ a.url }}" class="book__author">{{ a.name }}</a>{% endfor %}</span>{% endif %}
+</div>
+<div class="stats stats--series">
+<div class="stat stat--main">
+<span class="stat__label">既刊</span>
+<span class="stat__value"><span class="stat__num stat__num--34">{{ series.count }}</span><span class="stat__unit">巻</span></span>
+</div>
+<div class="stat">
+<span class="stat__label">最新刊の発売日</span>
+<span class="stat__value"><span class="stat__num stat__num--34">{{ latest.md }}</span><span class="stat__unit">（{{ latest.dow }}）</span></span>
+</div>
+{% if forecast %}
+<div class="stat">
+<span class="stat__label">次巻予測（<span class="en">{{ forecast.volume }}</span>巻）</span>
+<span class="stat__value"><span class="stat__num stat__num--34">{{ forecast.ym }}</span><span class="stat__unit">月頃</span></span>
+</div>
+{% endif %}
+{% if series.total_price %}
+<div class="stat">
+<span class="stat__label">全巻の定価合計</span>
+<span class="stat__value stat__value--tight"><span class="stat__unit">¥</span><span class="stat__num stat__num--34">{{ series.total_price }}</span></span>
+</div>
+{% endif %}
+</div>
+{% if forecast %}<p class="series__note">次巻予測は過去の発売間隔（平均約<span class="en">{{ forecast.interval }}</span>か月）からの目安です。</p>{% endif %}
+</section>
+<section aria-labelledby="latest-title" class="panel">
+<div class="latest__head">
+<span class="heading__en">LATEST</span>
+<h2 id="latest-title" class="section_head__title">最新刊</h2>
+</div>
+<div class="latest">
+<a href="{{ latest.url }}" class="latest__cover">
+<span class="latest__image">書影</span>
+<span class="latest__bubble{% if latest.on_sale %} latest__bubble--onsale{% endif %}">{{ latest.bubble }}</span>
+</a>
+<div class="latest__info">
+<a href="{{ latest.url }}" class="latest__title">{{ latest.title_main }}{% if latest.volume %} <span class="en">{{ latest.volume }}</span>巻{% endif %}</a>
+<span class="latest__meta">発売日 <span class="latest__date">{{ latest.date }}</span>（{{ latest.dow }}）{{ latest.meta }}</span>
+{{ store_buttons(latest.stores, 'latest__stores') }}
+</div>
+</div>
+</section>
+<section aria-labelledby="vols-title" class="panel">
+<div class="volumes__head">
+<div class="heading">
+<span class="heading__en">VOLUMES</span>
+<h2 id="vols-title" class="section_head__title">既刊一覧<span class="heading__count">全<span class="en">{{ series.count }}</span>巻</span></h2>
+</div>
+<div role="group" aria-label="並び順" class="toggle_group">
+<button type="button" aria-pressed="true" class="toggle_button" data-sort="desc">新しい順</button>
+<button type="button" aria-pressed="false" class="toggle_button" data-sort="asc">古い順</button>
+</div>
+</div>
+<ol class="volumes">
+{% for v in volumes %}
+<li>
+<a href="{{ v.url }}" class="volumes__link">
+<span class="cover">書影</span>
+{% if v.latest %}<span class="volumes__latest">最新刊</span>{% endif %}
+<span class="volumes__no">{{ v.no }}<span class="ja">巻</span></span>
+<span class="volumes__date"><span class="en">{{ v.date }}</span> 発売</span>
+</a>
+</li>
+{% endfor %}
+</ol>
+</section>
+{{ ad() }}
+{% endblock %}

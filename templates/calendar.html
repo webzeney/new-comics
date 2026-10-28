@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb, stat, store_tiles, bookrow %}
+{% block content %}
+<section aria-labelledby="cal-title" class="panel panel--head calendar" data-calendar data-selected="{{ selected.day }}">
+{{ breadcrumb(crumbs, 'breadcrumb--pc') }}
+<div class="calendar__head">
+<div class="heading">
+<span class="heading__en">CALENDAR</span>
+<h1 id="cal-title" class="heading__title">{{ month.title }}</h1>
+</div>
+<nav aria-label="表示する月" class="pill_nav">
+{% for m in month_nav %}
+<a href="{{ m.url }}" class="pill_nav__item{% if m.current %} pill_nav__item--current{% endif %}"{% if m.current %} aria-current="page"{% endif %}><span class="en">{{ m.no }}</span>月</a>
+{% endfor %}
+</nav>
+</div>
+<div class="stats">
+{{ stat(month.no ~ '月の発売点数', stats.total, '点', main=True) }}
+<div class="stat calendar__stat">
+<span class="stat__label">発売がある日</span>
+<span class="stat__value"><span class="stat__num">{{ stats.active_days }}</span><span class="stat__unit">日</span></span>
+</div>
+<div class="stat calendar__stat">
+<span class="stat__label">いちばん多い日</span>
+<span class="stat__value stat__value--loose"><span class="stat__num">{{ stats.peak_date }}</span><span class="stat__unit">{{ stats.peak_suffix }}</span></span>
+</div>
+</div>
+<div class="filter">
+<span class="filter__label">出版社で絞り込む</span>
+<button type="button" aria-pressed="true" class="chip" data-pub="">すべて</button>
+{% for p in publishers %}
+<button type="button" aria-pressed="false" class="chip" data-pub="{{ p }}">{{ p }}</button>
+{% endfor %}
+</div>
+<div class="calendar__grid">
+<div>
+<div class="calendar__weekdays">
+<span class="calendar__weekday calendar__weekday--sun">日</span>
+<span class="calendar__weekday">月</span>
+<span class="calendar__weekday">火</span>
+<span class="calendar__weekday">水</span>
+<span class="calendar__weekday">木</span>
+<span class="calendar__weekday">金</span>
+<span class="calendar__weekday calendar__weekday--sat">土</span>
+</div>
+<div class="calendar__cells">
+{% for c in cells %}
+{% if c.blank %}
+<div aria-hidden="true" class="calendar__blank"></div>
+{% else %}
+<button type="button" aria-pressed="{{ 'true' if c.day == selected.day else 'false' }}" aria-label="{{ c.aria }}"{% if c.count == 0 %} disabled{% endif %} class="calendar__day{% if c.count == 0 %} calendar__day--empty{% endif %}" data-day="{{ c.day }}">
+<span class="calendar__day_head">
+<span class="calendar__num{% if c.color %} calendar__num--{{ c.color }}{% endif %}">{{ c.day }}</span>
+{% if c.count %}<span class="calendar__count{% if c.count >= 40 %} calendar__count--big{% endif %}">{{ c.count }}点</span>{% endif %}
+</span>
+{% if c.holiday %}<span class="calendar__holiday">{{ c.holiday }}</span>{% endif %}
+{% for t in c.titles %}
+<span class="calendar__title">{{ t }}</span>
+{% endfor %}
+{% if c.count > 2 %}<span class="calendar__more">+{{ c.count - 2 }}点</span>{% endif %}
+</button>
+{% endif %}
+{% endfor %}
+</div>
+</div>
+</div>
+<div class="calendar__list">
+<p class="calendar__list_note">発売のない日は表示していません</p>
+<ul class="calendar__list_items">
+{% for l in list_days %}
+<li class="calendar__list_item">
+<div class="calendar__list_head">
+<span class="calendar__list_num{% if l.color %} calendar__list_num--{{ l.color }}{% endif %}">{{ l.date }}</span>
+<span class="calendar__list_dow{% if l.color %} calendar__list_dow--{{ l.color }}{% endif %}">（{{ l.dow }}）</span>
+{% if l.holiday %}<span class="calendar__list_holiday">{{ l.holiday }}</span>{% endif %}
+<span class="calendar__list_count{% if l.count >= 40 %} calendar__list_count--big{% endif %}">{{ l.count }}点</span>
+</div>
+{% for t in l.titles %}
+<a href="{{ t.url }}" class="calendar__list_title"{% if loop.index > 3 %} hidden data-extra{% endif %}>{{ t.title }}</a>
+{% endfor %}
+{% if l.count > 3 %}
+<button type="button" aria-expanded="false" class="calendar__list_more" data-label="すべて見る（{{ l.count }}点）"><span data-more-label>すべて見る（{{ l.count }}点）</span><span aria-hidden="true" class="calendar__list_arrow">▼</span></button>
+{% endif %}
+</li>
+{% endfor %}
+</ul>
+</div>
+<div class="calendar__legend">
+<span class="calendar__legend_item"><span class="calendar__legend_mark">40</span>40点以上の日</span>
+<span>日付を選ぶと、その日の新刊が下に表示されます</span>
+</div>
+</section>
+<section aria-labelledby="day-title" class="panel dayrelease">
+{{ breadcrumb(crumbs, 'breadcrumb--sp') }}
+<div class="section_head">
+<div class="heading">
+<span class="heading__en">RELEASE</span>
+<h2 id="day-title" class="dayrelease__title"><span class="en" data-sel-label>{{ selected.label }}</span>発売の新刊<span class="dayrelease__count" data-sel-count>{{ selected.books|length }}点</span></h2>
+</div>
+<span class="section_head__note" data-sel-note>すべての出版社</span>
+</div>
+<p class="empty" data-sel-empty{% if selected.books %} hidden{% endif %}>この条件で発売予定の新刊はありません</p>
+<ul class="booklist" data-day-list>
+{% for b in selected.books %}
+{{ bookrow(b, b.pub, b.meta, top=True) }}
+{% endfor %}
+</ul>
+</section>
+{{ ad(extra='page__ad') }}
+<template id="bookrow-template">
+<li class="bookrow bookrow--top">
+<a href="#" class="bookrow__cover" data-book-url>
+<span class="bookrow__image">書影</span>
+</a>
+<div class="bookrow__info">
+<div class="badges">
+<span class="badge" data-field="pub"></span>
+<span class="badge badge--ebook" data-field="ebook">電子版あり</span>
+<span class="badge badge--first" data-field="first">新シリーズ</span>
+</div>
+<a href="#" class="bookrow__title" data-book-url data-field="title"></a>
+<span class="bookrow__meta" data-field="meta"></span>
+</div>
+<div class="bookrow__stores">
+<a href="#" class="store_tile bookrow__store" aria-label="Amazonで購入" title="Amazon" rel="sponsored noopener" target="_blank" data-store="amazon">Amazon</a>
+<a href="#" class="store_tile store_tile--rakuten bookrow__store" aria-label="楽天ブックスで購入" title="楽天ブックス" rel="sponsored noopener" target="_blank" data-store="rakuten">楽天</a>
+<a href="#" class="store_tile store_tile--seven bookrow__store" aria-label="セブンネットショッピングで購入" title="セブンネットショッピング" rel="sponsored noopener" target="_blank" data-store="seven">セブン
+ネット</a>
+</div>
+</li>
+</template>
+<script type="application/json" id="calendar-data">{{ calendar_json|safe }}</script>
+{% endblock %}
