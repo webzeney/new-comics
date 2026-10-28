@@ -141,7 +141,8 @@ def collect(api, genre, start_month, end_month, log, depth=0):
                 reached = True
                 continue
             items.append(row)
-        if reached or page >= (data.get("pageCount") or 0):
+        page_count = data.get("pageCount") or 0
+        if reached or (page >= page_count and page_count < MAX_PAGE):
             return items
     if depth >= 2:
         log(f"{NAME}: ジャンル {genre} は100ページで対象期間をたどりきれませんでした")

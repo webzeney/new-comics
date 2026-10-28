@@ -54,6 +54,23 @@ class RakutenTest(unittest.TestCase):
         self.assertEqual([r["isbn"] for r in rows], ["9784000000012", "9784000000013"])
         self.assertEqual(len(api.calls), 2)
 
+    def test_collect_splits_when_pages_run_out(self):
+        class Split:
+            calls = []
+
+            def search(self, **params):
+                self.calls.append(params)
+                if params.get("genreInformationFlag"):
+                    return {"GenreInformation": [{"children": [{"booksGenreId": "001001001"}, {"booksGenreId": "001001002"}]}]}
+                if params["booksGenreId"] == "001001":
+                    return {"Items": [item(f"97840000{params['page']:05d}", "新 1", "2026年12月01日")], "pageCount": 100}
+                rows = {"001001001": [item("9784000099001", "A 1", "2026年11月01日"), item("9784000099002", "古", "2026年09月01日")],
+                        "001001002": [item("9784000099003", "B 1", "2026年10月01日")]}[params["booksGenreId"]]
+                return {"Items": rows, "pageCount": 1}
+        api = Split()
+        rows = rakuten.collect(api, "001001", "2026-10", "2026-12", lambda m: None)
+        self.assertEqual(sorted(r["isbn"] for r in rows), ["9784000099001", "9784000099003"])
+
     def test_publisher_resolve(self):
         self.assertEqual(publishers.resolve("株式会社 小学館")[:2], ("shogakukan", "小学館"))
         self.assertEqual(publishers.resolve("スクウェア・エニックス")[0], "square-enix")
