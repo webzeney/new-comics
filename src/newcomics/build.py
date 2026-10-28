@@ -195,7 +195,7 @@ def chunk_months(today, count=3):
 
 def build(conn, out_dir, today, env):
     site = Site(conn, today, env)
-    w = Writer(out_dir, site.tags_for_menu(), today.year, ga4_id=env.get("GA4_ID"), site_url=env.get("SITE_URL"))
+    w = Writer(out_dir, site.tags_for_menu(), today.year, ga4_id=env.get("GA4_ID"), site_url=env.get("SITE_URL"), rakuten_credit=any(b.origin == "rakuten" or b.rakuten_url for b in site.books))
     w.copy_assets()
     build_top(site, w)
     build_calendars(site, w)

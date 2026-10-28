@@ -168,6 +168,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .footer__link{color:#D6D0CA;padding:10px 0}
 .footer__link--current{color:#FFFFFF;font-weight:700}
 .footer__text{margin:0;line-height:1.7}
+.footer__credit{margin:0;font-size:12px}
+.footer__credit a{color:#D6D0CA}
 .footer__copy{margin:0;font-family:Fredoka,sans-serif;font-size:12px}
 /* ==========================================================================
 トップ：本日発売の帯

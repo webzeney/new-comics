@@ -35,8 +35,9 @@ def environment():
     return env
 
 
-def site_context(root, tags, year):
+def site_context(root, tags, year, rakuten_credit=False):
     return {
+        "rakuten_credit": rakuten_credit,
         "menu": [{"key": k, "label": label, "url": (root + path) or "./"} for k, label, path in MENU],
         "footer": [{"key": k, "label": label, "url": root + path} for k, label, path in FOOTER],
         "tags": [{"key": t["key"], "label": t["label"], "url": root + t["path"]} for t in tags],
@@ -51,13 +52,14 @@ def page_defaults(**kw):
 
 
 class Writer:
-    def __init__(self, out_dir, tags, year, ga4_id=None, site_url=None):
+    def __init__(self, out_dir, tags, year, ga4_id=None, site_url=None, rakuten_credit=False):
         self.out = Path(out_dir)
         self.env = environment()
         self.tags = tags
         self.year = year
         self.ga4_id = ga4_id
         self.site_url = (site_url or "").rstrip("/")
+        self.rakuten_credit = rakuten_credit
         self.count = 0
 
     def write(self, rel_path, template, page, **context):
@@ -68,7 +70,7 @@ class Writer:
         html = self.env.get_template(template).render(
             root=root,
             page=page,
-            site=site_context(root, self.tags, self.year),
+            site=site_context(root, self.tags, self.year, self.rakuten_credit),
             ga4_id=self.ga4_id,
             **context,
         )
