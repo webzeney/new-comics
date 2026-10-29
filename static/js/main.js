@@ -100,6 +100,8 @@ var li = rowTemplate.content.firstElementChild.cloneNode(true);
 $$('a[data-book-url]', li).forEach(function (a) { a.href = b.url; });
 $('[data-field="pub"]', li).textContent = b.pub;
 $('[data-field="title"]', li).textContent = b.title;
+var cover = $('.bookrow__image', li);
+if (cover && b.i) { var img = document.createElement('img'); img.src = b.i; img.alt = b.ia || ''; img.className = 'cover_photo'; img.loading = 'lazy'; cover.textContent = ''; cover.appendChild(img); }
 $('[data-field="meta"]', li).textContent = b.meta;
 if (!b.ebook) $('[data-field="ebook"]', li).remove();
 if (!b.first) $('[data-field="first"]', li).remove();

@@ -30,7 +30,7 @@
 {% macro bookrow(b, chip, meta, top=False, final_badge=False, date_badge=False) -%}
 <li class="bookrow{% if top %} bookrow--top{% endif %}" data-pub="{{ b.pub }}">
 <a href="{{ b.url }}" class="bookrow__cover{% if final_badge %} bookrow__cover--badge{% endif %}">
-<span class="bookrow__image">書影</span>
+<span class="bookrow__image">{{ cover_photo(b.image, b.alt) }}</span>
 {% if final_badge %}<span class="bookrow__final">完結</span>{% endif %}
 </a>
 <div class="bookrow__info">
@@ -62,4 +62,8 @@
 
 {% macro release_bubble(cls, item) -%}
 {% if item.release_iso %}<span class="{{ cls }}" data-release="{{ item.release_iso }}" data-onsale="{{ cls }}--onsale"></span><script>(function(e){var t=new Date(Date.now()+324e5),n=Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate()),r=e.getAttribute("data-release").split("-"),d=Math.round((Date.UTC(+r[0],r[1]-1,+r[2])-n)/864e5);e.textContent=d>0?"あと"+d+"日で発売":d===0?"本日発売":"発売中";if(d<0)e.className+=" "+e.getAttribute("data-onsale")})(document.currentScript.previousElementSibling)</script>{% else %}<span class="{{ cls }}">{{ item.bubble }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro cover_photo(image, alt) -%}
+{% if image %}<img src="{{ image }}" alt="{{ alt }}" class="cover_photo" loading="lazy">{% else %}書影{% endif %}
 {%- endmacro %}

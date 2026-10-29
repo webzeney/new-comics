@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble %}
+{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble, cover_photo %}
 {% block content %}
 <section aria-labelledby="book-title" class="panel panel--head">
 {{ breadcrumb(crumbs, 'breadcrumb--wide') }}
 <div class="book">
 <div class="book__cover">
-<div class="book__image">書影</div>
+<div class="book__image">{{ cover_photo(book.image, book.alt) }}</div>
 {{ release_bubble('book__bubble', book) }}
 </div>
 <div class="book__info">
@@ -62,7 +62,7 @@
 {% for v in series.volumes %}
 <li class="slider__item">
 <a href="{{ v.url }}" class="slider__link">
-<span class="cover">書影</span>
+<span class="cover">{{ cover_photo(v.image, v.alt) }}</span>
 <span class="slider__label">{{ v.label }}</span>
 </a>
 </li>
@@ -94,7 +94,7 @@
 <div class="sameday">
 {% for b in sameday.books %}
 <a href="{{ b.url }}" class="sameday__item">
-<span class="cover">書影</span>
+<span class="cover">{{ cover_photo(b.image, b.alt) }}</span>
 <span class="sameday__pub">{{ b.pub }}</span>
 <span class="sameday__title">{{ b.title }}</span>
 </a>

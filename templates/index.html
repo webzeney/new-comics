@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, arrow, store_tiles, kind_badge %}
+{% from "_parts.html" import ad, arrow, store_tiles, kind_badge, cover_photo %}
 {% block content %}
 <div aria-label="本日発売" class="ticker">
 <span class="ticker__label">TODAY</span>
@@ -86,7 +86,7 @@
 {% for b in r.books %}
 <article class="card">
 <a href="{{ b.url }}" class="card__cover">
-<div class="card__image">書影</div>
+<div class="card__image">{{ cover_photo(b.image, b.alt) }}</div>
 <span class="card__bubble{% if b.bubble_kind %} card__bubble--{{ b.bubble_kind }}{% endif %}">{{ b.bubble }}</span>
 </a>
 <div class="card__badges">
