@@ -5,6 +5,7 @@
 import argparse
 import calendar as calmod
 import json
+import shutil
 import os
 import sqlite3
 from collections import OrderedDict, defaultdict
@@ -708,11 +709,27 @@ def build_static(site, w):
         ("about", "運営者情報", "about.html", {}),
         ("privacy", "プライバシーポリシー", "privacy.html", {"established": site.env.get("PRIVACY_DATE") or site.today.strftime("%Y.%m.%d")}),
         ("disclaimer", "免責事項", "disclaimer.html", {}),
-        ("contact", "お問い合わせ", "contact.html", {"form_action": "./"}),
+        ("contact", "お問い合わせ", "contact.html", {"form_action": "confirm.php"}),
     ]
     for slug, label, template, extra in pages:
         page = page_defaults(title=f"{label}｜{SITE_NAME}", description=f"{SITE_NAME}の{label}です。", footer=slug)
         w.write(f"{slug}/index.html", template, page, crumbs=crumbs(root, (label, None)), **extra)
+    build_contact(w)
+
+
+def build_contact(w):
+    contact_crumb = ("お問い合わせ", "./")
+    page = page_defaults(title=f"お問い合わせ内容の確認｜{SITE_NAME}", description=f"{SITE_NAME}のお問い合わせです。", footer="contact")
+    page["noindex"] = True
+    w.write("contact/confirm.php", "contact_confirm.html", page, crumbs=crumbs("../", contact_crumb, ("内容の確認", None)))
+    page = page_defaults(title=f"お問い合わせを受け付けました｜{SITE_NAME}", description=f"{SITE_NAME}のお問い合わせです。", footer="contact")
+    page["noindex"] = True
+    w.write("contact/thanks/index.html", "contact_thanks.html", page, crumbs=crumbs("../../", ("お問い合わせ", "../"), ("受付完了", None)))
+    php = Path(__file__).resolve().parent / "php"
+    dest = Path(w.out) / "contact"
+    shutil.copyfile(php / "lib.php", dest / "lib.php")
+    shutil.copyfile(php / "send.php", dest / "send.php")
+    shutil.copyfile(php / "htaccess", dest / ".htaccess")
 
 
 def build_sitemap(site, w, site_url):
@@ -722,6 +739,8 @@ def build_sitemap(site, w, site_url):
     urls = []
     for p in sorted(Path(w.out).rglob("index.html")):
         rel = p.relative_to(w.out).as_posix()[: -len("index.html")]
+        if rel.startswith("contact/thanks/"):
+            continue
         urls.append(f"{base}/{rel}")
     body = "".join(f"<url><loc>{u}</loc></url>" for u in urls)
     (Path(w.out) / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>', encoding="utf-8")

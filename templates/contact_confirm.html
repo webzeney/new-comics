@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import breadcrumb %}
+{% block prelude %}<?php
+declare(strict_types=1);
+require __DIR__ . '/lib.php';
+nc_session();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+header('Location: ./', true, 303);
+exit;
+}
+$v = nc_input();
+$errors = nc_validate($v);
+if (!$errors && $v['website'] !== '') {
+header('Location: thanks/', true, 303);
+exit;
+}
+if (!$errors) {
+$_SESSION['contact'] = $v;
+$_SESSION['token'] = bin2hex(random_bytes(16));
+}
+?>
+{% endblock %}
+{% block content %}
+<article aria-labelledby="page-title" class="panel">
+{{ breadcrumb(crumbs, 'breadcrumb--wide') }}
+<div class="doc doc--form">
+<div class="doc__head">
+<span class="heading__en">CONTACT</span>
+<h1 id="page-title" class="heading__title">お問い合わせ内容の確認</h1>
+<?php if ($errors): ?>
+<p class="doc__lead">入力内容に誤りがあります。前の画面に戻って、次の点をご確認ください。</p>
+<?php else: ?>
+<p class="doc__lead">以下の内容で送信します。よろしければ「送信する」を押してください。</p>
+<?php endif; ?>
+</div>
+<?php if ($errors): ?>
+<ul class="contact__errors">
+<?php foreach ($errors as $e): ?>
+<li class="contact__error"><?= h($e) ?></li>
+<?php endforeach; ?>
+</ul>
+<div class="contact__actions">
+<button type="button" class="contact__back" onclick="history.back()">入力画面に戻る</button>
+</div>
+<?php else: ?>
+<dl class="contact__confirm">
+<div class="contact__row"><dt class="contact__term">お問い合わせの種類</dt><dd class="contact__desc"><?= h(NC_KINDS[$v['kind']]) ?></dd></div>
+<div class="contact__row"><dt class="contact__term">お名前</dt><dd class="contact__desc"><?= $v['name'] !== '' ? h($v['name']) : '（未記入）' ?></dd></div>
+<div class="contact__row"><dt class="contact__term">メールアドレス</dt><dd class="contact__desc"><?= h($v['email']) ?></dd></div>
+<div class="contact__row"><dt class="contact__term">対象ページのURL</dt><dd class="contact__desc"><?= $v['url'] !== '' ? h($v['url']) : '（未記入）' ?></dd></div>
+<div class="contact__row"><dt class="contact__term">お問い合わせ内容</dt><dd class="contact__desc contact__desc--body"><?= nl2br(h($v['body'])) ?></dd></div>
+</dl>
+<form class="contact__actions" action="send.php" method="post">
+<input type="hidden" name="token" value="<?= h($_SESSION['token']) ?>">
+<button type="button" class="contact__back" onclick="history.back()">入力画面に戻る</button>
+<button type="submit" class="contact__submit">送信する</button>
+</form>
+<?php endif; ?>
+</div>
+</article>
+{% endblock %}

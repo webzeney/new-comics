@@ -63,6 +63,18 @@ jobs:
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
           PRIVACY_DATE: ${{ vars.PRIVACY_DATE }}
         run: python -m newcomics.build --out dist
+      - name: お問い合わせの通知先を設定
+        if: env.MODE == 'deploy'
+        env:
+          CONTACT_TO: ${{ secrets.CONTACT_TO }}
+        run: |
+          python - <<'PY'
+          import json, os
+          to = os.environ.get("CONTACT_TO", "").strip()
+          with open("dist/contact/config.php", "w", encoding="utf-8") as f:
+              f.write("<?php\nreturn ['to' => " + json.dumps(to) + "];\n")
+          print("通知先：" + ("設定あり" if to else "未設定（受信内容はサーバーに保存のみ）"))
+          PY
       - name: 転送
         if: env.MODE == 'deploy'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

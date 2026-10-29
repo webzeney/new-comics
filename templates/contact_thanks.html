@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import breadcrumb %}
+{% block content %}
+<article aria-labelledby="page-title" class="panel">
+{{ breadcrumb(crumbs, 'breadcrumb--wide') }}
+<div class="doc doc--form">
+<div class="doc__head">
+<span class="heading__en">CONTACT</span>
+<h1 id="page-title" class="heading__title">お問い合わせを受け付けました</h1>
+<p class="doc__lead">お問い合わせありがとうございます。内容を確認のうえ、必要に応じてご記入のメールアドレスへご連絡いたします。</p>
+</div>
+<div class="contact__actions">
+<a href="{{ root }}" class="contact__submit contact__submit--link">トップページへ戻る</a>
+</div>
+</div>
+</article>
+{% endblock %}
