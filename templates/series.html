@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, store_buttons %}
+{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble %}
 {% block content %}
 <section aria-labelledby="series-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -45,7 +45,7 @@
 <div class="latest">
 <a href="{{ latest.url }}" class="latest__cover">
 <span class="latest__image">書影</span>
-<span class="latest__bubble{% if latest.on_sale %} latest__bubble--onsale{% endif %}">{{ latest.bubble }}</span>
+{{ release_bubble('latest__bubble', latest) }}
 </a>
 <div class="latest__info">
 <a href="{{ latest.url }}" class="latest__title">{{ latest.title_main }}{% if latest.volume %} <span class="en">{{ latest.volume }}</span>巻{% endif %}</a>

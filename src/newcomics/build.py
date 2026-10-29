@@ -481,7 +481,7 @@ def build_books(site, w):
         ctx = {
             "crumbs": crumbs(root, *crumb),
             "book": {
-                "bubble": bubble, "on_sale": on_sale, "pub": b.publisher, "pub_url": f"{root}publisher/{b.publisher_slug}/",
+                "bubble": bubble, "on_sale": on_sale, "release_iso": b.release.isoformat() if b.release else None, "pub": b.publisher, "pub_url": f"{root}publisher/{b.publisher_slug}/",
                 "label": b.label, "label_url": f"{root}label/{b.label_id}/" if b.label_id else "", "ebook": b.has_ebook,
                 "title_main": main, "volume": vol, "title_rest": rest, "authors": authors_ctx(root, b),
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
@@ -523,7 +523,7 @@ def build_series(site, w):
             },
             "latest": {
                 "md": md(latest.release) if latest.release else "未定", "dow": dow(latest.release) if latest.release else "", "url": site.book_url(root, latest),
-                "bubble": bubble, "on_sale": on_sale, "title_main": main, "volume": vol,
+                "bubble": bubble, "on_sale": on_sale, "release_iso": latest.release.isoformat() if latest.release else None, "title_main": main, "volume": vol,
                 "date": f"{latest.release.year}.{latest.release.month}.{latest.release.day}" if latest.release else "未定",
                 "meta": lt_meta, "stores": site.stores(latest),
             },

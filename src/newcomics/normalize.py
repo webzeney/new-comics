@@ -71,6 +71,18 @@ def isbn13(value):
     return None
 
 
+def isbn10_to_13(value):
+    """ISBN-10（9桁＋チェック）から ISBN-13 を作る。"""
+    digits = re.sub(r"[^\dXx]", "", nfkc(value))
+    if len(digits) == 10:
+        digits = digits[:9]
+    if len(digits) != 9 or not digits.isdigit():
+        return None
+    core = "978" + digits
+    total = sum(int(c) * (1 if i % 2 == 0 else 3) for i, c in enumerate(core))
+    return core + str((10 - total % 10) % 10)
+
+
 def parse_price(text):
     m = re.search(r"([\d,]+)\s*円", nfkc(text))
     return int(m.group(1).replace(",", "")) if m else None

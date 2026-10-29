@@ -171,6 +171,6 @@ def save(conn, publisher_id, rec, run_at):
 
 def known_isbn_dates(conn, publisher_id):
     rows = conn.execute(
-        "SELECT isbn13, source_key, release_date, price FROM books WHERE publisher_id = ?", (publisher_id,)
+        "SELECT isbn13, source_key, release_date, price, title_raw, authors FROM books WHERE publisher_id = ?", (publisher_id,)
     ).fetchall()
     return {r["source_key"]: r for r in rows}

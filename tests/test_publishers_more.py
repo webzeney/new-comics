@@ -79,3 +79,92 @@ class KadokawaTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+from newcomics.fetchers import akitashoten, futabasha, hakusensha  # noqa: E402
+
+AKITA_LIST = """
+<div class="releaseDate">11月6日発売</div>
+<div class="line soon clear">
+<div class="book"><a href="/comics/4253019242" class="clear"><div class="bookInfo"><h2>僕の心のヤバイやつ【特装…</h2><span class="">マルチメディア</span><span class="authorName">桜井のりお</span><span class="date">発売日：2026.11.06</span></div></a></div>
+<div class="book"><a href="/comics/4253019234" class="clear"><div class="bookInfo"><h2>僕の心のヤバイやつ 第14…</h2><span class="boys">少年チャンピオン・コミックス…</span><span class="authorName">桜井のりお</span><span class="date">発売日：2026.11.06</span></div></a></div>
+</div>
+"""
+
+AKITA_DETAIL = """
+<html><head><title>僕の心のヤバイやつ 第14巻 | 秋田書店</title></head><body>
+<h1><img alt="秋田書店"></h1><h1>僕の心のヤバイやつ 第14巻</h1>
+<div class="contents clear"><div class="detailSide"><ul class="clear">
+<li> 著者：<a href="#">桜井のりお</a> </li><li> 定価：649円 (10%税込) </li><li> ISBN：978-4-253-01923-1 </li>
+<li> レーベル：<a href="#">少年チャンピオン・コミックス（チャンピオンクロス）</a> </li><li> シリーズ：<a href="#">僕の心のヤバイやつ</a> </li></ul></div>
+<div class="imageSide"><div class="date"> 発売日：2026.11.06 </div></div></div></body></html>
+"""
+
+FUTABA_CAL = """{"books":{"book_informations":[
+{"jdcn_code":"97845754254060000000","isbn_code":"9784575425406","book_name":"作品A 9 【コミック】","publication_form":2,"release_dt":"2026-11-10","start_dt":null,"web_rbooks_id":18991,"web_ebooks_id":null,"age_verification":0,"label_name":"モンスターコミックスｆ","book_authors":[{"author_number":2,"author_name":"原作者","author_type_name":"原作"},{"author_number":1,"author_name":"作画者","author_type_name":"画","web_author_type_overwrite":null}]},
+{"jdcn_code":"97845754254060000001","isbn_code":"9784575425406","book_name":"作品A 9 【コミック】","publication_form":2,"release_dt":null,"start_dt":"2026-11-10","web_rbooks_id":null,"web_ebooks_id":22766,"age_verification":0,"label_name":"モンスターコミックスｆ","book_authors":[]},
+{"jdcn_code":"97800000230390000000","isbn_code":null,"book_name":"電子のみ ： 2","publication_form":2,"release_dt":null,"start_dt":"2026-11-01","web_rbooks_id":null,"web_ebooks_id":22774,"age_verification":0,"label_name":"KoiYui","book_authors":[]},
+{"jdcn_code":"97845750000000000000","isbn_code":"9784575000009","book_name":"雑誌","publication_form":1,"release_dt":"2026-11-05","web_rbooks_id":1,"age_verification":0,"book_authors":[]}
+]}}"""
+
+HAKU_LIST = """
+<h3 class="headingLine1 break">花とゆめコミックス</h3>
+<table class="table1"><tr><th>タイトル</th><th>作家</th><th>発売日</th><th>試し読み</th></tr>
+<tr><td class="txt3"><a href="https://www.hakusensha.co.jp/comicslist/80475/">ウチの万李がお世話になります 6</a></td><td class="txt3"><a href="#">海道ちとせ</a></td><td class="txt3 releaseDate">2026.11.05</td><td></td></tr></table>
+<table class="table1"><tr><th>タイトル</th></tr>
+<tr><td class="txt3"><a href="https://www.hakusensha.co.jp/booklist/80470/">画集</a></td><td class="txt3"><a href="#">作家</a></td><td class="txt3 releaseDate">2026.11.02</td><td></td></tr></table>
+"""
+
+HAKU_DETAIL = """
+<div class="detailInnerTxt"><p class="txt12 color2">ウチの万李がお世話になります 6</p>
+<p class="txt5 mtC linkStyle3">■著者名： <a href="#">海道ちとせ</a> </p><p class="txt5">■ISBNコード：9784592231745</p>
+<p class="txt5">■シリーズ名：花とゆめコミックス</p><p class="txt5">■定価：594円（本体540円＋税10%）</p>
+<p class="txt5">■発売日：<span class="releaseDate">2026.11.05</span></p></div>
+"""
+
+
+class AkitaTest(unittest.TestCase):
+    def test_list(self):
+        items = akitashoten.parse_list(AKITA_LIST)
+        self.assertEqual([i["code"] for i in items], ["4253019242", "4253019234"])
+        self.assertTrue(items[0]["excluded"])
+        self.assertFalse(items[1]["excluded"])
+        self.assertEqual(items[1]["release_date"], "2026-11-06")
+
+    def test_detail(self):
+        d = akitashoten.parse_detail(AKITA_DETAIL)
+        self.assertEqual(d["title"], "僕の心のヤバイやつ 第14巻")
+        self.assertEqual(d["isbn13"], "9784253019231")
+        self.assertEqual(d["price"], 649)
+        self.assertEqual(d["label"], "少年チャンピオン・コミックス（チャンピオンクロス）")
+        self.assertEqual(d["release_date"], "2026-11-06")
+
+
+class FutabaTest(unittest.TestCase):
+    def test_calendar(self):
+        items = futabasha.parse_calendar(FUTABA_CAL)
+        self.assertEqual(len(items), 1)
+        b = items[0]
+        self.assertEqual(b["isbn13"], "9784575425406")
+        self.assertEqual(b["release_date"], "2026-11-10")
+        self.assertTrue(b["has_ebook"])
+        self.assertEqual([a["name"] for a in b["authors"]], ["作画者", "原作者"])
+
+    def test_price(self):
+        self.assertEqual(futabasha.parse_price('{"book_details":{"rbook_price":740}}'), 814)
+        self.assertEqual(futabasha.parse_price('{"book_details":[{"rbook_price":540}]}'), 594)
+        self.assertIsNone(futabasha.parse_price('{"book_details":{"rbook_price":null}}'))
+
+
+class HakusenshaTest(unittest.TestCase):
+    def test_list(self):
+        items = hakusensha.parse_list(HAKU_LIST)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["id"], "80475")
+        self.assertEqual(items[0]["release_date"], "2026-11-05")
+
+    def test_detail(self):
+        d = hakusensha.parse_detail(HAKU_DETAIL)
+        self.assertEqual(d["isbn13"], "9784592231745")
+        self.assertEqual(d["label"], "花とゆめコミックス")
+        self.assertEqual(d["price"], 594)

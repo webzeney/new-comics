@@ -1,12 +1,12 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, store_buttons %}
+{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble %}
 {% block content %}
 <section aria-labelledby="book-title" class="panel panel--head">
 {{ breadcrumb(crumbs, 'breadcrumb--wide') }}
 <div class="book">
 <div class="book__cover">
 <div class="book__image">書影</div>
-<span class="book__bubble{% if book.on_sale %} book__bubble--onsale{% endif %}">{{ book.bubble }}</span>
+{{ release_bubble('book__bubble', book) }}
 </div>
 <div class="book__info">
 <div class="book__tags">

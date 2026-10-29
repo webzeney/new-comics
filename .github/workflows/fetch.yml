@@ -1,6 +1,8 @@
 name: 出版社サイトの取得
 
 on:
+  schedule:
+    - cron: "15 17 * * *"
   workflow_dispatch:
     inputs:
       publisher:
