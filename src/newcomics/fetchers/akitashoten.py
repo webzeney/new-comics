@@ -6,6 +6,8 @@
 import json
 import re
 
+import requests
+
 from bs4 import BeautifulSoup
 
 from ..normalize import clean_title, isbn13, isbn10_to_13, parse_date, parse_price
@@ -69,7 +71,13 @@ def parse_detail(html):
 def collect(client, url, start, end, log):
     found = []
     for page in range(1, MAX_PAGES + 1):
-        items = parse_list(client.get(url.format(page=page)))
+        try:
+            html = client.get(url.format(page=page))
+        except requests.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code == 404:
+                break
+            raise
+        items = parse_list(html)
         if not items:
             break
         found.extend(i for i in items if i["release_date"] and start <= i["release_date"] <= end)
