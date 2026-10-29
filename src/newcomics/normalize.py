@@ -83,6 +83,16 @@ def isbn10_to_13(value):
     return core + str((10 - total % 10) % 10)
 
 
+def isbn13_to_10(value):
+    """978 で始まる ISBN-13 から ISBN-10 を作る（紙の本は Amazon の商品番号と同じ）。979 で始まるものは None。"""
+    digits = isbn13(value or "")
+    if not digits or not digits.startswith("978"):
+        return None
+    core = digits[3:12]
+    r = (11 - sum(int(c) * (10 - i) for i, c in enumerate(core)) % 11) % 11
+    return core + ("X" if r == 10 else str(r))
+
+
 def parse_price(text):
     m = re.search(r"([\d,]+)\s*円", nfkc(text))
     return int(m.group(1).replace(",", "")) if m else None

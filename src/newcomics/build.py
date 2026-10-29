@@ -17,6 +17,7 @@ from urllib.parse import quote
 import holidays as holidays_lib
 
 from . import db
+from .normalize import isbn13_to_10
 from .render import Writer, page_defaults
 
 DOWS = ["月", "火", "水", "木", "金", "土", "日"]
@@ -138,8 +139,10 @@ class Site:
     def stores(self, b):
         tag = self.env.get("AMAZON_TAG")
         q = b.isbn13 or b.title
-        if b.asin:
-            amazon = f"https://www.amazon.co.jp/dp/{b.asin}"
+        # ISBN が分かる本は Amazon・セブンネットとも商品ページへ。分からない本だけ書名の検索ページにする
+        asin = b.asin or isbn13_to_10(b.isbn13)
+        if asin:
+            amazon = f"https://www.amazon.co.jp/dp/{asin}"
             if tag:
                 amazon += f"?tag={quote(tag)}"
         else:
@@ -147,7 +150,7 @@ class Site:
             if tag:
                 amazon += f"&tag={quote(tag)}"
         rakuten = b.rakuten_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}"
-        seven = f"https://7net.omni7.jp/search/?keyword={quote(q)}"
+        seven = f"https://7net.omni7.jp/detail_isbn/{b.isbn13}" if b.isbn13 else f"https://7net.omni7.jp/search/?keyword={quote(q)}"
         return [
             {"name": "Amazon", "short": "Amazon", "kind": "amazon", "button": "Amazon", "url": amazon},
             {"name": "楽天ブックス", "short": "楽天", "kind": "rakuten", "button": "楽天ブックス", "url": rakuten},
