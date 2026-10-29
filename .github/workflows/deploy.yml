@@ -62,6 +62,7 @@ jobs:
           GA4_ID: ${{ vars.GA4_ID }}
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
           PRIVACY_DATE: ${{ vars.PRIVACY_DATE }}
+          FEATURE_API: ${{ vars.SITE_URL }}/feature/wp-json/wp/v2/posts
         run: python -m newcomics.build --out dist
       - name: お問い合わせの通知先を設定
         if: env.MODE == 'deploy'
@@ -90,3 +91,13 @@ jobs:
             **/.git*/**
             feature/**
             data/**
+      - name: 特集のテーマを転送
+        if: env.MODE == 'deploy'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./wordpress/new-comics/
+          server-dir: ${{ secrets.FTP_DIR }}feature/wp-content/themes/new-comics/

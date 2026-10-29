@@ -1,0 +1,15 @@
+<footer class="footer page__footer">
+<div class="footer__inner">
+<span class="footer__brand"><span class="footer__name">漫画新刊JP</span><span class="footer__en">NEW COMICS JP</span></span>
+<nav aria-label="フッターメニュー" class="footer__nav">
+{% for item in site.footer %}
+<a href="{{ item.url }}" class="footer__link{% if item.key == page.footer %} footer__link--current{% endif %}"{% if item.key == page.footer %} aria-current="page"{% endif %}>{{ item.label }}</a>
+{% endfor %}
+</nav>
+<p class="footer__text">当サイトのリンクにはアフィリエイトリンク（Amazonアソシエイト・楽天アフィリエイト等）が含まれます。発売日・価格は変更される場合があります。最新情報は各出版社・販売店でご確認ください。</p>
+{% if site.rakuten_credit %}
+<p class="footer__credit"><a href="https://developers.rakuten.com/" target="_blank">Supported by Rakuten Developers</a></p>
+{% endif %}
+<p class="footer__copy">© {{ site.year }} NEW COMICS JP</p>
+</div>
+</footer>

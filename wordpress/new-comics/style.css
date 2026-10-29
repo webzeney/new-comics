@@ -1,0 +1,54 @@
+/*
+Theme Name: 漫画新刊JP
+Theme URI: https://new-comics.jp/feature/
+Description: 漫画新刊JPの特集記事用テーマ。本体サイトのスタイルシートとサイドメニュー・フッターをそのまま使う。
+Version: 1.0.0
+Requires PHP: 8.0
+Text Domain: new-comics
+*/
+/* ==========================================================================
+特集一覧
+========================================================================== */
+.feature_list{list-style:none;margin:0;padding:0;border-top:1px dashed #EBCFC9}
+.feature_list__item{border-bottom:1px dashed #EBCFC9}
+.feature_list__link{display:flex;flex-direction:column;gap:6px;padding:18px 0;text-decoration:none;color:#222222}
+.feature_list__meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.feature_list__date{font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;color:#5A5148}
+.feature_list__tag{font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;background:#FFF0EC;color:#B5302A}
+.feature_list__title{margin:0;font-size:18px;font-weight:900;line-height:1.5}
+.feature_list__excerpt{margin:0;font-size:14px;line-height:1.8;color:#5A5148}
+.feature_list__empty{padding:18px 0;font-size:14px;color:#5A5148}
+/* ==========================================================================
+ページ送り
+========================================================================== */
+.pager{margin-top:24px}
+.pager .nav-links{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.pager .page-numbers{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:44px;padding:0 12px;border:2px solid #222222;border-radius:999px;font-family:Fredoka,sans-serif;font-size:15px;font-weight:600;text-decoration:none;color:#222222;background:#FFFFFF}
+.pager .page-numbers.current{background:#222222;color:#FFFFFF}
+/* ==========================================================================
+特集記事
+========================================================================== */
+.article{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+.article__meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.article__date{font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;color:#5A5148}
+.article__tag{font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;background:#FFF0EC;color:#B5302A;text-decoration:none}
+.article__body{font-size:15px;line-height:1.9}
+.article__body h2{margin:40px 0 14px;padding-bottom:6px;border-bottom:3px solid #FFD15C;font-size:21px;font-weight:900;line-height:1.5}
+.article__body h3{margin:28px 0 10px;padding-left:12px;border-left:5px solid #D9483B;font-size:18px;font-weight:900;line-height:1.5}
+.article__body p{margin:0 0 1.2em}
+.article__body ul,.article__body ol{margin:0 0 1.2em;padding-left:1.4em}
+.article__body li{margin-bottom:4px}
+.article__body a{color:#B5302A;font-weight:700}
+.article__body img{max-width:100%;height:auto;border-radius:6px}
+.article__body figure{margin:0 0 1.2em}
+.article__body figcaption{font-size:12px;color:#5A5148;text-align:center}
+.article__body blockquote{margin:0 0 1.2em;padding:14px 18px;border-radius:12px;background:#FFF6EC}
+.article__body table{width:100%;margin:0 0 1.2em;border-collapse:collapse;font-size:14px}
+.article__body th,.article__body td{padding:10px 12px;border:1px solid #D9CFC6;text-align:left;vertical-align:top}
+.article__body th{background:#FFF8F5;font-weight:700}
+.article__note{margin:0;padding:14px 18px;border-radius:12px;background:#FFF6EC;font-size:13px;line-height:1.8;color:#5A5148}
+.article__back{display:inline-flex;align-items:center;justify-content:center;align-self:center;min-width:220px;min-height:52px;padding:0 28px;border-radius:999px;background:#222222;color:#FFFFFF;font-weight:700;text-decoration:none}
+@media (max-width: 720px) {
+.article__body h2{font-size:19px}
+.feature_list__title{font-size:16px}
+}

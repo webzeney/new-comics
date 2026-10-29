@@ -4,6 +4,7 @@
 """
 import argparse
 import calendar as calmod
+import html
 import json
 import shutil
 import os
@@ -214,7 +215,47 @@ def build(conn, out_dir, today, env):
     build_updates(site, w)
     build_static(site, w)
     build_sitemap(site, w, env.get("SITE_URL"))
+    build_partials(site, w)
     return w.count
+
+
+def load_features(env, limit=3):
+    """特集（WordPress）の新しい記事を、REST API から取る。取れないときは空にする。"""
+    api = env.get("FEATURE_API")
+    if not api:
+        return []
+    try:
+        import requests
+        res = requests.get(api, params={"per_page": limit, "_embed": "wp:term", "_fields": "title,link,_embedded,_links"}, timeout=20)
+        res.raise_for_status()
+        posts = res.json()
+    except Exception as exc:
+        print(f"特集記事を取得できませんでした：{exc}")
+        return []
+    out = []
+    for i, post in enumerate(posts[:limit], 1):
+        terms = [t for group in (post.get("_embedded") or {}).get("wp:term", []) for t in group if t.get("taxonomy") == "category"]
+        out.append({
+            "no": f"{i:02d}",
+            "tag": terms[0]["name"] if terms else "特集",
+            "title": html.unescape((post.get("title") or {}).get("rendered", "")),
+            "url": post.get("link"),
+        })
+    return out
+
+
+def build_partials(site, w):
+    """特集（WordPress）のテーマで使う、サイドメニューとフッターの部品を書き出す。"""
+    from .render import site_context
+    ctx = {
+        "root": "/",
+        "page": {"menu": "feature", "tag": None, "footer": None},
+        "site": site_context("/", w.tags, w.year, w.rakuten_credit),
+    }
+    dest = Path(w.out) / "assets" / "partials"
+    dest.mkdir(parents=True, exist_ok=True)
+    for name in ("sidemenu", "footer"):
+        (dest / f"{name}.html").write_text(w.env.get_template(f"_{name}.html").render(**ctx), encoding="utf-8")
 
 
 def crumbs(root, *items):
@@ -256,7 +297,7 @@ def build_top(site, w):
         "tomorrow": {"url": f"date/{tomorrow.isoformat()}/" if tomorrow in site.by_date else f"calendar/{tomorrow.year}/{tomorrow.month:02d}/", "label": f"{md(tomorrow)}（{dow(tomorrow)}）"},
         "releases": [release(today, "今日"), release(tomorrow, "明日")],
         "updates": updates,
-        "features": [],
+        "features": load_features(site.env),
     }
     page = page_defaults(
         title=f"{SITE_NAME}｜漫画の新刊発売日カレンダー",

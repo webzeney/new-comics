@@ -1,0 +1,27 @@
+<aside aria-label="サイドメニュー" class="sidemenu">
+<a href="{{ root or './' }}" class="sidemenu__logo">
+<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><rect x="3" y="3" width="58" height="58" rx="10" fill="#FFFFFF" stroke="#222222" stroke-width="3"></rect><path d="M3 30h31M34 3v58M34 40h27" stroke="#222222" stroke-width="3"></path><rect x="8" y="8" width="21" height="17" rx="3" fill="#D9483B"></rect><rect x="39" y="8" width="17" height="27" rx="3" fill="#FFD15C"></rect><rect x="8" y="35" width="21" height="21" rx="3" fill="#FFD15C"></rect><rect x="39" y="45" width="17" height="11" rx="3" fill="#D9483B"></rect></svg>
+<span class="sidemenu__name">漫画新刊JP</span>
+<span class="sidemenu__en">NEW COMICS JP</span>
+</a>
+<button type="button" class="sidemenu__toggle" aria-expanded="false" aria-controls="sidemenu-body" data-open-label="メニューを閉じる" data-closed-label="メニューを開く"><span class="sidemenu__toggle_label">メニューを開く</span><span aria-hidden="true" class="sidemenu__arrow">▼</span></button>
+<div id="sidemenu-body" class="sidemenu__body sidemenu__body--closed">
+<nav aria-label="メインメニュー">
+<ul class="sidemenu__list">
+{% for item in site.menu %}
+<li class="sidemenu__item"><a href="{{ item.url }}" class="sidemenu__link{% if item.key == page.menu %} sidemenu__link--current{% endif %}"{% if item.key == page.menu %} aria-current="page"{% endif %}>{{ item.label }}<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7h9M7.5 3.5L11 7l-3.5 3.5" fill="none" stroke="#B5302A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></a></li>
+{% endfor %}
+</ul>
+</nav>
+<div class="sidemenu__tags">
+<span class="sidemenu__heading">TAGS</span>
+<div class="sidemenu__taglist">
+{% for tag in site.tags %}
+<a href="{{ tag.url }}" class="sidemenu__tag{% if tag.key == page.tag %} sidemenu__tag--current{% endif %}"{% if tag.key == page.tag %} aria-current="page"{% endif %}>#{{ tag.label }}</a>
+{% endfor %}
+</div>
+</div>
+<a href="{{ root }}contact/" class="sidemenu__contact"{% if page.footer == 'contact' %} aria-current="page"{% endif %}>お問い合わせ</a>
+</div>
+<p class="sidemenu__note">当サイトはアフィリエイト広告（Amazonアソシエイト・楽天アフィリエイト等）を利用しています。</p>
+</aside>
