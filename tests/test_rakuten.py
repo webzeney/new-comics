@@ -100,6 +100,7 @@ class MergeTest(unittest.TestCase):
         self.assertIsNone(b["price"])
         self.assertEqual(b["origin"], "publisher")
         self.assertEqual(b["rakuten_url"], "https://hb.afl.rakuten.co.jp/x/9784098000001")
+        self.assertEqual(b["image_url"], "https://thumbnail.image.rakuten.co.jp/9784098000001.jpg")
         self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM books").fetchone()[0], 1)
         self.assertEqual([r["kind"] for r in self.conn.execute("SELECT kind FROM change_log")], ["NEW"])
 
@@ -125,6 +126,7 @@ class MergeTest(unittest.TestCase):
         self.assertIsNone(b["price"])
         self.assertEqual(b["authors"], "[]")
         self.assertEqual(b["rakuten_url"], "https://books.rakuten.co.jp/rb/9784785900002/")
+        self.assertEqual(b["image_url"], "https://thumbnail.image.rakuten.co.jp/9784785900002.jpg")
         self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM books").fetchone()[0], 1)
 
     def test_isbn_found_later_merges_rakuten_copy(self):

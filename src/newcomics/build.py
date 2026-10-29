@@ -56,7 +56,7 @@ def parse(d):
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "first_seen", "tags", "key",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "first_seen", "tags", "key",
     )
 
     def __init__(self, row, tags):
@@ -78,7 +78,14 @@ class Book:
         self.asin = row["asin"]
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
-        self.image = row["image_url"] if self.origin == "rakuten" and "image_url" in row.keys() else None
+        image = row["image_url"] if "image_url" in row.keys() else None
+        # 出版社サイトの本は、楽天の商品ページへのリンクがあるときだけ楽天の書影を出し、書影のリンク先を楽天にする
+        if self.origin == "rakuten":
+            self.image, self.cover_url = image, None
+        elif image and self.rakuten_url:
+            self.image, self.cover_url = image, self.rakuten_url
+        else:
+            self.image, self.cover_url = None, None
         self.first_seen = row["first_seen_at"]
         self.tags = tags
         self.key = self.isbn13 or f"b{self.id}"
@@ -172,7 +179,7 @@ class Site:
     def row(self, root, b, keys=("author", "label", "price")):
         return {
             "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook,
-            "first": b.is_first, "meta": self.meta(b, keys), "stores": self.stores(b), "image": b.image, "alt": self.alt(b),
+            "first": b.is_first, "meta": self.meta(b, keys), "stores": self.stores(b), "image": b.image, "cover_url": b.cover_url, "alt": self.alt(b),
         }
 
     def holiday(self, d):
@@ -289,7 +296,7 @@ def build_top(site, w):
             cards.append({
                 "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "ebook": b.has_ebook,
                 "author": site.author_text(b), "label_price": label_price, "bubble": bubble, "bubble_kind": kind, "stores": site.stores(b),
-                "image": b.image, "alt": site.alt(b),
+                "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b),
             })
         more = f"date/{d.isoformat()}/" if books else f"calendar/{d.year}/{d.month:02d}/"
         return {"word": word, "date": md(d), "books": cards, "more_url": more}
@@ -421,7 +428,7 @@ def calendar_context(site, root, y, m, months):
 
 def compact_row(site, root, b):
     stores = {s["kind"]: s["url"] for s in site.stores(b)}
-    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook), "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
+    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook), "first": b.is_first, "stores": stores, "i": b.image, "c": b.cover_url, "ia": site.alt(b)}
 
 
 # ---- 日別一覧 ----
@@ -518,7 +525,7 @@ def build_books(site, w):
             info = site.series[b.series_id]
             series = {
                 "name": info["name"], "count": latest.volume, "url": f"{root}series/{b.series_id}/", "start": start,
-                "volumes": [{"label": f"{x.volume}巻", "url": site.book_url(root, x), "image": x.image, "alt": site.alt(x)} for x in slider] if len(slider) >= 2 else [],
+                "volumes": [{"label": f"{x.volume}巻", "url": site.book_url(root, x), "image": x.image, "cover_url": x.cover_url, "alt": site.alt(x)} for x in slider] if len(slider) >= 2 else [],
                 "forecast": forecast_for(volumes),
             }
         sameday = None
@@ -526,7 +533,7 @@ def build_books(site, w):
             others = [x for x in site.by_date.get(b.release, []) if x.id != b.id]
             if others:
                 sameday = {"md": md(b.release), "dow": dow(b.release), "url": f"{root}date/{b.release.isoformat()}/", "count": len(others) + 1,
-                           "books": [{"title": x.title, "pub": x.publisher, "url": site.book_url(root, x), "image": x.image, "alt": site.alt(x)} for x in others[:6]]}
+                           "books": [{"title": x.title, "pub": x.publisher, "url": site.book_url(root, x), "image": x.image, "cover_url": x.cover_url, "alt": site.alt(x)} for x in others[:6]]}
         crumb = [(b.publisher, f"{root}publisher/{b.publisher_slug}/")]
         if b.series_id and vol:
             crumb.append((main, f"{root}series/{b.series_id}/"))
@@ -541,7 +548,7 @@ def build_books(site, w):
                 "title_main": main, "volume": vol, "title_rest": rest, "authors": authors_ctx(root, b),
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
                 "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "isbn": b.isbn13,
-                "image": b.image, "alt": site.alt(b),
+                "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b),
             },
             "series": series,
             "sameday": sameday,
@@ -581,10 +588,10 @@ def build_series(site, w):
                 "md": md(latest.release) if latest.release else "未定", "dow": dow(latest.release) if latest.release else "", "url": site.book_url(root, latest),
                 "bubble": bubble, "on_sale": on_sale, "release_iso": latest.release.isoformat() if latest.release else None, "title_main": main, "volume": vol,
                 "date": f"{latest.release.year}.{latest.release.month}.{latest.release.day}" if latest.release else "未定",
-                "meta": lt_meta, "stores": site.stores(latest), "image": latest.image, "alt": site.alt(latest),
+                "meta": lt_meta, "stores": site.stores(latest), "image": latest.image, "cover_url": latest.cover_url, "alt": site.alt(latest),
             },
             "forecast": fc if status != "完結" else None,
-            "volumes": [{"no": b.volume, "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else "未定", "latest": b.id == latest.id, "url": site.book_url(root, b), "image": b.image, "alt": site.alt(b)} for b in reversed(vols)],
+            "volumes": [{"no": b.volume, "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else "未定", "latest": b.id == latest.id, "url": site.book_url(root, b), "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b)} for b in reversed(vols)],
         }
         page = page_defaults(
             title=f"{info['name']}の新刊・既刊一覧（{latest.publisher}）｜{SITE_NAME}",
@@ -701,7 +708,7 @@ def build_search(site, w):
         stores = {s["kind"]: s["url"] for s in site.stores(b)}
         items.append({
             "t": b.title, "p": b.publisher, "l": b.label or "", "a": site.author_text(b), "d": b.release.isoformat() if b.release else "",
-            "e": bool(b.has_ebook), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "ia": site.alt(b),
+            "e": bool(b.has_ebook), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "c": b.cover_url, "ia": site.alt(b),
         })
     target = Path(w.out) / "search" / "index.json"
     target.parent.mkdir(parents=True, exist_ok=True)

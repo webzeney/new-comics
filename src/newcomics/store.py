@@ -53,11 +53,15 @@ def origin_of(source_key):
 
 
 def link_rakuten(conn, existing, rec, run_at):
-    """出版社サイトの本には、楽天の情報を混ぜず、楽天の商品ページへのリンクだけを付ける。"""
-    changed = existing["rakuten_url"] != rec.rakuten_url
+    """出版社サイトの本には、楽天の情報を混ぜず、楽天の商品ページへのリンクと書影だけを付ける。
+
+    書影は楽天の商品ページへのリンクとして表示する（楽天ウェブサービス規約 第8条4項）。
+    """
+    image = rec.image_url or existing["image_url"]
+    changed = existing["rakuten_url"] != rec.rakuten_url or existing["image_url"] != image
     conn.execute(
-        f"UPDATE books SET rakuten_url = ?, last_seen_at = ?{', updated_at = ?' if changed else ''} WHERE id = ?",
-        [rec.rakuten_url, run_at] + ([run_at] if changed else []) + [existing["id"]],
+        f"UPDATE books SET rakuten_url = ?, image_url = ?, last_seen_at = ?{', updated_at = ?' if changed else ''} WHERE id = ?",
+        [rec.rakuten_url, image, run_at] + ([run_at] if changed else []) + [existing["id"]],
     )
     return "updated" if changed else "same"
 
@@ -98,6 +102,8 @@ def save(conn, publisher_id, rec, run_at):
                 if other["origin"] == "rakuten":
                     if rec.rakuten_url is None:
                         rec.rakuten_url = other["rakuten_url"]
+                    if rec.image_url is None:
+                        rec.image_url = other["image_url"]
                     db.delete_book(conn, other["id"])
                 else:
                     rec.isbn13 = None
@@ -106,6 +112,8 @@ def save(conn, publisher_id, rec, run_at):
             if dup is not None:
                 if rec.rakuten_url is None and existing["rakuten_url"] is None:
                     rec.rakuten_url = dup["rakuten_url"]
+                if rec.image_url is None and existing["image_url"] is None:
+                    rec.image_url = dup["image_url"]
                 db.delete_book(conn, dup["id"])
     takeover = existing is not None and origin == "publisher" and existing["origin"] == "rakuten"
     values = {
@@ -140,7 +148,7 @@ def save(conn, publisher_id, rec, run_at):
         status = "new"
     else:
         book_id = existing["id"]
-        keep = ("rakuten_url",) if takeover else ("isbn13", "price", "has_ebook", "label_id", "volume", "rakuten_url", "image_url")
+        keep = ("rakuten_url", "image_url") if takeover else ("isbn13", "price", "has_ebook", "label_id", "volume", "rakuten_url", "image_url")
         for key in keep:
             if values[key] is None:
                 values[key] = existing[key]

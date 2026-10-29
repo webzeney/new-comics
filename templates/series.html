@@ -43,7 +43,7 @@
 <h2 id="latest-title" class="section_head__title">最新刊</h2>
 </div>
 <div class="latest">
-<a href="{{ latest.url }}" class="latest__cover">
+<a href="{{ latest.cover_url or latest.url }}" class="latest__cover"{% if latest.cover_url %} rel="sponsored noopener" target="_blank"{% endif %}>
 <span class="latest__image">{{ cover_photo(latest.image, latest.alt) }}</span>
 {{ release_bubble('latest__bubble', latest) }}
 </a>
@@ -68,12 +68,23 @@
 <ol class="volumes">
 {% for v in volumes %}
 <li>
+{% if v.cover_url %}
+<div class="volumes__link">
+<a href="{{ v.cover_url }}" class="cover_link" rel="sponsored noopener" target="_blank"><span class="cover">{{ cover_photo(v.image, v.alt) }}</span></a>
+{% if v.latest %}<span class="volumes__latest">最新刊</span>{% endif %}
+<a href="{{ v.url }}" class="volumes__text">
+<span class="volumes__no">{{ v.no }}<span class="ja">巻</span></span>
+<span class="volumes__date"><span class="en">{{ v.date }}</span> 発売</span>
+</a>
+</div>
+{% else %}
 <a href="{{ v.url }}" class="volumes__link">
 <span class="cover">{{ cover_photo(v.image, v.alt) }}</span>
 {% if v.latest %}<span class="volumes__latest">最新刊</span>{% endif %}
 <span class="volumes__no">{{ v.no }}<span class="ja">巻</span></span>
 <span class="volumes__date"><span class="en">{{ v.date }}</span> 発売</span>
 </a>
+{% endif %}
 </li>
 {% endfor %}
 </ol>

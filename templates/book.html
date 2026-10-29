@@ -5,7 +5,7 @@
 {{ breadcrumb(crumbs, 'breadcrumb--wide') }}
 <div class="book">
 <div class="book__cover">
-<div class="book__image">{{ cover_photo(book.image, book.alt) }}</div>
+{% if book.cover_url %}<a href="{{ book.cover_url }}" class="book__image" rel="sponsored noopener" target="_blank">{{ cover_photo(book.image, book.alt) }}</a>{% else %}<div class="book__image">{{ cover_photo(book.image, book.alt) }}</div>{% endif %}
 {{ release_bubble('book__bubble', book) }}
 </div>
 <div class="book__info">
@@ -61,10 +61,17 @@
 <ol class="slider__track">
 {% for v in series.volumes %}
 <li class="slider__item">
+{% if v.cover_url %}
+<div class="slider__link">
+<a href="{{ v.cover_url }}" class="cover_link" rel="sponsored noopener" target="_blank"><span class="cover">{{ cover_photo(v.image, v.alt) }}</span></a>
+<a href="{{ v.url }}" class="slider__label">{{ v.label }}</a>
+</div>
+{% else %}
 <a href="{{ v.url }}" class="slider__link">
 <span class="cover">{{ cover_photo(v.image, v.alt) }}</span>
 <span class="slider__label">{{ v.label }}</span>
 </a>
+{% endif %}
 </li>
 {% endfor %}
 </ol>
@@ -93,11 +100,21 @@
 </div>
 <div class="sameday">
 {% for b in sameday.books %}
+{% if b.cover_url %}
+<div class="sameday__item">
+<a href="{{ b.cover_url }}" class="cover_link" rel="sponsored noopener" target="_blank"><span class="cover">{{ cover_photo(b.image, b.alt) }}</span></a>
+<a href="{{ b.url }}" class="sameday__text">
+<span class="sameday__pub">{{ b.pub }}</span>
+<span class="sameday__title">{{ b.title }}</span>
+</a>
+</div>
+{% else %}
 <a href="{{ b.url }}" class="sameday__item">
 <span class="cover">{{ cover_photo(b.image, b.alt) }}</span>
 <span class="sameday__pub">{{ b.pub }}</span>
 <span class="sameday__title">{{ b.title }}</span>
 </a>
+{% endif %}
 {% endfor %}
 </div>
 </section>

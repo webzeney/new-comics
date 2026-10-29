@@ -151,6 +151,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 ========================================================================== */
 .cover{aspect-ratio:2 / 3;display:flex;align-items:center;justify-content:center;background:#F3EEE8;border:2px solid #222222;border-radius:4px;box-shadow:3px 3px 0 #222222;color:#5A5148;font-size:11px}
 .cover--current{border:3px solid #D9483B;box-shadow:3px 3px 0 #D9483B}
+.cover_link{display:block;text-decoration:none}
 /* ==========================================================================
 書影の画像
 ========================================================================== */
@@ -355,7 +356,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .slider__track{list-style:none;margin:0;padding:0;display:flex;gap:14px;transition:transform 0.5s ease}
 .slider__item{flex:0 0 calc((100% - 42px) / 4)}
 .slider__link{display:flex;flex-direction:column;gap:6px;text-decoration:none}
-.slider__label{text-align:center;font-family:Fredoka,sans-serif;font-size:13px;font-weight:700;color:#222222}
+.slider__label{text-align:center;font-family:Fredoka,sans-serif;font-size:13px;font-weight:700;color:#222222;text-decoration:none}
 .slider__label--current{color:#B5302A}
 .forecast{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:8px;padding:14px 18px;border-radius:14px;background:#FFF6EC}
 .forecast__badge{font-size:12px;font-weight:900;padding:2px 10px;border:2px solid #222222;border-radius:999px;background:#FFFFFF}
@@ -363,6 +364,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .forecast__note{font-size:12px;color:#5A5148}
 .sameday{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:20px 14px}
 .sameday__item{display:flex;flex-direction:column;gap:6px;text-decoration:none}
+.sameday__text{display:flex;flex-direction:column;gap:6px;text-decoration:none}
 .sameday__pub{font-size:11px;font-weight:700;color:#5A5148}
 .sameday__title{font-size:13px;font-weight:900;line-height:1.4}
 /* ==========================================================================
@@ -385,6 +387,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .volumes__head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:20px}
 .volumes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:24px 16px}
 .volumes__link{position:relative;display:flex;flex-direction:column;gap:6px;text-decoration:none}
+.volumes__text{display:flex;flex-direction:column;gap:6px;text-decoration:none}
 .volumes__latest{position:absolute;top:-10px;left:-6px;padding:2px 8px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-size:10px;font-weight:900}
 .volumes__no{font-family:Fredoka,sans-serif;font-size:16px;font-weight:700}
 .volumes__date{font-size:12px;color:#5A5148}
