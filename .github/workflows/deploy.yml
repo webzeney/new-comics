@@ -78,26 +78,7 @@ jobs:
           PY
       - name: 転送
         if: env.MODE == 'deploy'
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          local-dir: ./dist/
-          server-dir: ${{ secrets.FTP_DIR }}
-          exclude: |
-            **/.git*
-            **/.git*/**
-            feature/**
-            data/**
+        run: python -m newcomics.ftpsync --local dist --remote "$FTP_DIR" --exclude 'feature/**' --exclude 'data/**' --exclude '.git*' --workers 3
       - name: 特集のテーマを転送
         if: env.MODE == 'deploy'
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          local-dir: ./wordpress/new-comics/
-          server-dir: ${{ secrets.FTP_DIR }}feature/wp-content/themes/new-comics/
+        run: python -m newcomics.ftpsync --local wordpress/new-comics --remote "${FTP_DIR%/}/feature/wp-content/themes/new-comics/" --workers 2 --make-base
