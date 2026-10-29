@@ -19,7 +19,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy
+  # 転送しない実行（push で起きた取得のあとなど）が順番待ちに入り、手動の転送を取り消さないようにする
+  group: ${{ (github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'schedule') && 'deploy' || format('skip-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
