@@ -22,6 +22,12 @@ from .render import Writer, page_defaults
 DOWS = ["月", "火", "水", "木", "金", "土", "日"]
 SITE_NAME = "漫画新刊JP"
 UPDATES_PER_PAGE = 40
+UPDATE_KINDS = [
+    ("", None, "すべての更新", "発売日の変更・決定は、今のところありません。"),
+    ("change", "日付変更", "発売日の変更", "発売日が変更された本は、今のところありません。"),
+    ("fixed", "日付決定", "発売日の決定", "発売日が決定した本は、今のところありません。"),
+]
+KIND_LABELS = {"日付変更": "発売日の変更", "日付決定": "発売日の決定"}
 TOP_BOOKS = 8
 TAG_INFO = {
     "new-series": ("新シリーズ1巻", "シリーズの1巻として発売される新刊です。"),
@@ -321,9 +327,9 @@ def update_detail(kind, old, new):
     return f"{short(old)} → {short(new)}"
 
 
-def change_rows(site):
-    rows = site.conn.execute("SELECT * FROM change_log ORDER BY detected_at DESC, id DESC").fetchall()
-    return [r for r in rows if r["book_id"] in site.by_id]
+def change_rows(site, kind=None):
+    rows = site.conn.execute("SELECT * FROM change_log WHERE kind IN ('日付変更', '日付決定') ORDER BY detected_at DESC, id DESC").fetchall()
+    return [r for r in rows if r["book_id"] in site.by_id and (kind is None or r["kind"] == kind)]
 
 
 def latest_updates(site, root, limit):
@@ -712,35 +718,46 @@ def build_search(site, w):
 
 
 # ---- 新着・更新情報 ----
+def updates_dir(slug):
+    return f"updates/{slug}/" if slug else "updates/"
+
+
 def build_updates(site, w):
-    rows = change_rows(site)
-    pages = [rows[i:i + UPDATES_PER_PAGE] for i in range(0, len(rows), UPDATES_PER_PAGE)] or [[]]
     last = site.conn.execute("SELECT MAX(finished_at) AS t FROM fetch_runs WHERE status = 'ok'").fetchone()["t"]
     updated_at = datetime.fromisoformat(last).strftime("%Y.%m.%d %-H:%M") if last else "—"
-    for n, chunk in enumerate(pages, start=1):
-        rel = "updates/index.html" if n == 1 else f"updates/page/{n}/index.html"
-        root = "../" if n == 1 else "../../../"
-        groups = OrderedDict()
-        for r in chunk:
-            b = site.by_id[r["book_id"]]
-            d = datetime.fromisoformat(r["detected_at"]).date()
-            groups.setdefault(d, []).append({"kind": r["kind"], "title": b.title, "pub": b.publisher, "detail": update_detail(r["kind"], r["old_value"], r["new_value"]), "url": site.book_url(root, b)})
-        pager = []
-        if len(pages) > 1:
-            for k in range(1, len(pages) + 1):
-                url = f"{root}updates/" if k == 1 else f"{root}updates/page/{k}/"
-                pager.append({"label": str(k), "url": url, "current": k == n, "next": False})
-            if n < len(pages):
-                pager.append({"label": "次へ ›", "url": f"{root}updates/page/{n + 1}/", "current": False, "next": True})
-        ctx = {
-            "crumbs": crumbs(root, ("新着・更新情報", None)),
-            "updated_at": updated_at,
-            "shown_count": len(chunk),
-            "groups": [{"md": md(d), "dow": dow(d), "items": v} for d, v in groups.items()],
-            "pager": pager,
-        }
-        page = page_defaults(title=f"新着・更新情報｜{SITE_NAME}", description="新しく追加された漫画の新刊と、発売日の変更・決定をお知らせします。", menu="updates")
-        w.write(rel, "updates.html", page, **ctx)
+    for slug, kind, heading, empty in UPDATE_KINDS:
+        rows = change_rows(site, kind)
+        pages = [rows[i:i + UPDATES_PER_PAGE] for i in range(0, len(rows), UPDATES_PER_PAGE)] or [[]]
+        base = updates_dir(slug)
+        for n, chunk in enumerate(pages, start=1):
+            rel = base + ("index.html" if n == 1 else f"page/{n}/index.html")
+            root = "../" * (rel.count("/"))
+            groups = OrderedDict()
+            for r in chunk:
+                b = site.by_id[r["book_id"]]
+                d = datetime.fromisoformat(r["detected_at"]).date()
+                groups.setdefault(d, []).append({"kind": r["kind"], "title": b.title, "pub": b.publisher, "detail": update_detail(r["kind"], r["old_value"], r["new_value"]), "url": site.book_url(root, b)})
+            pager = []
+            if len(pages) > 1:
+                for k in range(1, len(pages) + 1):
+                    url = f"{root}{base}" if k == 1 else f"{root}{base}page/{k}/"
+                    pager.append({"label": str(k), "url": url, "current": k == n, "next": False})
+                if n < len(pages):
+                    pager.append({"label": "次へ ›", "url": f"{root}{base}page/{n + 1}/", "current": False, "next": True})
+            tabs = [{"label": "すべて" if not s else h, "url": f"{root}{updates_dir(s)}", "current": s == slug} for s, _, h, _ in UPDATE_KINDS]
+            ctx = {
+                "crumbs": crumbs(root, ("新着・更新情報", None)),
+                "updated_at": updated_at,
+                "heading": heading,
+                "total": len(rows),
+                "empty": empty,
+                "tabs": tabs,
+                "groups": [{"md": md(d), "dow": dow(d), "items": v} for d, v in groups.items()],
+                "pager": pager,
+            }
+            title = "新着・更新情報" if not slug else f"{heading}｜新着・更新情報"
+            page = page_defaults(title=f"{title}｜{SITE_NAME}", description="漫画の新刊の発売日の変更・決定をお知らせします。", menu="updates")
+            w.write(rel, "updates.html", page, **ctx)
 
 
 # ---- 固定ページ ----

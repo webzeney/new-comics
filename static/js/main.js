@@ -258,32 +258,6 @@ $$('li', list).reverse().forEach(function (li) { list.appendChild(li); });
 });
 }
 
-/* 新着・更新情報の種類絞り込み */
-function initKindFilter() {
-var buttons = $$('[data-kind]');
-if (!buttons.length) return;
-var labels = { all: 'すべての更新', 'NEW': 'NEWの更新', '日付変更': '日付変更の更新', '日付決定': '日付決定の更新' };
-buttons.forEach(function (b) {
-b.addEventListener('click', function () {
-var kind = b.dataset.kind;
-buttons.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
-var shown = 0;
-$$('.updates').forEach(function (g) {
-var any = 0;
-$$('.updates__item', g).forEach(function (li) {
-var on = kind === 'all' || li.dataset.itemKind === kind;
-li.hidden = !on;
-if (on) any += 1;
-});
-g.hidden = any === 0;
-shown += any;
-});
-$('[data-list-title]').firstChild.textContent = labels[kind];
-$('[data-list-count]').textContent = shown;
-});
-});
-}
-
 document.addEventListener('DOMContentLoaded', function () {
 initSidemenu();
 initReleaseTabs();
@@ -292,7 +266,6 @@ initCalendar();
 initMonthTabs();
 initSlider();
 initVolumeSort();
-initKindFilter();
 if (window.NewComicsSearch) window.NewComicsSearch();
 });
 })();

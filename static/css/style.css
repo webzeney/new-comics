@@ -85,7 +85,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .chip__count{font-family:Fredoka,sans-serif;margin-left:6px}
 .chip_link{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border:2px solid #222222;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none}
 .toggle_button{min-height:40px;padding:0 16px;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
-.toggle_button[aria-pressed="true"]{background:#222222;color:#FFFFFF}
+.toggle_button[aria-pressed="true"],.toggle_button[aria-current="page"]{background:#222222;color:#FFFFFF}
+.toggle_button--link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 .toggle_group{display:flex;gap:6px}
 .pill_nav{display:flex;gap:6px}
 .pill_nav__item{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;box-sizing:border-box;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-weight:700;text-decoration:none}
@@ -255,6 +256,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .updates_panel__date{flex:0 0 auto;width:44px;font-family:Fredoka,sans-serif;font-size:14px;font-weight:600;color:#5A5148}
 .updates_panel__link{flex:1 1 200px;min-width:0;text-decoration:none;font-weight:700}
 .updates_panel__detail{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:14px;font-weight:500;color:#5A5148}
+.updates_panel__empty{font-size:13px;color:#5A5148}
 .feature_panel__head{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
 .feature_panel__title{margin:0;font-size:22px;font-weight:900}
 .feature_panel__list{list-style:none;margin:0;padding:0}
@@ -416,12 +418,10 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .legend__desc{margin:0}
 .kindtab{display:flex;flex-wrap:wrap;gap:6px}
 .updates{margin-top:18px}
-.updates[hidden]{display:none}
 .updates__title{margin:0;padding:6px 14px;border-radius:10px;background:#FFF6EC;font-size:14px;font-weight:900}
 .updates__date{font-family:Fredoka,sans-serif;font-size:17px}
 .updates__list{list-style:none;margin:0;padding:0}
 .updates__item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:12px 4px;border-bottom:1px dashed #EBCFC9}
-.updates__item[hidden]{display:none}
 .updates__link{flex:1 1 220px;min-width:0;font-weight:700;text-decoration:none}
 .updates__pub{flex:0 0 auto;font-size:12px;color:#5A5148}
 .updates__detail{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:14px;font-weight:600}

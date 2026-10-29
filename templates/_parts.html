@@ -57,7 +57,7 @@
 {%- endmacro %}
 
 {% macro kind_badge(kind) -%}
-<span class="kind{% if kind == '日付変更' %} kind--change{% elif kind == '日付決定' %} kind--fixed{% endif %}">{{ kind }}</span>
+<span class="kind{% if kind == '日付変更' %} kind--change{% elif kind == '日付決定' %} kind--fixed{% endif %}">{{ {'日付変更': '発売日の変更', '日付決定': '発売日の決定'}.get(kind, kind) }}</span>
 {%- endmacro %}
 
 {% macro release_bubble(cls, item) -%}

@@ -126,6 +126,8 @@
 <a href="{{ u.url }}" class="updates_panel__link">{{ u.title }}</a>
 <span class="updates_panel__detail">{{ u.detail }}</span>
 </li>
+{% else %}
+<li class="updates_panel__item updates_panel__empty">発売日の変更・決定は、今のところありません。</li>
 {% endfor %}
 </ul>
 </section>
