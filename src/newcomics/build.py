@@ -79,9 +79,9 @@ class Book:
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
         image = row["image_url"] if "image_url" in row.keys() else None
-        # 出版社サイトの本は、楽天の商品ページへのリンクがあるときだけ楽天の書影を出し、書影のリンク先を楽天にする
+        # 楽天の書影は、リンク先を必ず楽天の商品ページにする（出版社サイトの本は楽天へのリンクがあるときだけ書影を出す）
         if self.origin == "rakuten":
-            self.image, self.cover_url = image, None
+            self.image, self.cover_url = image, (self.rakuten_url if image else None)
         elif image and self.rakuten_url:
             self.image, self.cover_url = image, self.rakuten_url
         else:
@@ -148,8 +148,6 @@ class Site:
                 amazon += f"&tag={quote(tag)}"
         rakuten = b.rakuten_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}"
         seven = f"https://7net.omni7.jp/search/?keyword={quote(q)}"
-        if b.origin == "rakuten":
-            return [{"name": "楽天ブックス", "short": "楽天", "kind": "rakuten", "button": "楽天ブックス", "url": rakuten}]
         return [
             {"name": "Amazon", "short": "Amazon", "kind": "amazon", "button": "Amazon", "url": amazon},
             {"name": "楽天ブックス", "short": "楽天", "kind": "rakuten", "button": "楽天ブックス", "url": rakuten},
