@@ -11,9 +11,12 @@
 <?php while (have_posts()): the_post(); $cat = nc_category(); ?>
 <li class="feature_list__item">
 <a href="<?php the_permalink(); ?>" class="feature_list__link">
+<?php if (has_post_thumbnail()): ?><span class="feature_list__thumb"><?php the_post_thumbnail('large', ['class' => 'feature_list__img', 'alt' => '', 'loading' => 'lazy']); ?></span><?php endif; ?>
+<span class="feature_list__text">
 <span class="feature_list__meta"><time class="feature_list__date" datetime="<?php echo esc_attr(get_the_date('Y-m-d')); ?>"><?php echo esc_html(get_the_date('Y.m.d')); ?></time><?php if ($cat): ?><span class="feature_list__tag"><?php echo esc_html($cat->name); ?></span><?php endif; ?></span>
-<h2 class="feature_list__title"><?php the_title(); ?></h2>
-<p class="feature_list__excerpt"><?php echo esc_html(get_the_excerpt()); ?></p>
+<span class="feature_list__title"><?php the_title(); ?></span>
+<span class="feature_list__excerpt"><?php echo esc_html(get_the_excerpt()); ?></span>
+</span>
 </a>
 </li>
 <?php endwhile; ?>

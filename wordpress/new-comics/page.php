@@ -8,6 +8,7 @@
 <h1 id="page-title" class="heading__title"><?php the_title(); ?></h1>
 </div>
 <div class="article__meta"><time class="article__date" datetime="<?php echo esc_attr(get_the_date('Y-m-d')); ?>"><?php echo esc_html(get_the_date('Y.m.d')); ?></time><?php if ($cat): ?><a href="<?php echo esc_url(get_category_link($cat)); ?>" class="article__tag"><?php echo esc_html($cat->name); ?></a><?php endif; ?></div>
+<?php if (has_post_thumbnail()): ?><figure class="article__eyecatch"><?php the_post_thumbnail('full', ['class' => 'article__eyecatch_img', 'alt' => '']); ?></figure><?php endif; ?>
 <div class="article__body">
 <?php the_content(); ?>
 </div>
