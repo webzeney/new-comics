@@ -6,7 +6,8 @@ a{color:#222222}
 a:where(:hover){color:#B5302A}
 input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid #222222;outline-offset:2px}
 .visually_hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-.en{font-family:Fredoka,sans-serif}
+.en{font-family:Fredoka,sans-serif;font-weight:600}
+.en--light{font-weight:300}
 .ja{font-family:'Noto Sans JP',sans-serif;font-size:13px}
 @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 /* ==========================================================================
@@ -21,7 +22,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .sidemenu{flex:1 1 220px;max-width:100%;background:#FFFFFF;border-radius:20px;padding:28px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px}
 .sidemenu__logo{display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;color:#222222}
 .sidemenu__name{font-size:22px;font-weight:900;letter-spacing:0.04em;line-height:1.2}
-.sidemenu__en{font-family:Fredoka,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.24em;line-height:1}
+.sidemenu__en{font-family:Fredoka,sans-serif;font-size:11px;font-weight:500;letter-spacing:0.24em;line-height:1}
 .sidemenu__toggle{display:none;align-items:center;justify-content:center;gap:8px;min-height:44px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
 .sidemenu__arrow{display:inline-block;font-size:10px;transform:rotate(0deg)}
 .sidemenu__toggle[aria-expanded="true"] .sidemenu__arrow{transform:rotate(180deg)}
@@ -31,7 +32,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .sidemenu__link{display:flex;align-items:center;justify-content:space-between;min-height:44px;text-decoration:none;font-weight:700;font-size:14px;color:#222222}
 .sidemenu__link--current{color:#B5302A}
 .sidemenu__tags{display:flex;flex-direction:column;gap:10px}
-.sidemenu__heading{font-family:Fredoka,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.16em;color:#B5302A}
+.sidemenu__heading{font-family:Fredoka,sans-serif;font-size:12px;font-weight:500;letter-spacing:0.16em;color:#B5302A}
 .sidemenu__taglist{display:flex;flex-wrap:wrap;gap:6px}
 .sidemenu__tag{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;border-radius:999px;background:#FFF0EC;color:#222222;text-decoration:none;font-size:12px;font-weight:500}
 .sidemenu__tag--current{font-weight:700;background:#222222;color:#FFFFFF}
@@ -48,7 +49,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .breadcrumb__sep{margin:0 8px}
 .breadcrumb--sp{display:none}
 .heading{display:flex;flex-direction:column;gap:2px}
-.heading__en{font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.16em;color:#B5302A}
+.heading__en{font-family:Fredoka,sans-serif;font-size:13px;font-weight:500;letter-spacing:0.16em;color:#B5302A}
 .heading__title{margin:0;font-size:30px;font-weight:900;line-height:1.3}
 .heading__sub{font-size:13px;color:#5A5148}
 .heading__lead{margin:6px 0 0;font-size:13px;color:#5A5148}
@@ -72,7 +73,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .stat__value--wrap{flex-wrap:wrap}
 .stat__value--loose{gap:6px}
 .stat__value--tight{gap:2px}
-.stat__num{font-family:Fredoka,sans-serif;font-size:36px;font-weight:700;line-height:1.1}
+.stat__num{font-family:Fredoka,sans-serif;font-size:36px;font-weight:600;line-height:1.1}
 .stat__num--34{font-size:34px}
 .stat__unit{font-weight:700}
 /* ==========================================================================
@@ -82,7 +83,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .filter__label{font-size:12px;font-weight:700;margin-right:4px}
 .chip{min-height:36px;padding:0 14px;border-radius:999px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #222222;background:#FFFFFF;color:#222222}
 .chip[aria-pressed="true"]{background:#222222;color:#FFFFFF}
-.chip__count{font-family:Fredoka,sans-serif;margin-left:6px}
+.chip__count{font-family:Fredoka,sans-serif;font-weight:600;margin-left:6px}
 .chip_link{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border:2px solid #222222;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none}
 .toggle_button{min-height:40px;padding:0 16px;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
 .toggle_button[aria-pressed="true"],.toggle_button[aria-current="page"]{background:#222222;color:#FFFFFF}
@@ -98,7 +99,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .monthtab__item--current{background:#222222;color:#FFFFFF}
 .arrow_button{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:48px;padding:0 28px;border-radius:999px;background:#222222;color:#FFFFFF;font-weight:700;text-decoration:none}
 .pager{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:24px}
-.pager__item{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:44px;min-height:44px;padding:0 12px;border:2px solid #222222;border-radius:999px;font-family:Fredoka,sans-serif;font-size:15px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222;text-decoration:none}
+.pager__item{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:44px;min-height:44px;padding:0 12px;border:2px solid #222222;border-radius:999px;font-family:Fredoka,sans-serif;font-size:15px;font-weight:600;cursor:pointer;background:#FFFFFF;color:#222222;text-decoration:none}
 .pager__item--current{background:#222222;color:#FFFFFF}
 /* ==========================================================================
 バッジ
@@ -142,8 +143,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .bookrow__stores{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,64px);gap:6px}
 .group{margin-top:20px}
 .group__title{display:flex;align-items:center;gap:10px;margin:0;padding:8px 14px;border-radius:10px;background:#FFF6EC;font-size:16px;font-weight:900}
-.group__date{font-family:Fredoka,sans-serif;font-size:20px}
-.group__count{font-family:Fredoka,sans-serif;font-size:13px;font-weight:700;padding:0 10px;border-radius:999px;background:#FFFFFF}
+.group__date{font-family:Fredoka,sans-serif;font-size:20px;font-weight:600}
+.group__count{font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;padding:0 10px;border-radius:999px;background:#FFFFFF}
 .group__onsale{font-size:11px;font-weight:900;padding:1px 10px;border-radius:999px;background:#222222;color:#FFFFFF}
 .empty{margin:16px 0 0;padding:24px;border-radius:14px;background:#FFF6EC;text-align:center;font-weight:700}
 /* ==========================================================================
@@ -162,7 +163,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 ========================================================================== */
 .ad{background:#FFF6EC;border-radius:20px;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#5A5148;font-size:13px}
 .ad--rect{min-height:250px}
-.ad__label{font-family:Fredoka,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.16em}
+.ad__label{font-family:Fredoka,sans-serif;font-size:12px;font-weight:500;letter-spacing:0.16em}
 /* ==========================================================================
 フッター
 ========================================================================== */
@@ -170,19 +171,19 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .footer__inner{padding:32px 28px;display:flex;flex-direction:column;gap:16px;font-size:13px}
 .footer__brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .footer__name{font-size:18px;font-weight:900;color:#FFFFFF}
-.footer__en{font-family:Fredoka,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.24em;color:#FFD15C}
+.footer__en{font-family:Fredoka,sans-serif;font-size:11px;font-weight:500;letter-spacing:0.24em;color:#FFD15C}
 .footer__nav{display:flex;flex-wrap:wrap;gap:4px 24px}
 .footer__link{color:#D6D0CA;padding:10px 0}
 .footer__link--current{color:#FFFFFF;font-weight:700}
 .footer__text{margin:0;line-height:1.7}
 .footer__credit{margin:0;font-size:12px}
 .footer__credit a{color:#D6D0CA}
-.footer__copy{margin:0;font-family:Fredoka,sans-serif;font-size:12px}
+.footer__copy{margin:0;font-family:Fredoka,sans-serif;font-size:12px;font-weight:300}
 /* ==========================================================================
 トップ：本日発売の帯
 ========================================================================== */
 .ticker{background:#222222;border-radius:20px;overflow:hidden;display:flex;align-items:center;min-height:52px}
-.ticker__label{flex:0 0 auto;align-self:stretch;display:flex;align-items:center;padding:0 20px;background:#FFD15C;color:#222222;font-family:Fredoka,sans-serif;font-weight:700;font-size:15px;letter-spacing:0.08em}
+.ticker__label{flex:0 0 auto;align-self:stretch;display:flex;align-items:center;padding:0 20px;background:#FFD15C;color:#222222;font-family:Fredoka,sans-serif;font-weight:600;font-size:15px;letter-spacing:0.08em}
 .ticker__viewport{flex:1 1 auto;overflow:hidden;white-space:nowrap}
 .ticker__track{display:inline-flex;gap:40px;padding-left:24px;animation:ticker 40s linear infinite;color:#FFFFFF;font-weight:700;font-size:15px}
 /* ==========================================================================
@@ -210,13 +211,13 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .top_side{flex:1 1 260px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .top_side--start{flex:1 1 280px}
 .calendar_card{flex:1 1 auto;background:#FFD15C;border-radius:20px;padding:24px;text-decoration:none;color:#222222;display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:180px}
-.calendar_card__en{font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.16em}
+.calendar_card__en{font-family:Fredoka,sans-serif;font-size:13px;font-weight:500;letter-spacing:0.16em}
 .calendar_card__month{display:flex;align-items:flex-end;gap:8px}
-.calendar_card__num{font-family:Fredoka,sans-serif;font-size:88px;font-weight:700;line-height:0.85}
+.calendar_card__num{font-family:Fredoka,sans-serif;font-size:88px;font-weight:600;line-height:0.85}
 .calendar_card__text{font-size:18px;font-weight:900;padding-bottom:4px}
 .calendar_card__link{display:flex;align-items:center;justify-content:space-between;border-top:2px solid #222222;padding-top:10px;font-weight:700}
 .tomorrow_card{background:#FFF6EC;border-radius:20px;padding:20px 24px;text-decoration:none;color:#222222;display:flex;flex-direction:column;gap:6px}
-.tomorrow_card__en{font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.16em;color:#B5302A}
+.tomorrow_card__en{font-family:Fredoka,sans-serif;font-size:13px;font-weight:500;letter-spacing:0.16em;color:#B5302A}
 .tomorrow_card__text{font-size:16px;font-weight:900}
 /* ==========================================================================
 トップ：今日・明日発売の新刊
@@ -254,16 +255,16 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .updates_panel__all{font-size:13px;font-weight:700}
 .updates_panel__list{list-style:none;margin:0;padding:0}
 .updates_panel__item{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:12px 0;border-top:1px dashed #EBCFC9}
-.updates_panel__date{flex:0 0 auto;width:44px;font-family:Fredoka,sans-serif;font-size:14px;font-weight:600;color:#5A5148}
+.updates_panel__date{flex:0 0 auto;width:44px;font-family:Fredoka,sans-serif;font-size:14px;font-weight:500;color:#5A5148}
 .updates_panel__link{flex:1 1 200px;min-width:0;text-decoration:none;font-weight:700}
-.updates_panel__detail{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:14px;font-weight:500;color:#5A5148}
+.updates_panel__detail{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:14px;font-weight:400;color:#5A5148}
 .updates_panel__empty{font-size:13px;color:#5A5148}
 .feature_panel__head{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
 .feature_panel__title{margin:0;font-size:22px;font-weight:900}
 .feature_panel__list{list-style:none;margin:0;padding:0}
 .feature_panel__item{border-top:1px dashed #EBCFC9}
 .feature_panel__link{display:flex;align-items:center;gap:14px;padding:12px 0;text-decoration:none}
-.feature_panel__no{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:30px;font-weight:700;line-height:1;color:#D9483B}
+.feature_panel__no{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:30px;font-weight:600;line-height:1;color:#D9483B}
 .feature_panel__body{display:flex;flex-direction:column;gap:2px;min-width:0}
 .feature_panel__tag{font-size:11px;font-weight:700;color:#B5302A}
 .feature_panel__text{font-size:14px;font-weight:700;line-height:1.45}
@@ -284,10 +285,10 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .calendar__day--empty{cursor:default;background:#FAF6F3;border:1px dashed #EBCFC9}
 .calendar__day[aria-pressed="true"]{background:#FFF1C2;border:2px solid #222222;box-shadow:3px 3px 0 #222222}
 .calendar__day_head{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.calendar__num{font-family:Fredoka,sans-serif;font-size:20px;font-weight:700;line-height:1;color:#222222}
+.calendar__num{font-family:Fredoka,sans-serif;font-size:20px;font-weight:600;line-height:1;color:#222222}
 .calendar__num--red{color:#B5302A}
 .calendar__num--blue{color:#2F5C9E}
-.calendar__count{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;line-height:1.5;background:#FFF0EC;border:2px solid #FFF0EC}
+.calendar__count{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;line-height:1.5;background:#FFF0EC;border:2px solid #FFF0EC}
 .calendar__count--big{background:#FFD15C;border:2px solid #222222}
 .calendar__holiday{font-size:10px;font-weight:700;color:#B5302A;line-height:1.2}
 .calendar__title{display:block;font-size:11px;font-weight:500;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -297,12 +298,12 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .calendar__list_items{list-style:none;margin:0;padding:0}
 .calendar__list_item{border-top:1px dashed #EBCFC9;padding:12px 0;display:flex;flex-direction:column;gap:6px}
 .calendar__list_head{display:flex;align-items:center;gap:8px}
-.calendar__list_num{font-family:Fredoka,sans-serif;font-size:22px;font-weight:700;line-height:1;color:#222222}
+.calendar__list_num{font-family:Fredoka,sans-serif;font-size:22px;font-weight:600;line-height:1;color:#222222}
 .calendar__list_dow{font-size:13px;font-weight:700;color:#222222}
 .calendar__list_num--red,.calendar__list_dow--red{color:#B5302A}
 .calendar__list_num--blue,.calendar__list_dow--blue{color:#2F5C9E}
 .calendar__list_holiday{font-size:11px;font-weight:700;color:#B5302A}
-.calendar__list_count{margin-left:auto;font-family:Fredoka,sans-serif;font-size:12px;font-weight:700;padding:1px 10px;border-radius:999px;background:#FFF0EC;border:2px solid #FFF0EC}
+.calendar__list_count{margin-left:auto;font-family:Fredoka,sans-serif;font-size:12px;font-weight:600;padding:1px 10px;border-radius:999px;background:#FFF0EC;border:2px solid #FFF0EC}
 .calendar__list_count--big{background:#FFD15C;border:2px solid #222222}
 .calendar__list_title{display:block;font-size:14px;font-weight:700;line-height:1.5;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .calendar__list_title[hidden]{display:none}
@@ -311,7 +312,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .calendar__list_more[aria-expanded="true"] .calendar__list_arrow{transform:rotate(180deg)}
 .calendar__legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:12px;color:#5A5148}
 .calendar__legend_item{display:inline-flex;align-items:center;gap:6px}
-.calendar__legend_mark{display:inline-block;padding:0 8px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-family:Fredoka,sans-serif;font-weight:700;color:#222222}
+.calendar__legend_mark{display:inline-block;padding:0 8px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-family:Fredoka,sans-serif;font-weight:600;color:#222222}
 .dayrelease__title{margin:0;font-size:24px;font-weight:900}
 .dayrelease__count{font-size:16px;margin-left:8px}
 /* ==========================================================================
@@ -339,7 +340,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .book__fact_label{font-size:12px;font-weight:700}
 .book__fact_value{display:flex;align-items:baseline;gap:2px}
 .book__fact_value--date{gap:4px;flex-wrap:wrap}
-.book__fact_num{font-family:Fredoka,sans-serif;font-size:32px;font-weight:700;line-height:1.1}
+.book__fact_num{font-family:Fredoka,sans-serif;font-size:32px;font-weight:600;line-height:1.1}
 .book__fact_unit{font-weight:700}
 .book__notice{margin:0;padding:10px 14px;border:2px solid #B5302A;border-radius:10px;font-size:13px;font-weight:700;color:#B5302A}
 .book__buy{display:flex;flex-direction:column;gap:8px}
@@ -348,7 +349,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .book__data{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;padding-top:14px;border-top:1px dashed #EBCFC9;font-size:13px}
 .book__data_term{font-weight:700;color:#5A5148}
 .book__data_desc{margin:0}
-.book__data_desc--en{font-family:Fredoka,sans-serif}
+.book__data_desc--en{font-family:Fredoka,sans-serif;font-weight:300}
 .series_head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
 .slider{display:flex;align-items:center;gap:10px}
 .slider__button{flex:0 0 44px;height:44px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-size:18px;font-weight:900;font-family:inherit;cursor:pointer}
@@ -356,7 +357,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .slider__track{list-style:none;margin:0;padding:0;display:flex;gap:14px;transition:transform 0.5s ease}
 .slider__item{flex:0 0 calc((100% - 42px) / 4)}
 .slider__link{display:flex;flex-direction:column;gap:6px;text-decoration:none}
-.slider__label{text-align:center;font-family:Fredoka,sans-serif;font-size:13px;font-weight:700;color:#222222;text-decoration:none}
+.slider__label{text-align:center;font-family:Fredoka,sans-serif;font-size:13px;font-weight:600;color:#222222;text-decoration:none}
 .slider__label--current{color:#B5302A}
 .forecast{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:8px;padding:14px 18px;border-radius:14px;background:#FFF6EC}
 .forecast__badge{font-size:12px;font-weight:900;padding:2px 10px;border:2px solid #222222;border-radius:999px;background:#FFFFFF}
@@ -382,14 +383,14 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .latest__info{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:10px}
 .latest__title{font-size:22px;font-weight:900;line-height:1.4;text-decoration:none}
 .latest__meta{font-size:13px;color:#5A5148}
-.latest__date{font-family:Fredoka,sans-serif;font-weight:700;color:#222222}
+.latest__date{font-family:Fredoka,sans-serif;font-weight:600;color:#222222}
 .latest__stores{margin-top:4px}
 .volumes__head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:20px}
 .volumes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:24px 16px}
 .volumes__link{position:relative;display:flex;flex-direction:column;gap:6px;text-decoration:none}
 .volumes__text{display:flex;flex-direction:column;gap:6px;text-decoration:none}
 .volumes__latest{position:absolute;top:-10px;left:-6px;padding:2px 8px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-size:10px;font-weight:900}
-.volumes__no{font-family:Fredoka,sans-serif;font-size:16px;font-weight:700}
+.volumes__no{font-family:Fredoka,sans-serif;font-size:16px;font-weight:600}
 .volumes__date{font-size:12px;color:#5A5148}
 /* ==========================================================================
 出版社別・レーベル別・タグ別
@@ -422,12 +423,12 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .kindtab{display:flex;flex-wrap:wrap;gap:6px}
 .updates{margin-top:18px}
 .updates__title{margin:0;padding:6px 14px;border-radius:10px;background:#FFF6EC;font-size:14px;font-weight:900}
-.updates__date{font-family:Fredoka,sans-serif;font-size:17px}
+.updates__date{font-family:Fredoka,sans-serif;font-size:17px;font-weight:600}
 .updates__list{list-style:none;margin:0;padding:0}
 .updates__item{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:12px 4px;border-bottom:1px dashed #EBCFC9}
 .updates__link{flex:1 1 220px;min-width:0;font-weight:700;text-decoration:none}
 .updates__pub{flex:0 0 auto;font-size:12px;color:#5A5148}
-.updates__detail{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:14px;font-weight:600}
+.updates__detail{flex:0 0 auto;font-family:Fredoka,sans-serif;font-size:14px;font-weight:500}
 .pager__item--plain{padding:1px 6px;line-height:normal}
 .pager__item--next{padding:0 16px;font-family:inherit;font-size:14px}
 /* ==========================================================================
@@ -447,7 +448,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .profile{margin:0;display:grid;grid-template-columns:minmax(96px,max-content) minmax(0,1fr);border-top:2px solid #222222;font-size:15px}
 .profile__term{padding:14px 16px;background:#FFF6EC;font-weight:700;border-bottom:1px dashed #EBCFC9}
 .profile__desc{margin:0;padding:14px 16px;border-bottom:1px dashed #EBCFC9}
-.profile__desc--en{font-family:Fredoka,sans-serif}
+.profile__desc--en{font-family:Fredoka,sans-serif;font-weight:300}
 /* ==========================================================================
 お問い合わせ
 ========================================================================== */

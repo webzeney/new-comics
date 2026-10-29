@@ -26,7 +26,7 @@ add_action('wp_enqueue_scripts', function (): void {
     $css_ver = @filemtime($root . '/assets/css/style.css') ?: null;
     $js_ver = @filemtime($root . '/assets/js/main.js') ?: null;
     $theme_ver = @filemtime(get_stylesheet_directory() . '/style.css') ?: wp_get_theme()->get('Version');
-    wp_enqueue_style('nc-fonts', 'https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap', [], null);
+    wp_enqueue_style('nc-fonts', 'https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600&family=Noto+Sans+JP:wght@400;500;700;900&display=swap', [], null);
     wp_enqueue_style('nc-site', $site . '/assets/css/style.css', ['nc-fonts'], $css_ver);
     wp_enqueue_style('nc-theme', get_stylesheet_uri(), ['nc-site'], $theme_ver);
     wp_enqueue_script('nc-main', $site . '/assets/js/main.js', [], $js_ver, ['strategy' => 'defer', 'in_footer' => false]);
