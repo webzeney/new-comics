@@ -724,7 +724,7 @@ def build_search(site, w):
     w.write("search/index.html", "search.html", page, **ctx)
 
 
-# ---- 新着・更新情報 ----
+# ---- 発売日の変更・決定 ----
 def updates_dir(slug):
     return f"updates/{slug}/" if slug else "updates/"
 
@@ -753,7 +753,7 @@ def build_updates(site, w):
                     pager.append({"label": "次へ ›", "url": f"{root}{base}page/{n + 1}/", "current": False, "next": True})
             tabs = [{"label": "すべて" if not s else h, "url": f"{root}{updates_dir(s)}", "current": s == slug} for s, _, h, _ in UPDATE_KINDS]
             ctx = {
-                "crumbs": crumbs(root, ("新着・更新情報", None)),
+                "crumbs": crumbs(root, ("発売日の変更・決定", None)),
                 "updated_at": updated_at,
                 "heading": heading,
                 "total": len(rows),
@@ -762,7 +762,7 @@ def build_updates(site, w):
                 "groups": [{"md": md(d), "dow": dow(d), "items": v} for d, v in groups.items()],
                 "pager": pager,
             }
-            title = "新着・更新情報" if not slug else f"{heading}｜新着・更新情報"
+            title = "発売日の変更・決定" if not slug else f"{heading}｜発売日の変更・決定"
             page = page_defaults(title=f"{title}｜{SITE_NAME}", description="漫画の新刊の発売日の変更・決定をお知らせします。", menu="updates")
             w.write(rel, "updates.html", page, **ctx)
 

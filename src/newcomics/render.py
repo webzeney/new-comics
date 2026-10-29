@@ -13,7 +13,7 @@ MENU = [
     ("publisher", "出版社から探す", "publisher/"),
     ("label", "レーベルから探す", "label/"),
     ("feature", "特集", "feature/"),
-    ("updates", "新着・更新情報", "updates/"),
+    ("updates", "発売日の変更・決定", "updates/"),
 ]
 FOOTER = [
     ("about", "運営者情報", "about/"),
