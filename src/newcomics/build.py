@@ -287,6 +287,29 @@ def build_partials(site, w):
     (dest / "analytics.html").write_text(ga, encoding="utf-8")
 
 
+PAGER_SIZE = 4
+
+
+def pager_items(current, last):
+    """ページ送りの並び。番号は最大4つ。「最初」は1ページ目が番号にないとき、「前へ」は1ページ目以外、「次へ」は最後のページ以外、「最後」は最後のページが番号にないときに出す。"""
+    if last <= 1:
+        return []
+    start = max(1, min(current - 1, last - PAGER_SIZE + 1))
+    end = min(last, start + PAGER_SIZE - 1)
+    items = []
+    if start > 1:
+        items.append(("first", 1, "« 最初"))
+    if current > 1:
+        items.append(("prev", current - 1, "‹ 前へ"))
+    for k in range(start, end + 1):
+        items.append(("num", k, str(k)))
+    if current < last:
+        items.append(("next", current + 1, "次へ ›"))
+    if end < last:
+        items.append(("last", last, "最後 »"))
+    return items
+
+
 def crumbs(root, *items):
     out = [{"label": "トップ", "url": root or "./"}]
     for label, url in items:
@@ -867,13 +890,7 @@ def build_updates(site, w):
                 b = site.by_id[r["book_id"]]
                 d = datetime.fromisoformat(r["detected_at"]).date()
                 groups.setdefault(d, []).append({"kind": r["kind"], "title": b.title, "pub": b.publisher, "detail": update_detail(r["kind"], r["old_value"], r["new_value"]), "url": site.book_url(root, b)})
-            pager = []
-            if len(pages) > 1:
-                for k in range(1, len(pages) + 1):
-                    url = f"{root}{base}" if k == 1 else f"{root}{base}page/{k}/"
-                    pager.append({"label": str(k), "url": url, "current": k == n, "next": False})
-                if n < len(pages):
-                    pager.append({"label": "次へ ›", "url": f"{root}{base}page/{n + 1}/", "current": False, "next": True})
+            pager = [{"label": label, "url": f"{root}{base}" if k == 1 else f"{root}{base}page/{k}/", "current": kind == "num" and k == n, "text": kind != "num"} for kind, k, label in pager_items(n, len(pages))]
             tabs = [{"label": "すべて" if not s else h, "url": f"{root}{updates_dir(s)}", "current": s == slug} for s, _, h, _ in UPDATE_KINDS]
             ctx = {
                 "crumbs": crumbs(root, ("発売日の変更・決定", None)),

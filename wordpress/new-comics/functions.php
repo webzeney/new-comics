@@ -50,6 +50,43 @@ remove_action('wp_head', 'print_emoji_detection_script', 7);
 remove_action('wp_print_styles', 'print_emoji_styles');
 remove_action('wp_head', 'wp_generator');
 
+function nc_pager(): void
+{
+    global $wp_query;
+    $last = (int) $wp_query->max_num_pages;
+    if ($last <= 1) {
+        return;
+    }
+    $current = max(1, (int) get_query_var('paged'));
+    $start = max(1, min($current - 1, $last - 3));
+    $end = min($last, $start + 3);
+    $items = [];
+    if ($start > 1) {
+        $items[] = [1, '« 最初'];
+    }
+    if ($current > 1) {
+        $items[] = [$current - 1, '‹ 前へ'];
+    }
+    for ($k = $start; $k <= $end; $k++) {
+        $items[] = [$k, (string) $k];
+    }
+    if ($current < $last) {
+        $items[] = [$current + 1, '次へ ›'];
+    }
+    if ($end < $last) {
+        $items[] = [$last, '最後 »'];
+    }
+    echo '<nav aria-label="ページ送り" class="pager"><div class="nav-links">';
+    foreach ($items as [$page, $label]) {
+        if ($label === (string) $current && $page === $current) {
+            echo '<span aria-current="page" class="page-numbers current">' . esc_html($label) . '</span>';
+        } else {
+            echo '<a href="' . esc_url(get_pagenum_link($page)) . '" class="page-numbers">' . esc_html($label) . '</a>';
+        }
+    }
+    echo '</div></nav>';
+}
+
 function nc_breadcrumb(array $items): void
 {
     echo '<nav aria-label="パンくずリスト" class="breadcrumb breadcrumb--wide">';

@@ -432,7 +432,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .updates__pub{flex:0 0 auto;font-size:12px;color:#5A5148}
 .updates__detail{flex:0 0 auto;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:14px;letter-spacing:0.1em}
 .pager__item--plain{padding:1px 6px;line-height:normal}
-.pager__item--next{padding:0 16px;font-family:inherit;font-size:14px}
+.pager__item--text{padding:0 16px;font-family:inherit;font-size:14px}
 /* ==========================================================================
 固定ページ
 ========================================================================== */

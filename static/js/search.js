@@ -155,8 +155,13 @@ $$('[data-search-sort]').forEach(function (b) { b.setAttribute('aria-pressed', b
 var pager = $('[data-search-pager]');
 pager.textContent = '';
 if (pageCount > 1) {
-for (var i = 1; i <= pageCount; i++) pager.appendChild(pageButton(String(i), i, i === state.page));
+var start = Math.max(1, Math.min(state.page - 1, pageCount - 3));
+var end = Math.min(pageCount, start + 3);
+if (start > 1) pager.appendChild(pageButton('« 最初', 1, false));
+if (state.page > 1) pager.appendChild(pageButton('‹ 前へ', state.page - 1, false));
+for (var i = start; i <= end; i++) pager.appendChild(pageButton(String(i), i, i === state.page));
 if (state.page < pageCount) pager.appendChild(pageButton('次へ ›', state.page + 1, false));
+if (end < pageCount) pager.appendChild(pageButton('最後 »', pageCount, false));
 }
 }
 

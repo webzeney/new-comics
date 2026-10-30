@@ -43,7 +43,7 @@
 {% if pager %}
 <nav aria-label="ページ送り" class="pager">
 {% for p in pager %}
-<a href="{{ p.url }}" class="pager__item pager__item--plain{% if p.current %} pager__item--current{% endif %}{% if p.next %} pager__item--next{% endif %}"{% if p.current %} aria-current="page"{% endif %}>{{ p.label }}</a>
+<a href="{{ p.url }}" class="pager__item pager__item--plain{% if p.current %} pager__item--current{% endif %}{% if p.text %} pager__item--text{% endif %}"{% if p.current %} aria-current="page"{% endif %}>{{ p.label }}</a>
 {% endfor %}
 </nav>
 {% endif %}

@@ -21,7 +21,7 @@
 </li>
 <?php endwhile; ?>
 </ul>
-<?php the_posts_pagination(['class' => 'pager', 'mid_size' => 1, 'prev_text' => '‹', 'next_text' => '›']); ?>
+<?php nc_pager(); ?>
 <?php else: ?>
 <p class="feature_list__empty">特集記事は準備中です。</p>
 <?php endif; ?>
