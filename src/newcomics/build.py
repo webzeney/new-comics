@@ -4,15 +4,19 @@
 """
 import argparse
 import calendar as calmod
+import hashlib
 import html
 import json
-import shutil
 import os
+import re
+import shutil
 import sqlite3
+import unicodedata
 from collections import OrderedDict, defaultdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
+from xml.sax.saxutils import escape as xml_escape
 
 import holidays as holidays_lib
 
@@ -223,12 +227,17 @@ def build(conn, out_dir, today, env):
     site = Site(conn, today, env)
     w = Writer(out_dir, site.tags_for_menu(), today.year, ga4_id=env.get("GA4_ID"), site_url=env.get("SITE_URL"), rakuten_credit=any(b.origin == "rakuten" or b.rakuten_url for b in site.books))
     w.copy_assets()
+    AUTHOR_KEYS.clear()
+    AUTHOR_KEYS.update(author_key(a["name"]) for b in site.dated for a in b.authors)
     build_top(site, w)
     build_calendars(site, w)
     build_dates(site, w)
     build_books(site, w)
     build_series(site, w)
     build_listings(site, w)
+    build_authors(site, w)
+    build_series_feeds(site, w, env.get("SITE_URL"))
+    build_favorites(site, w)
     build_search(site, w)
     build_updates(site, w)
     build_static(site, w)
@@ -491,8 +500,33 @@ def title_parts(b):
     return series_name(b.title) or b.title, b.volume, ""
 
 
+def author_key(name):
+    """著者ページの URL に使う識別子（表記ゆれのうち空白と全角半角だけを吸収する）。"""
+    norm = re.sub(r"\s+", "", unicodedata.normalize("NFKC", name or ""))
+    return hashlib.sha1(norm.encode("utf-8")).hexdigest()[:10]
+
+
+AUTHOR_KEYS = set()
+
+
 def authors_ctx(root, b):
-    return [{"role": a.get("role") if a.get("role") and a.get("role") != "著" else None, "name": a["name"], "url": f"{root}search/?q={quote(a['name'])}"} for a in b.authors]
+    out = []
+    for a in b.authors:
+        k = author_key(a["name"])
+        url = f"{root}author/{k}/" if k in AUTHOR_KEYS else f"{root}search/?q={quote(a['name'])}"
+        out.append({"role": a.get("role") if a.get("role") and a.get("role") != "著" else None, "name": a["name"], "url": url})
+    return out
+
+
+def gcal_url(b):
+    """Google カレンダーに終日の予定として登録する URL。"""
+    if not b.release:
+        return None
+    start = b.release.strftime("%Y%m%d")
+    end = (b.release + timedelta(days=1)).strftime("%Y%m%d")
+    text = f"『{b.title}』発売日"
+    details = f"{b.publisher}　漫画新刊JP"
+    return f"https://calendar.google.com/calendar/render?action=TEMPLATE&text={quote(text)}&dates={start}/{end}&details={quote(details)}"
 
 
 def last_change(site, b):
@@ -559,6 +593,9 @@ def build_books(site, w):
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
                 "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "isbn": b.isbn13,
                 "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b),
+                "gcal": gcal_url(b), "ics_date": b.release.strftime("%Y%m%d") if b.release else None,
+                "ics_end": (b.release + timedelta(days=1)).strftime("%Y%m%d") if b.release else None, "ics_name": f"『{b.title}』発売日",
+                "fav": {"id": b.series_id, "name": site.series[b.series_id]["name"], "url": f"/series/{b.series_id}/"} if b.series_id in site.series else None,
             },
             "series": series,
             "sameday": sameday,
@@ -600,12 +637,15 @@ def build_series(site, w):
                 "date": f"{latest.release.year}.{latest.release.month}.{latest.release.day}" if latest.release else "未定",
                 "meta": lt_meta, "stores": site.stores(latest), "image": latest.image, "cover_url": latest.cover_url, "alt": site.alt(latest),
             },
+            "fav": {"id": sid, "name": info["name"], "url": f"/series/{sid}/"},
+            "feed_url": f"{root}series/{sid}/feed.xml",
             "forecast": fc if status != "完結" else None,
             "volumes": [{"no": b.volume, "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else "未定", "latest": b.id == latest.id, "url": site.book_url(root, b), "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b)} for b in reversed(vols)],
         }
         page = page_defaults(
             title=f"{info['name']}の新刊・既刊一覧（{latest.publisher}）｜{SITE_NAME}",
             description=f"{info['name']}（{latest.publisher}）の最新刊と既刊の発売日をまとめています。",
+            feed={"title": f"{info['name']}の新刊（{SITE_NAME}）", "url": f"{root}series/{sid}/feed.xml"},
         )
         w.write(f"series/{sid}/index.html", "series.html", page, **ctx)
 
@@ -712,6 +752,79 @@ def build_listings(site, w):
             groups=[{"title": "タグ", "links": tag_links}])
 
 
+# ---- 著者 ----
+def build_authors(site, w):
+    root = "../../"
+    by_key = OrderedDict()
+    names = {}
+    for b in site.dated:
+        for a in b.authors:
+            k = author_key(a["name"])
+            by_key.setdefault(k, [])
+            if b not in by_key[k]:
+                by_key[k].append(b)
+            names.setdefault(k, a["name"])
+    for k, books in by_key.items():
+        name = names[k]
+        ctx = {
+            "crumbs": crumbs(root, (f"{name}", None)),
+            "listing": {"en": "AUTHOR", "title": f"{name}の新刊発売予定", "lead": f"{name}さんが関わる漫画の新刊を、発売日順に紹介しています。", "kind": "author", "final_badge": False},
+            "label_links": [],
+            "months": listing_months(site, root, books, ("label", "price"), "author"),
+            "others": None,
+            **listing_common(site, root, books),
+        }
+        page = page_defaults(title=f"{name}の漫画新刊発売予定｜{SITE_NAME}", description=f"{name}さんの漫画（コミック）の新刊を、発売日順に紹介しています。")
+        w.write(f"author/{k}/index.html", "listing.html", page, **ctx)
+
+
+# ---- 作品ごとの RSS ----
+def build_series_feeds(site, w, site_url):
+    base = (site_url or "https://new-comics.jp").rstrip("/")
+    for sid, books in site.series_books.items():
+        if sid not in site.series:
+            continue
+        name = site.series[sid]["name"]
+        items = sorted(books, key=lambda b: (b.first_seen or "", b.id), reverse=True)[:20]
+        entries = []
+        for b in items:
+            when = f"{b.release.year}年{b.release.month}月{b.release.day}日発売" if b.release else "発売日未定"
+            try:
+                pub = datetime.fromisoformat(b.first_seen).strftime("%a, %d %b %Y %H:%M:%S %z")
+            except (TypeError, ValueError):
+                pub = None
+            entries.append(
+                "<item>"
+                f"<title>{xml_escape(b.title)}（{when}）</title>"
+                f"<link>{base}/book/{b.key}/</link>"
+                f"<guid isPermaLink=\"true\">{base}/book/{b.key}/</guid>"
+                f"<description>{xml_escape(f'{b.publisher}・{when}')}</description>"
+                + (f"<pubDate>{pub}</pubDate>" if pub else "")
+                + "</item>"
+            )
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<rss version="2.0"><channel>'
+            f"<title>{xml_escape(name)}の新刊（{SITE_NAME}）</title>"
+            f"<link>{base}/series/{sid}/</link>"
+            f"<description>{xml_escape(name)}の新刊が載ったらお知らせします。</description>"
+            "<language>ja</language>"
+            + "".join(entries)
+            + "</channel></rss>"
+        )
+        target = Path(w.out) / "series" / str(sid) / "feed.xml"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(xml, encoding="utf-8")
+
+
+# ---- お気に入り ----
+def build_favorites(site, w):
+    root = "../"
+    ctx = {"crumbs": crumbs(root, ("お気に入り", None)), "favorites_js": True}
+    page = page_defaults(title=f"お気に入り｜{SITE_NAME}", description="お気に入りに登録した作品の新刊をまとめて見られます。", menu="favorites", noindex=True)
+    w.write("favorites/index.html", "favorites.html", page, **ctx)
+
+
 # ---- 検索 ----
 def build_search(site, w):
     root = "../"
@@ -721,7 +834,7 @@ def build_search(site, w):
         stores = {s["kind"]: s["url"] for s in site.stores(b)}
         items.append({
             "t": b.title, "p": b.publisher, "l": b.label or "", "a": site.author_text(b), "d": b.release.isoformat() if b.release else "",
-            "e": bool(b.has_ebook), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "c": b.cover_url, "ia": site.alt(b),
+            "e": bool(b.has_ebook), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "c": b.cover_url, "ia": site.alt(b), "sr": b.series_id,
         })
     target = Path(w.out) / "search" / "index.json"
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -817,7 +930,7 @@ def build_sitemap(site, w, site_url):
     urls = []
     for p in sorted(Path(w.out).rglob("index.html")):
         rel = p.relative_to(w.out).as_posix()[: -len("index.html")]
-        if rel.startswith("contact/thanks/"):
+        if rel.startswith(("contact/thanks/", "favorites/")):
             continue
         urls.append(f"{base}/{rel}")
     body = "".join(f"<url><loc>{u}</loc></url>" for u in urls)

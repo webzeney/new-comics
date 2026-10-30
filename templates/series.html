@@ -12,6 +12,10 @@
 </div>
 <h1 id="series-title" class="series__title">{{ series.name }}</h1>
 {% if series.authors %}<span class="book__authors">{% for a in series.authors %}{% if not loop.first %}／{% endif %}{% if a.role %}{{ a.role }}：{% endif %}<a href="{{ a.url }}" class="book__author">{{ a.name }}</a>{% endfor %}</span>{% endif %}
+<div class="series__actions">
+<button type="button" aria-pressed="false" class="fav_button" data-fav-id="{{ fav.id }}" data-fav-name="{{ fav.name }}" data-fav-url="{{ fav.url }}"><span aria-hidden="true" class="fav_button__icon">☆</span><span class="fav_button__label">この作品をお気に入りに追加</span></button>
+<a href="{{ feed_url }}" class="chip_link">RSSで新刊を受け取る</a>
+</div>
 </div>
 <div class="stats stats--series">
 <div class="stat stat--main">

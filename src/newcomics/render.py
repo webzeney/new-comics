@@ -12,6 +12,7 @@ MENU = [
     ("calendar", "新刊カレンダー", "calendar/"),
     ("publisher", "出版社から探す", "publisher/"),
     ("label", "レーベルから探す", "label/"),
+    ("favorites", "お気に入り", "favorites/"),
     ("feature", "特集", "feature/"),
     ("updates", "発売日の変更・決定", "updates/"),
 ]

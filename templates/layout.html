@@ -7,6 +7,7 @@
 <meta name="description" content="{{ page.description }}">
 {% if page.get('noindex') %}<meta name="robots" content="noindex">{% endif %}
 {% if page.canonical %}<link rel="canonical" href="{{ page.canonical }}">{% endif %}
+{% if page.get('feed') %}<link rel="alternate" type="application/rss+xml" title="{{ page.feed.title }}" href="{{ page.feed.url }}">{% endif %}
 
 <meta property="og:type" content="{{ 'website' if page.is_top else 'article' }}">
 <meta property="og:title" content="{{ page.title }}">

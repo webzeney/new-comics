@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb %}
+{% block content %}
+<section aria-labelledby="fav-title" class="panel panel--head">
+{{ breadcrumb(crumbs) }}
+<div class="heading">
+<span class="heading__en">FAVORITE</span>
+<h1 id="fav-title" class="heading__title">お気に入り</h1>
+<p class="heading__lead">お気に入りに登録した作品の新刊をまとめて表示します。作品ページや本のページの「お気に入りに追加」から登録できます。お気に入りはこのブラウザに保存されます。</p>
+</div>
+<div class="filter" data-fav-list hidden>
+<span class="filter__label">登録中の作品</span>
+</div>
+</section>
+<section aria-labelledby="fav-list-title" class="panel">
+<div class="section_head section_head--title">
+<h2 id="fav-list-title" class="section_head__title">お気に入りの新刊<span class="heading__count" data-fav-count>0点</span></h2>
+</div>
+<ul class="booklist" data-fav-books></ul>
+<p class="empty" data-fav-empty>お気に入りに登録した作品は、まだありません。</p>
+</section>
+{{ ad() }}
+<template id="fav-row-template">
+<li class="bookrow">
+<a href="#" class="bookrow__cover" data-book-url>
+<span class="bookrow__image">書影</span>
+</a>
+<div class="bookrow__info">
+<div class="badges badges--center">
+<span class="badge" data-field="date"></span>
+<span class="badge" data-field="pub"></span>
+<span class="badge badge--ebook" data-field="ebook">電子版あり</span>
+</div>
+<a href="#" class="bookrow__title" data-book-url data-field="title"></a>
+<span class="bookrow__meta" data-field="meta"></span>
+</div>
+<div class="bookrow__stores">
+<a href="#" class="store_tile bookrow__store" aria-label="Amazonで購入" title="Amazon" rel="sponsored noopener" target="_blank" data-store="amazon">Amazon</a>
+<a href="#" class="store_tile store_tile--rakuten bookrow__store" aria-label="楽天ブックスで購入" title="楽天ブックス" rel="sponsored noopener" target="_blank" data-store="rakuten">楽天</a>
+<a href="#" class="store_tile store_tile--seven bookrow__store" aria-label="セブンネットショッピングで購入" title="セブンネットショッピング" rel="sponsored noopener" target="_blank" data-store="seven">セブン
+ネット</a>
+</div>
+</li>
+</template>
+{% endblock %}
+{% block scripts %}
+{% if favorites_js %}<script src="{{ root }}assets/js/favorites.js" defer></script>{% endif %}
+{% endblock %}

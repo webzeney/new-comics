@@ -18,6 +18,7 @@
 <h1 id="book-title" class="book__title">{{ book.title_main }}{% if book.volume %} <span class="en">{{ book.volume }}</span>巻{% endif %}{% if book.title_rest %} {{ book.title_rest }}{% endif %}</h1>
 {% if book.authors %}<span class="book__authors">{% for a in book.authors %}{% if not loop.first %}／{% endif %}{% if a.role %}{{ a.role }}：{% endif %}<a href="{{ a.url }}" class="book__author">{{ a.name }}</a>{% endfor %}</span>{% endif %}
 </div>
+{% if book.fav %}<button type="button" aria-pressed="false" class="fav_button" data-fav-id="{{ book.fav.id }}" data-fav-name="{{ book.fav.name }}" data-fav-url="{{ book.fav.url }}"><span aria-hidden="true" class="fav_button__icon">☆</span><span class="fav_button__label">この作品をお気に入りに追加</span></button>{% endif %}
 <div class="book__facts">
 <div class="book__fact book__fact--date">
 <span class="book__fact_label">発売日</span>
@@ -36,6 +37,15 @@
 {{ store_buttons(book.stores, '') }}
 <span class="book__buy_note">価格・発売日・在庫は各販売店のページでご確認ください。</span>
 </div>
+{% if book.gcal %}
+<div class="calendar_add">
+<span class="calendar_add__title">発売日をカレンダーに追加</span>
+<div class="calendar_add__links">
+<a href="{{ book.gcal }}" class="chip_link" target="_blank" rel="noopener">Googleカレンダー</a>
+<button type="button" class="chip_link chip_link--button" data-ics-name="{{ book.ics_name }}" data-ics-start="{{ book.ics_date }}" data-ics-end="{{ book.ics_end }}" data-ics-file="{{ book.isbn or 'release' }}.ics">iPhone・その他（.ics）</button>
+</div>
+</div>
+{% endif %}
 <dl class="book__data">
 <dt class="book__data_term">出版社</dt><dd class="book__data_desc"><a href="{{ book.pub_url }}">{{ book.pub }}</a></dd>
 {% if book.label %}<dt class="book__data_term">レーベル</dt><dd class="book__data_desc"><a href="{{ book.label_url }}">{{ book.label }}</a></dd>{% endif %}

@@ -48,7 +48,7 @@
 <h3 class="group__title"><span class="group__date">{{ g.md }}</span>（{{ g.dow }}）<span class="group__count">{{ g.books|length }}点</span>{% if g.on_sale %}<span class="group__onsale">発売中</span>{% endif %}</h3>
 <ul class="booklist">
 {% for b in g.books %}
-{% if listing.kind == 'tag' %}
+{% if listing.kind in ('tag', 'author') %}
 {{ bookrow(b, b.pub, b.meta, final_badge=listing.final_badge) }}
 {% else %}
 {{ bookrow(b, b.label or b.pub, b.meta) }}

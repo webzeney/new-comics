@@ -479,6 +479,20 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .contact__actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
 .contact__back{min-width:200px;min-height:56px;padding:0 28px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .contact__submit--link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+/* ==========================================================================
+お気に入り・カレンダー追加・RSS
+========================================================================== */
+.fav_button{align-self:flex-start;box-sizing:content-box;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
+.fav_button[aria-pressed="true"]{background:#FFD15C}
+.fav_button__icon{font-size:15px;line-height:1}
+.series__actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.calendar_add{display:flex;flex-direction:column;gap:8px}
+.calendar_add__title{font-size:13px;font-weight:900}
+.calendar_add__links{display:flex;flex-wrap:wrap;gap:8px}
+.chip_link--button{box-sizing:content-box;background:#FFFFFF;font-family:inherit;color:#222222;cursor:pointer}
+.fav_chip{display:inline-flex;align-items:center;min-height:36px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;overflow:hidden}
+.fav_chip__link{padding:0 6px 0 14px;font-size:12px;font-weight:700;text-decoration:none}
+.fav_chip__remove{min-width:32px;min-height:32px;border:0;background:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:#5A5148}
 
 @media (max-width: 720px){
 .sidemenu__toggle{display:flex}

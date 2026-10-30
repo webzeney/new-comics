@@ -283,10 +283,63 @@ b.textContent = open ? b.dataset.lessLabel : b.dataset.moreLabel;
 });
 }
 
+/* お気に入り（作品単位・このブラウザに保存） */
+var FAV_KEY = 'nc_favorites';
+function loadFavs() {
+try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]') || []; } catch (e) { return []; }
+}
+function saveFavs(list) {
+try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
+}
+function initFavButtons() {
+$$('[data-fav-id]').forEach(function (b) {
+var id = String(b.dataset.favId);
+var label = $('.fav_button__label', b);
+var icon = $('.fav_button__icon', b);
+function paint() {
+var on = loadFavs().some(function (f) { return String(f.id) === id; });
+b.setAttribute('aria-pressed', on ? 'true' : 'false');
+if (label) label.textContent = on ? 'お気に入りに登録済み' : 'この作品をお気に入りに追加';
+if (icon) icon.textContent = on ? '★' : '☆';
+}
+b.addEventListener('click', function () {
+var list = loadFavs();
+var exists = list.some(function (f) { return String(f.id) === id; });
+list = exists ? list.filter(function (f) { return String(f.id) !== id; }) : list.concat([{ id: id, name: b.dataset.favName, url: b.dataset.favUrl }]);
+saveFavs(list);
+paint();
+});
+paint();
+});
+}
+
+/* 本のページ：発売日をカレンダー（.ics）に追加 */
+function initIcs() {
+$$('[data-ics-start]').forEach(function (b) {
+b.addEventListener('click', function () {
+var esc = function (t) { return String(t).replace(/[\;,]/g, function (c) { return '\\' + c; }); };
+var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//new-comics.jp//JA', 'BEGIN:VEVENT',
+'UID:' + b.dataset.icsStart + '-' + b.dataset.icsFile + '@new-comics.jp',
+'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z'),
+'DTSTART;VALUE=DATE:' + b.dataset.icsStart, 'DTEND;VALUE=DATE:' + b.dataset.icsEnd,
+'SUMMARY:' + esc(b.dataset.icsName), 'URL:' + location.href.split('#')[0], 'END:VEVENT', 'END:VCALENDAR'];
+var blob = new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/calendar' });
+var a = document.createElement('a');
+a.href = URL.createObjectURL(blob);
+a.download = b.dataset.icsFile;
+document.body.appendChild(a);
+a.click();
+setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+});
+});
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 initSidemenu();
 initTicker();
 initFilterMore();
+initFavButtons();
+initIcs();
 initReleaseTabs();
 initDayPage();
 initCalendar();
