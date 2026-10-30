@@ -80,6 +80,31 @@ $('[data-filter-note]').textContent = filterNote(selected);
 });
 }
 
+/* なめらかなスクロール */
+function smoothScrollTo(target) {
+if (!target) return;
+var start = window.pageYOffset;
+var end = Math.max(0, Math.min(target.getBoundingClientRect().top + start - 16, document.documentElement.scrollHeight - window.innerHeight));
+var distance = end - start;
+if (Math.abs(distance) < 2) return;
+if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { window.scrollTo(0, end); return; }
+var duration = Math.min(1100, Math.max(600, Math.abs(distance) * 0.6));
+var begin = null;
+var stopped = false;
+var stop = function () { stopped = true; };
+var events = ['wheel', 'touchstart', 'keydown', 'mousedown'];
+events.forEach(function (name) { window.addEventListener(name, stop, { passive: true, once: true }); });
+var ease = function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+function step(now) {
+if (stopped) return;
+if (begin === null) begin = now;
+var t = Math.min(1, (now - begin) / duration);
+window.scrollTo(0, start + distance * ease(t));
+if (t < 1) { requestAnimationFrame(step); } else { events.forEach(function (name) { window.removeEventListener(name, stop); }); }
+}
+requestAnimationFrame(step);
+}
+
 /* カレンダー */
 function initCalendar() {
 var root = $('[data-calendar]');
@@ -154,6 +179,7 @@ cell.addEventListener('click', function () {
 if (cell.disabled) return;
 state.day = Number(cell.dataset.day);
 render();
+smoothScrollTo($('.dayrelease'));
 });
 });
 initPubFilter(root, function (selected) { state.pubs = selected; render(); });
