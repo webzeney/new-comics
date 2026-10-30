@@ -63,6 +63,11 @@ jobs:
           else
             python -m newcomics.fetch
           fi
+      - name: セブンネットの取り扱い確認
+        continue-on-error: true
+        env:
+          PYTHONPATH: src
+        run: python -m newcomics.sevencheck
       - name: 件数の集計
         env:
           PYTHONPATH: src

@@ -57,7 +57,7 @@ def parse(d):
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "first_seen", "tags", "key",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key",
     )
 
     def __init__(self, row, tags):
@@ -87,6 +87,7 @@ class Book:
             self.image, self.cover_url = image, self.rakuten_url
         else:
             self.image, self.cover_url = None, None
+        self.seven_ok = row["seven_ok"] if "seven_ok" in row.keys() else None
         self.first_seen = row["first_seen_at"]
         self.tags = tags
         self.key = self.isbn13 or f"b{self.id}"
@@ -151,11 +152,14 @@ class Site:
                 amazon += f"&tag={quote(tag)}"
         rakuten = b.rakuten_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}"
         seven = f"https://7net.omni7.jp/detail_isbn/{b.isbn13}" if b.isbn13 else f"https://7net.omni7.jp/search/?keyword={quote(q)}"
-        return [
+        out = [
             {"name": "Amazon", "short": "Amazon", "kind": "amazon", "button": "Amazon", "url": amazon},
             {"name": "楽天ブックス", "short": "楽天", "kind": "rakuten", "button": "楽天ブックス", "url": rakuten},
-            {"name": "セブンネットショッピング", "short": "セブン\nネット", "kind": "seven", "button": "セブンネット", "url": seven},
         ]
+        # セブンネットで取り扱いがないと確認できた本は、セブンネットのボタンを出さない
+        if b.seven_ok != 0:
+            out.append({"name": "セブンネットショッピング", "short": "セブン\nネット", "kind": "seven", "button": "セブンネット", "url": seven})
+        return out
 
     @staticmethod
     def author_text(b):

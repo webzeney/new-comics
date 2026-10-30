@@ -94,6 +94,8 @@ MIGRATIONS = [
     ("books", "rakuten_url", "TEXT"),
     ("books", "origin", "TEXT NOT NULL DEFAULT 'publisher'"),
     ("publishers", "is_adult", "INTEGER NOT NULL DEFAULT 0"),
+    ("books", "seven_ok", "INTEGER"),
+    ("books", "seven_checked_at", "TEXT"),
 ]
 
 
