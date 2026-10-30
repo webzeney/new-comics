@@ -84,6 +84,9 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .chip{min-height:36px;padding:0 14px;border-radius:999px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #222222;background:#FFFFFF;color:#222222}
 .chip[aria-pressed="true"]{background:#222222;color:#FFFFFF}
 .chip__count{font-family:Fredoka,sans-serif;font-weight:600;margin-left:6px}
+.chip--more{border-style:dashed}
+.filter__more{display:contents}
+.filter__more[hidden]{display:none}
 .chip_link{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border:2px solid #222222;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none}
 .toggle_button{min-height:40px;padding:0 16px;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
 .toggle_button[aria-pressed="true"],.toggle_button[aria-current="page"]{background:#222222;color:#FFFFFF}

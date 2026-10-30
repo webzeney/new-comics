@@ -269,9 +269,24 @@ set();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(set);
 }
 
+/* カレンダー：出版社の絞り込みボタンの折りたたみ */
+function initFilterMore() {
+$$('.chip--more').forEach(function (b) {
+var box = document.getElementById(b.getAttribute('aria-controls'));
+if (!box) return;
+b.addEventListener('click', function () {
+var open = b.getAttribute('aria-expanded') !== 'true';
+b.setAttribute('aria-expanded', open ? 'true' : 'false');
+box.hidden = !open;
+b.textContent = open ? b.dataset.lessLabel : b.dataset.moreLabel;
+});
+});
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 initSidemenu();
 initTicker();
+initFilterMore();
 initReleaseTabs();
 initDayPage();
 initCalendar();

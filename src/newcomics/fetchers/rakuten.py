@@ -55,8 +55,14 @@ def parse_sales_date(text):
 def label_name(series):
     """楽天の seriesName はレーベル名。末尾にレーベル内の通し番号が付くことがあるので外す。"""
     t = clean_title(nfkc(series))
-    t = re.sub(r"\s+\d+$", "", t)
-    return t or None
+    # 末尾の通し番号（「457」「CM1511」「CMPTH50」「F35」「シリーズ069」の数字など）を外す
+    t = re.sub(r"\s+[A-Z]{0,6}\d+$", "", t)
+    t = re.sub(r"(?<=シリーズ)\d+$", "", t)
+    # 「ハーレクインコミックス ハーレクインコミックス」のように同じ名前が2回続くときは1つにする
+    m = re.fullmatch(r"(.+?)\s+\1", t)
+    if m:
+        t = m.group(1)
+    return clean_title(t) or None
 
 
 def parse_authors(text):

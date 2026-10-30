@@ -28,9 +28,17 @@
 <div class="filter">
 <span class="filter__label">出版社で絞り込む</span>
 <button type="button" aria-pressed="true" class="chip" data-pub="">すべて</button>
-{% for p in publishers %}
+{% for p in publishers[:8] %}
 <button type="button" aria-pressed="false" class="chip" data-pub="{{ p }}">{{ p }}</button>
 {% endfor %}
+{% if publishers|length > 8 %}
+<div id="filter-more" class="filter__more" hidden>
+{% for p in publishers[8:] %}
+<button type="button" aria-pressed="false" class="chip" data-pub="{{ p }}">{{ p }}</button>
+{% endfor %}
+</div>
+<button type="button" aria-expanded="false" aria-controls="filter-more" class="chip chip--more" data-more-label="ほかの出版社（{{ publishers|length - 8 }}社）" data-less-label="閉じる">ほかの出版社（{{ publishers|length - 8 }}社）</button>
+{% endif %}
 </div>
 <div class="calendar__grid">
 <div>

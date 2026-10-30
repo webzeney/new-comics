@@ -30,6 +30,12 @@ class RakutenTest(unittest.TestCase):
         self.assertEqual(rakuten.parse_sales_date("2026年11月上旬"), (None, "2026-11"))
         self.assertEqual(rakuten.parse_sales_date("2026年11月04日頃"), ("2026-11-04", "2026-11"))
         self.assertEqual(rakuten.label_name("ヴァルキリーコミックス　457"), "ヴァルキリーコミックス")
+        self.assertEqual(rakuten.label_name("ハーレクインコミックス　ハーレクインコミックス　CM1511"), "ハーレクインコミックス")
+        self.assertEqual(rakuten.label_name("ハーレクインコミックス・キララ ハーレクインコミックス・キララ CMK1242"), "ハーレクインコミックス・キララ")
+        self.assertEqual(rakuten.label_name("ハーパーコリンズ・フィクション ハーパーコリンズ・フィクション F35"), "ハーパーコリンズ・フィクション")
+        self.assertEqual(rakuten.label_name("H&C Comics iHertZシリーズ069"), "H&C Comics iHertZシリーズ")
+        self.assertEqual(rakuten.label_name("ちゃおコミックス スペシャル"), "ちゃおコミックス スペシャル")
+        self.assertEqual(rakuten.label_name("ガンガンコミックスUP!"), "ガンガンコミックスUP!")
         self.assertEqual(rakuten.parse_sales_date("2027年"), (None, "2027-12"))
 
     def test_record(self):

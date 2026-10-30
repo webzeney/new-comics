@@ -16,7 +16,7 @@ from urllib.parse import quote
 
 import holidays as holidays_lib
 
-from . import db
+from . import db, yomi
 from .normalize import isbn13_to_10
 from .render import Writer, page_defaults
 
@@ -683,10 +683,13 @@ def build_listings(site, w):
         w.write(f"tag/{slug}/index.html", "listing.html", page, **ctx)
     # 一覧ページ
     root1 = "../"
-    pubs = [{"name": f"{p['name']}（{p['count']}）", "url": f"{root1}publisher/{p['slug']}/"} for p in site.publishers]
+    pub_groups = OrderedDict((row, []) for row, _ in yomi.ROWS)
+    pub_groups[yomi.OTHER] = []
+    for p in sorted(site.publishers, key=lambda p: yomi.sort_key(p["name"])):
+        pub_groups[yomi.row_of(p["name"])].append({"name": f"{p['name']}（{p['count']}）", "url": f"{root1}publisher/{p['slug']}/"})
     w.write("publisher/index.html", "index_list.html", page_defaults(title=f"出版社から探す｜{SITE_NAME}", description="出版社ごとの漫画新刊発売予定。", menu="publisher"),
             crumbs=crumbs(root1, ("出版社から探す", None)), heading={"en": "PUBLISHER", "title": "出版社から探す", "lead": "出版社を選ぶと、その出版社の新刊発売予定を一覧で見られます。"},
-            groups=[{"title": "出版社", "links": pubs}])
+            groups=[{"title": k, "links": v} for k, v in pub_groups.items() if v])
     label_groups = OrderedDict()
     counts = defaultdict(int)
     for b in site.dated:
