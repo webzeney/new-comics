@@ -15,24 +15,15 @@
 <meta property="og:site_name" content="漫画新刊JP">
 {% if page.canonical %}<meta property="og:url" content="{{ page.canonical }}">{% endif %}
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Yusei+Magic&amp;family=Noto+Sans+JP:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ root }}assets/css/style.css">
-
-<script src="{{ root }}assets/js/main.js" defer></script>
-{% if ga4_id %}
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ ga4_id }}');</script>
-{% endif %}
+<?php readfile(__DIR__ . '/{{ root }}assets/partials/{{ inc.head }}'); ?>
 </head>
 <body>
 <div class="page">
 <div class="page__inner">
-{% include "_sidemenu.html" %}
+<?php readfile(__DIR__ . '/{{ root }}assets/partials/{{ inc.sidemenu }}'); ?>
 <main class="page__main">
 {% block content %}{% endblock %}
-{% include "_footer.html" %}
+<?php readfile(__DIR__ . '/{{ root }}assets/partials/{{ inc.footer }}'); ?>
 </main>
 </div>
 </div>
