@@ -4,7 +4,4 @@
 <link rel="stylesheet" href="{{ root }}assets/css/style.css">
 
 <script src="{{ root }}assets/js/main.js" defer></script>
-{% if ga4_id %}
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ ga4_id }}');</script>
-{% endif %}
+{% include "_analytics.html" %}

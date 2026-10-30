@@ -283,10 +283,7 @@ def build_partials(site, w):
     dest.mkdir(parents=True, exist_ok=True)
     for name in ("sidemenu", "footer"):
         (dest / f"{name}.html").write_text(w.env.get_template(f"_{name}.html").render(**ctx), encoding="utf-8")
-    ga = ""
-    if w.ga4_id:
-        ga = (f'<script async src="https://www.googletagmanager.com/gtag/js?id={w.ga4_id}"></script>\n'
-              f"<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','{w.ga4_id}');</script>\n")
+    ga = w.env.get_template("_analytics.html").render(ga4_id=w.ga4_id)
     (dest / "analytics.html").write_text(ga, encoding="utf-8")
 
 
