@@ -4,7 +4,6 @@
 サーバーにはもとから .htaccess があるため、上書きはせず、決まった印のついた行がなければ末尾に足すだけにする。
 足す前の .htaccess は「.htaccess.nc-backup」として同じ場所に残す（.ht で始まるのでブラウザからは見えない）。
 公開リポジトリの Actions ログは誰でも見られるため、.htaccess の中身は出力しない。
-あわせて、動作確認用に送った _probe フォルダを消す。
 """
 import ftplib
 import io
@@ -13,7 +12,6 @@ import sys
 
 MARK = "# new-comics: html-php"
 BLOCK = MARK + "\n<FilesMatch \"\\.html$\">\nAddHandler php-script .php .html\n</FilesMatch>\n"
-PROBE = "_probe"
 
 
 def read(ftp, name):
@@ -41,35 +39,6 @@ def patched(current):
     return (text + BLOCK).encode("utf-8", errors="surrogateescape")
 
 
-def remove_tree(ftp, path):
-    try:
-        names = ftp.nlst(path)
-    except ftplib.error_perm:
-        return 0
-    count = 0
-    for n in names:
-        base = n.rsplit("/", 1)[-1]
-        if base in (".", ".."):
-            continue
-        full = n if "/" in n else f"{path}/{n}"
-        try:
-            ftp.delete(full)
-            count += 1
-        except ftplib.error_perm:
-            count += remove_tree(ftp, full)
-    for hidden in (".htaccess", ".nc-sync-state.json"):
-        try:
-            ftp.delete(f"{path}/{hidden}")
-            count += 1
-        except ftplib.error_perm:
-            pass
-    try:
-        ftp.rmd(path)
-    except ftplib.error_perm:
-        pass
-    return count
-
-
 def main():
     ftp = ftplib.FTP_TLS(os.environ["FTP_SERVER"], timeout=60)
     ftp.login(os.environ["FTP_USERNAME"], os.environ["FTP_PASSWORD"])
@@ -88,9 +57,6 @@ def main():
             print(".htaccess：書き込んだ内容を確かめられませんでした")
             return 1
         print(".htaccess：.html を PHP として動かす設定を末尾に足しました")
-    removed = remove_tree(ftp, PROBE)
-    if removed:
-        print(f"動作確認用のファイルを消しました（{removed} 件）")
     ftp.quit()
     return 0
 
