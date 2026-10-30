@@ -85,7 +85,7 @@
 <div role="tabpanel" id="release-panel-{{ loop.index }}" aria-labelledby="release-tab-{{ loop.index }}" class="release__grid"{% if not loop.first %} hidden{% endif %}>
 {% for b in r.books %}
 <article class="card">
-<a href="{{ b.cover_url or b.url }}" class="card__cover"{% if b.cover_url %} rel="sponsored noopener" target="_blank"{% endif %}>
+<a href="{{ b.url }}" class="card__cover">
 <div class="card__image">{{ cover_photo(b.image, b.alt) }}</div>
 <span class="card__bubble{% if b.bubble_kind %} card__bubble--{{ b.bubble_kind }}{% endif %}">{{ b.bubble }}</span>
 </a>

@@ -102,8 +102,6 @@ $('[data-field="pub"]', li).textContent = b.pub;
 $('[data-field="title"]', li).textContent = b.title;
 var cover = $('.bookrow__image', li);
 if (cover && b.i) { var img = document.createElement('img'); img.src = b.i; img.alt = b.ia || ''; img.className = 'cover_photo'; img.loading = 'lazy'; cover.textContent = ''; cover.appendChild(img); }
-var coverLink = $('.bookrow__cover', li);
-if (coverLink && b.c) { coverLink.href = b.c; coverLink.rel = 'sponsored noopener'; coverLink.target = '_blank'; }
 $('[data-field="meta"]', li).textContent = b.meta;
 if (!b.ebook) $('[data-field="ebook"]', li).remove();
 if (!b.first) $('[data-field="first"]', li).remove();

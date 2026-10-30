@@ -29,7 +29,7 @@
 
 {% macro bookrow(b, chip, meta, top=False, final_badge=False, date_badge=False) -%}
 <li class="bookrow{% if top %} bookrow--top{% endif %}" data-pub="{{ b.pub }}">
-<a href="{{ b.cover_url or b.url }}" class="bookrow__cover{% if final_badge %} bookrow__cover--badge{% endif %}"{% if b.cover_url %} rel="sponsored noopener" target="_blank"{% endif %}>
+<a href="{{ b.url }}" class="bookrow__cover{% if final_badge %} bookrow__cover--badge{% endif %}">
 <span class="bookrow__image">{{ cover_photo(b.image, b.alt) }}</span>
 {% if final_badge %}<span class="bookrow__final">完結</span>{% endif %}
 </a>

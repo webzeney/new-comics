@@ -447,7 +447,7 @@ def calendar_context(site, root, y, m, months):
 
 def compact_row(site, root, b):
     stores = {s["kind"]: s["url"] for s in site.stores(b)}
-    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook), "first": b.is_first, "stores": stores, "i": b.image, "c": b.cover_url, "ia": site.alt(b)}
+    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook), "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
 
 
 # ---- 日別一覧 ----
@@ -834,7 +834,7 @@ def build_search(site, w):
         stores = {s["kind"]: s["url"] for s in site.stores(b)}
         items.append({
             "t": b.title, "p": b.publisher, "l": b.label or "", "a": site.author_text(b), "d": b.release.isoformat() if b.release else "",
-            "e": bool(b.has_ebook), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "c": b.cover_url, "ia": site.alt(b), "sr": b.series_id,
+            "e": bool(b.has_ebook), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "ia": site.alt(b), "sr": b.series_id,
         })
     target = Path(w.out) / "search" / "index.json"
     target.parent.mkdir(parents=True, exist_ok=True)

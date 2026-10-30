@@ -42,8 +42,6 @@ $('[data-field="pub"]', li).textContent = item.p;
 $('[data-field="title"]', li).textContent = item.t;
 var cover = $('.bookrow__image', li);
 if (cover && item.i) { var img = document.createElement('img'); img.src = item.i; img.alt = item.ia || ''; img.className = 'cover_photo'; img.loading = 'lazy'; cover.textContent = ''; cover.appendChild(img); }
-var coverLink = $('.bookrow__cover', li);
-if (coverLink && item.c) { coverLink.href = item.c; coverLink.rel = 'sponsored noopener'; coverLink.target = '_blank'; }
 $('[data-field="meta"]', li).textContent = item.m;
 if (!item.e) $('[data-field="ebook"]', li).remove();
 $$('[data-store]', li).forEach(function (a) { var u = item.s && item.s[a.dataset.store]; if (u) { a.href = u; } else { a.remove(); } });

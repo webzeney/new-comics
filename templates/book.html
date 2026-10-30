@@ -73,7 +73,7 @@
 <li class="slider__item">
 {% if v.cover_url %}
 <div class="slider__link">
-<a href="{{ v.cover_url }}" class="cover_link" rel="sponsored noopener" target="_blank"><span class="cover">{{ cover_photo(v.image, v.alt) }}</span></a>
+<a href="{{ v.url }}" class="cover_link"><span class="cover">{{ cover_photo(v.image, v.alt) }}</span></a>
 <a href="{{ v.url }}" class="slider__label">{{ v.label }}</a>
 </div>
 {% else %}
@@ -112,7 +112,7 @@
 {% for b in sameday.books %}
 {% if b.cover_url %}
 <div class="sameday__item">
-<a href="{{ b.cover_url }}" class="cover_link" rel="sponsored noopener" target="_blank"><span class="cover">{{ cover_photo(b.image, b.alt) }}</span></a>
+<a href="{{ b.url }}" class="cover_link"><span class="cover">{{ cover_photo(b.image, b.alt) }}</span></a>
 <a href="{{ b.url }}" class="sameday__text">
 <span class="sameday__pub">{{ b.pub }}</span>
 <span class="sameday__title">{{ b.title }}</span>
