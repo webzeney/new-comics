@@ -39,7 +39,7 @@
 </div>
 {% endif %}
 </div>
-{% if forecast %}<p class="series__note">次巻予測は過去の発売間隔（平均約<span class="en en--light">{{ forecast.interval }}</span>か月）からの目安です。</p>{% endif %}
+{% if forecast %}<p class="series__note">次巻予測は過去の発売間隔（平均約<span class="en">{{ forecast.interval }}</span>か月）からの目安です。</p>{% endif %}
 </section>
 <section aria-labelledby="latest-title" class="panel">
 <div class="latest__head">
@@ -78,7 +78,7 @@
 {% if v.latest %}<span class="volumes__latest">最新刊</span>{% endif %}
 <a href="{{ v.url }}" class="volumes__text">
 <span class="volumes__no">{{ v.no }}<span class="ja">巻</span></span>
-<span class="volumes__date"><span class="en en--light">{{ v.date }}</span> 発売</span>
+<span class="volumes__date"><span class="en">{{ v.date }}</span> 発売</span>
 </a>
 </div>
 {% else %}
@@ -86,7 +86,7 @@
 <span class="cover">{{ cover_photo(v.image, v.alt) }}</span>
 {% if v.latest %}<span class="volumes__latest">最新刊</span>{% endif %}
 <span class="volumes__no">{{ v.no }}<span class="ja">巻</span></span>
-<span class="volumes__date"><span class="en en--light">{{ v.date }}</span> 発売</span>
+<span class="volumes__date"><span class="en">{{ v.date }}</span> 発売</span>
 </a>
 {% endif %}
 </li>

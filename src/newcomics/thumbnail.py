@@ -16,7 +16,7 @@ ACCENT = (181, 48, 42)
 CREAM = (255, 246, 236)
 
 JP_FONT = os.environ.get("NC_FONT_JP", "/usr/share/fonts/opentype/noto/NotoSansCJK-Black.ttc")
-EN_FONT = os.environ.get("NC_FONT_EN", str(Path(__file__).resolve().parent / "fonts" / "Fredoka-700.ttf"))
+EN_FONT = os.environ.get("NC_FONT_EN", str(Path(__file__).resolve().parent / "fonts" / "YuseiMagic-Regular.ttf"))
 
 
 def font_jp(size):
@@ -25,6 +25,19 @@ def font_jp(size):
 
 def font_en(size):
     return ImageFont.truetype(EN_FONT, size)
+
+
+def en_width(d, text, font, spacing=0.1):
+    """英字を文字間 spacing（em）で並べたときの幅。"""
+    return sum(d.textlength(c, font=font) for c in text) + font.size * spacing * (len(text) - 1)
+
+
+def en_text(d, xy, text, font, fill, spacing=0.1):
+    """英字を文字間 spacing（em）を空けて1文字ずつ描く。"""
+    x, y = xy
+    for c in text:
+        d.text((x, y), c, font=font, fill=fill)
+        x += d.textlength(c, font=font) + font.size * spacing
 
 
 def logo(draw, x, y, s):
@@ -48,10 +61,10 @@ def make(title_lines, label, out_path, sub=None):
     d.rounded_rectangle((x0 + 12, y0 + 12, x1 + 12, y1 + 12), radius=36, fill=BLACK)
     d.rounded_rectangle((x0, y0, x1, y1), radius=36, fill=WHITE, outline=BLACK, width=5)
     pad = 64
-    d.text((x0 + pad, y0 + 52), "FEATURE", font=font_en(30), fill=ACCENT)
+    en_text(d, (x0 + pad, y0 + 52), "FEATURE", font_en(30), ACCENT, 0.16)
     tag_font = font_jp(26)
     tw = d.textlength(label, font=tag_font)
-    tx = x0 + pad + d.textlength("FEATURE", font=font_en(30)) + 24
+    tx = x0 + pad + en_width(d, "FEATURE", font_en(30), 0.16) + 24
     d.rounded_rectangle((tx, y0 + 48, tx + tw + 36, y0 + 92), radius=22, fill=CREAM)
     d.text((tx + 18, y0 + 52), label, font=tag_font, fill=ACCENT)
     lines = [l for l in title_lines if l][:3]
@@ -71,9 +84,9 @@ def make(title_lines, label, out_path, sub=None):
     d.rectangle((x0 + pad, y1 - 118, x1 - pad, y1 - 115), fill=YELLOW)
     logo(d, x0 + pad, y1 - 96, 60)
     d.text((x0 + pad + 76, y1 - 98), "漫画新刊JP", font=font_jp(32), fill=BLACK)
-    d.text((x0 + pad + 78, y1 - 56), "NEW COMICS JP", font=font_en(20), fill=ACCENT)
+    en_text(d, (x0 + pad + 78, y1 - 56), "NEW COMICS JP", font_en(20), ACCENT)
     url_font = font_en(24)
-    d.text((x1 - pad - d.textlength("new-comics.jp", font=url_font), y1 - 82), "new-comics.jp", font=url_font, fill=BLACK)
+    en_text(d, (x1 - pad - en_width(d, "new-comics.jp", url_font), y1 - 82), "new-comics.jp", url_font, BLACK)
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     img.save(out_path, "PNG", optimize=True)
     return out_path

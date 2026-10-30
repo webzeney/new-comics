@@ -7,6 +7,12 @@
 <div class="book__cover">
 {% if book.cover_url %}<a href="{{ book.cover_url }}" class="book__image" rel="sponsored noopener" target="_blank">{{ cover_photo(book.image, book.alt) }}</a>{% else %}<div class="book__image">{{ cover_photo(book.image, book.alt) }}</div>{% endif %}
 {{ release_bubble('book__bubble', book) }}
+<dl class="book__data">
+<dt class="book__data_term">出版社</dt><dd class="book__data_desc"><a href="{{ book.pub_url }}">{{ book.pub }}</a></dd>
+{% if book.label %}<dt class="book__data_term">レーベル</dt><dd class="book__data_desc"><a href="{{ book.label_url }}">{{ book.label }}</a></dd>{% endif %}
+{% if book.isbn %}<dt class="book__data_term">ISBN</dt><dd class="book__data_desc book__data_desc--en">{{ book.isbn }}</dd>{% endif %}
+{% if book.ebook is not none %}<dt class="book__data_term">電子書籍</dt><dd class="book__data_desc">{{ 'あり' if book.ebook else 'なし' }}</dd>{% endif %}
+</dl>
 </div>
 <div class="book__info">
 <div class="book__tags">
@@ -46,12 +52,6 @@
 </div>
 </div>
 {% endif %}
-<dl class="book__data">
-<dt class="book__data_term">出版社</dt><dd class="book__data_desc"><a href="{{ book.pub_url }}">{{ book.pub }}</a></dd>
-{% if book.label %}<dt class="book__data_term">レーベル</dt><dd class="book__data_desc"><a href="{{ book.label_url }}">{{ book.label }}</a></dd>{% endif %}
-{% if book.isbn %}<dt class="book__data_term">ISBN</dt><dd class="book__data_desc book__data_desc--en">{{ book.isbn }}</dd>{% endif %}
-{% if book.ebook is not none %}<dt class="book__data_term">電子書籍</dt><dd class="book__data_desc">{{ 'あり' if book.ebook else 'なし' }}</dd>{% endif %}
-</dl>
 </div>
 </div>
 </section>
@@ -93,7 +93,7 @@
 <div class="forecast">
 <span class="forecast__badge">次巻予測</span>
 <span class="forecast__text"><span class="en">{{ series.forecast.volume }}</span>巻は<span class="en">{{ series.forecast.year }}</span>年<span class="en">{{ series.forecast.month }}</span>月頃</span>
-<span class="forecast__note">過去の発売間隔（平均約<span class="en en--light">{{ series.forecast.interval }}</span>か月）からの目安です</span>
+<span class="forecast__note">過去の発売間隔（平均約<span class="en">{{ series.forecast.interval }}</span>か月）からの目安です</span>
 </div>
 {% endif %}
 </section>

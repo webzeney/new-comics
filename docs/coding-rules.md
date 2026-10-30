@@ -60,7 +60,7 @@ tests/visual/         見た目の照合（モックアップとの差分）
 
 ## デザイン基準値
 
-- フォント：Noto Sans JP（400/500/700/900）、Fredoka（500/600/700）。Google Fonts から読み込む
+- フォント：Noto Sans JP（400/500/700/900）、Yusei Magic（400のみ）。Google Fonts から読み込む
 - 本文 14px、行送り 1.6
 - 外側の余白 12px、パネル間 12px、パネルの角丸 20px
 
