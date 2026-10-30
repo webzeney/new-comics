@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <?php wp_head(); ?>
+<?php nc_partial('analytics'); ?>
 </head>
 <body>
 <div class="page">
