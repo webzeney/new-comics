@@ -15,15 +15,15 @@
 <meta property="og:site_name" content="漫画新刊JP">
 {% if page.canonical %}<meta property="og:url" content="{{ page.canonical }}">{% endif %}
 
-<?php readfile(__DIR__ . '/{{ root }}assets/partials/{{ inc.head }}'); ?>
+<?php @readfile(__DIR__ . '/{{ root }}assets/partials/{{ inc.head }}'); ?>
 </head>
 <body>
 <div class="page">
 <div class="page__inner">
-<?php readfile(__DIR__ . '/{{ root }}assets/partials/{{ inc.sidemenu }}'); ?>
+<?php @readfile(__DIR__ . '/{{ root }}assets/partials/{{ inc.sidemenu }}'); ?>
 <main class="page__main">
 {% block content %}{% endblock %}
-<?php readfile(__DIR__ . '/{{ root }}assets/partials/{{ inc.footer }}'); ?>
+<?php @readfile(__DIR__ . '/{{ root }}assets/partials/{{ inc.footer }}'); ?>
 </main>
 </div>
 </div>

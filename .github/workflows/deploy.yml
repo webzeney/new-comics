@@ -4,14 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "check＝転送先の確認だけ／deploy＝確認のあと転送／probe＝サーバーの動作確認用ファイルだけ転送"
+        description: "check＝転送先の確認だけ／deploy＝確認のあと転送"
         required: true
         default: check
         type: choice
         options:
           - check
           - deploy
-          - probe
   workflow_run:
     workflows: ["出版社サイトの取得"]
     types: [completed]
@@ -78,37 +77,12 @@ jobs:
               f.write("<?php\nreturn ['to' => " + json.dumps(to) + "];\n")
           print("通知先：" + ("設定あり" if to else "未設定（受信内容はサーバーに保存のみ）"))
           PY
+      - name: .html を PHP として動かす設定（一番上の .htaccess の末尾に追記）
+        if: env.MODE == 'deploy'
+        run: python -m newcomics.htaccess
       - name: 転送
         if: env.MODE == 'deploy'
         run: python -m newcomics.ftpsync --local dist --remote "$FTP_DIR" --exclude 'feature/**' --exclude 'data/**' --exclude '.git*' --workers 3
       - name: 特集のテーマを転送
         if: env.MODE == 'deploy'
         run: python -m newcomics.ftpsync --local wordpress/new-comics --remote "${FTP_DIR%/}/feature/wp-content/themes/new-comics/" --workers 2 --make-base
-      - name: ルートの.htaccessの有無（成功＝あり・失敗＝なし）
-        if: env.MODE == 'probe'
-        continue-on-error: true
-        run: |
-          python - <<'PY'
-          import ftplib, os, sys
-          ftp = ftplib.FTP_TLS(os.environ["FTP_SERVER"], timeout=30)
-          ftp.login(os.environ["FTP_USERNAME"], os.environ["FTP_PASSWORD"])
-          ftp.prot_p()
-          ftp.cwd(os.environ["FTP_DIR"])
-          try:
-              ftp.size(".htaccess")
-              ok = True
-          except ftplib.error_perm:
-              ok = False
-          ftp.quit()
-          sys.exit(0 if ok else 1)
-          PY
-      - name: PHPの動作確認用ファイルを転送
-        if: env.MODE == 'probe'
-        run: |
-          php='<?php echo "PHP-OK"; ?>'
-          for d in a b c d; do mkdir -p probe/$d; printf '%s\n' "$php" > probe/$d/t.html; done
-          printf '%s\n' "$php" > probe/d/t.php
-          printf '<FilesMatch "\\.html$">\nAddHandler php-script .php .html\n</FilesMatch>\n' > probe/a/.htaccess
-          printf 'AddHandler php-script .html\n' > probe/b/.htaccess
-          printf 'AddType application/x-httpd-php .php .html\nAddHandler application/x-httpd-php .php .html\n' > probe/c/.htaccess
-          python -m newcomics.ftpsync --local probe --remote "${FTP_DIR%/}/_probe/" --workers 1 --make-base

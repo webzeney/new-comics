@@ -47,7 +47,9 @@ def local_files(root, excludes, key=b""):
 
 
 def order_key(rel):
-    """HTML などのページを先に、CSS・JS を後に、トップページを最後に送る。"""
+    """ページが読み込む共通部品を最初に、HTML などのページを次に、CSS・JS を後に、トップページを最後に送る。"""
+    if rel.startswith("assets/partials/"):
+        return (-1, rel)
     if rel == "index.html":
         return (3, rel)
     if rel.startswith("assets/"):
@@ -194,7 +196,8 @@ def main(argv=None):
             print("記録を保存しました", flush=True)
 
     # ページ・その他のファイルを並列で送り、CSS・JS とトップページは最後にまとめて送る
-    first = [r for r in todo if order_key(r)[0] < 2]
+    parts = [r for r in todo if order_key(r)[0] < 0]
+    first = [r for r in todo if 0 <= order_key(r)[0] < 2]
     last = [r for r in todo if order_key(r)[0] >= 2]
 
     def run_batch(batch, workers):
@@ -233,7 +236,9 @@ def main(argv=None):
             t.join()
 
     start = time.time()
-    run_batch(first, args.workers)
+    run_batch(parts, args.workers)
+    if not errors:
+        run_batch(first, args.workers)
     if not errors:
         run_batch(last, 1)
     for rel in gone:
