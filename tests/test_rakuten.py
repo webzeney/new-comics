@@ -1,5 +1,7 @@
+import os
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from newcomics import db, publishers, store
@@ -76,6 +78,37 @@ class RakutenTest(unittest.TestCase):
         api = Split()
         rows = rakuten.collect(api, "001001", "2026-10", "2026-12", lambda m: None)
         self.assertEqual(sorted(r["isbn"] for r in rows), ["9784000099001", "9784000099003"])
+
+    def test_collect_reports_gaps(self):
+        class Capped:
+            def search(self, **params):
+                if params.get("genreInformationFlag"):
+                    children = {"001001": [{"booksGenreId": "001001001"}], "001001001": [{"booksGenreId": "001001001001"}]}.get(params["booksGenreId"], [])
+                    return {"GenreInformation": [{"children": children}]}
+                count = {"001001": 5000, "001001001": 4000, "001001001001": 3000}[params["booksGenreId"]]
+                return {"Items": [item("9784000000001", "新 1", "2026年12月01日")], "pageCount": 100, "count": count}
+        report = {}
+        rakuten.collect(Capped(), "001001", "2026-10", "2026-12", lambda m: None, report=report)
+        self.assertEqual(len(report["gaps"]), 3)
+        self.assertIn("001001001001", report["gaps"][0])
+        self.assertIn("1000 件", report["gaps"][1])
+        self.assertIn("1000 件", report["gaps"][2])
+
+    def test_collect_no_gaps(self):
+        report = {}
+        api = FakeApi({1: [item("9784000000012", "A 1", "2026年12月01日")]})
+        rakuten.collect(api, "001001", "2026-10", "2026-12", lambda m: None, report=report)
+        self.assertEqual(report["gaps"], [])
+
+    def test_write_summary(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "s.md"
+            with mock.patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(path)}):
+                rakuten.write_summary("2026-11", "2027-01", 10, 20, [])
+                rakuten.write_summary("2026-11", "2027-01", 10, 20, ["ジャンル 001001001 は"])
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("すべてたどりました", text)
+            self.assertIn("取りこぼしのおそれ", text)
 
     def test_publisher_resolve(self):
         self.assertEqual(publishers.resolve("株式会社 小学館")[:2], ("shogakukan", "小学館"))

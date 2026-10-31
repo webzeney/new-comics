@@ -52,7 +52,8 @@ def probe(api, publisher, start, end):
 
 def genre_mode(api, args, known):
     """コミックのジャンル全体をたどり、判型がコミック以外の本を一覧にする。出版社・シリーズ別の件数も書き出す。"""
-    rows = collect(api, ROOT_GENRE, args.start, args.end, print)
+    report = {}
+    rows = collect(api, ROOT_GENRE, args.start, args.end, print, report=report)
     seen, out = set(), []
     for it in rows:
         isbn = isbn13(it.get("isbn") or "") or (it.get("isbn") or "")
@@ -72,6 +73,8 @@ def genre_mode(api, args, known):
     with open(base + "-summary.tsv", "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, delimiter="\t")
         w.writerow(["区分", "名前", "件数"])
+        for g in report["gaps"]:
+            w.writerow(["たどりきれなかった部分", g, ""])
         for k, v in sizes.most_common():
             w.writerow(["判型（コミックのジャンル全体）", k, v])
         for k, v in Counter(it.get("publisherName") or "" for it, _ in others).most_common():

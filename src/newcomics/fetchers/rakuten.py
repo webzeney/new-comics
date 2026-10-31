@@ -129,11 +129,20 @@ class Api:
         raise RakutenError("再試行しても応答がありません")
 
 
-def collect(api, genre, start_month, end_month, log, depth=0):
-    """genre を発売日の新しい順にたどり、start_month〜end_month の項目を返す。"""
+def collect(api, genre, start_month, end_month, log, depth=0, report=None):
+    """genre を発売日の新しい順にたどり、start_month〜end_month の項目を返す。
+
+    report に dict を渡すと、たどりきれなかったジャンルを report["gaps"] に入れる。
+    """
+    if report is None:
+        report = {}
+    report.setdefault("gaps", [])
+    report.setdefault("totals", {})
     items = []
     for page in range(1, MAX_PAGE + 1):
         data = api.search(booksGenreId=genre, sort="-releaseDate", hits=HITS, page=page, outOfStockFlag=1)
+        if page == 1 and isinstance(data.get("count"), int):
+            report["totals"][genre] = data["count"]
         rows = data.get("Items") or data.get("items") or []
         if not rows:
             return items
@@ -152,18 +161,43 @@ def collect(api, genre, start_month, end_month, log, depth=0):
             return items
     if depth >= 2:
         log(f"{NAME}: ジャンル {genre} は100ページで対象期間をたどりきれませんでした")
+        report["gaps"].append(f"ジャンル {genre} は100ページの上限で対象期間をたどりきれませんでした")
         return items
     info = api.search(booksGenreId=genre, hits=1, genreInformationFlag=1)
     children = [c.get("booksGenreId") or c.get("child", {}).get("booksGenreId") for c in (info.get("GenreInformation") or [{}])[0].get("children", [])]
     children = [c for c in children if c]
     if not children:
         log(f"{NAME}: ジャンル {genre} は100ページで足りず、下位ジャンルもありません")
+        report["gaps"].append(f"ジャンル {genre} は100ページの上限で対象期間をたどりきれず、下位ジャンルもありません")
         return items
     log(f"{NAME}: ジャンル {genre} を下位ジャンル {len(children)} 件に分けて取得します")
     items = []
     for child in children:
-        items.extend(collect(api, child, start_month, end_month, log, depth + 1))
+        items.extend(collect(api, child, start_month, end_month, log, depth + 1, report))
+    totals = report["totals"]
+    if genre in totals and all(c in totals for c in children):
+        rest = totals[genre] - sum(totals[c] for c in children)
+        if rest > 0:
+            log(f"{NAME}: ジャンル {genre} には下位ジャンルに入っていない本が {rest} 件あります")
+            report["gaps"].append(f"ジャンル {genre} には下位ジャンルに入っていない本が {rest} 件あり、分けて取得したときにたどれていません")
     return items
+
+
+def write_summary(start_month, end_month, count, request_count, gaps):
+    """Actions の実行結果のまとめに、楽天の取得がたどりきれたかを書く。"""
+    for gap in gaps:
+        print(f"::warning title={NAME}::{gap}")
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not path:
+        return
+    lines = [f"### {NAME}", "", f"- 対象期間：{start_month}〜{end_month}", f"- 取得件数：{count} 件（API {request_count} 回）"]
+    if gaps:
+        lines.append("- **たどりきれなかった部分があります（取りこぼしのおそれ）**")
+        lines += [f"  - {g}" for g in gaps]
+    else:
+        lines.append("- 100ページの上限に当たらず、対象期間をすべてたどりました")
+    with open(path, "a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n\n")
 
 
 def fetch(client, conn, publisher_id, months, log, known=None):
@@ -174,7 +208,8 @@ def fetch(client, conn, publisher_id, months, log, known=None):
     api = Api(app_id, access_key, os.environ.get("RAKUTEN_AFFILIATE_ID"))
     start_month = f"{months[0][0]:04d}-{months[0][1]:02d}"
     end_month = f"{months[-1][0]:04d}-{months[-1][1]:02d}"
-    rows = collect(api, ROOT_GENRE, start_month, end_month, log)
+    report = {}
+    rows = collect(api, ROOT_GENRE, start_month, end_month, log, report=report)
     out, seen = [], set()
     for row in rows:
         rec = to_record(row, api.affiliate)
@@ -184,4 +219,5 @@ def fetch(client, conn, publisher_id, months, log, known=None):
         out.append(rec)
     client.request_count += api.request_count
     log(f"{NAME}: {start_month}〜{end_month} の {len(out)} 件（API {api.request_count} 回）")
+    write_summary(start_month, end_month, len(out), api.request_count, report["gaps"])
     return out
