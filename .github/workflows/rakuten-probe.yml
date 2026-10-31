@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       publishers:
-        description: "調べる出版社名（カンマ区切り）"
-        required: true
-        default: "星海社,宝島社,マガジンハウス,冬水社,ラビットフット"
+        description: "調べる出版社名（カンマ区切り）。空欄ならコミックのジャンル全体で、判型がコミック以外の本を調べる"
+        required: false
+        default: ""
       from:
         description: "対象期間の始まり（YYYY-MM）"
         required: true
@@ -14,15 +14,20 @@ on:
       to:
         description: "対象期間の終わり（YYYY-MM）"
         required: true
-        default: "2027-03"
+        default: "2027-01"
 
 permissions:
   contents: read
 
+# 楽天へのリクエストが毎日の取得と重ならないよう、同じ順番待ちに入れる
+concurrency:
+  group: data-update
+  cancel-in-progress: false
+
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     env:
       DATA_REPO: ${{ github.repository_owner }}/new-comics-data
       DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
@@ -43,7 +48,7 @@ jobs:
           PUBLISHERS: ${{ github.event.inputs.publishers }}
           FROM: ${{ github.event.inputs.from }}
           TO: ${{ github.event.inputs.to }}
-        run: python -m newcomics.rakutenprobe --publishers "$PUBLISHERS" --from "$FROM" --to "$TO" --db data/newcomics.sqlite --out probe/rakuten-probe.tsv
+        run: python -m newcomics.rakutenprobe $( [ -z "$PUBLISHERS" ] && echo --genre ) --publishers "$PUBLISHERS" --from "$FROM" --to "$TO" --db data/newcomics.sqlite --out probe/rakuten-probe.tsv
       - uses: actions/upload-artifact@v4
         if: always()
         with:

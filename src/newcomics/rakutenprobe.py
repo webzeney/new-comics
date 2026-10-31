@@ -9,7 +9,9 @@ import os
 import sqlite3
 import sys
 
-from .fetchers.rakuten import COMIC_SIZES, HITS, Api, parse_sales_date
+from collections import Counter
+
+from .fetchers.rakuten import COMIC_SIZES, HITS, ROOT_GENRE, Api, collect, parse_sales_date
 from .normalize import isbn13
 
 MAX_PAGE = 10
@@ -48,9 +50,43 @@ def probe(api, publisher, start, end):
     return rows
 
 
+def genre_mode(api, args, known):
+    """コミックのジャンル全体をたどり、判型がコミック以外の本を一覧にする。出版社・シリーズ別の件数も書き出す。"""
+    rows = collect(api, ROOT_GENRE, args.start, args.end, print)
+    seen, out = set(), []
+    for it in rows:
+        isbn = isbn13(it.get("isbn") or "") or (it.get("isbn") or "")
+        if isbn in seen:
+            continue
+        seen.add(isbn)
+        out.append((it, isbn))
+    sizes = Counter(it.get("size") or "（なし）" for it, _ in out)
+    others = [(it, isbn) for it, isbn in out if it.get("size") not in COMIC_SIZES]
+    with open(args.out, "w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f, delimiter="\t")
+        w.writerow(COLUMNS)
+        for it, isbn in sorted(others, key=lambda x: (x[0].get("publisherName") or "", x[0].get("seriesName") or "", x[0].get("title") or "")):
+            w.writerow(["（コミックのジャンル全体）", it.get("publisherName", ""), it.get("salesDate", ""), it.get("title", ""), it.get("seriesName", ""),
+                        it.get("size", ""), it.get("booksGenreId", ""), isbn, "いいえ", "はい" if isbn in known else "いいえ"])
+    base = args.out.rsplit(".", 1)[0]
+    with open(base + "-summary.tsv", "w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f, delimiter="\t")
+        w.writerow(["区分", "名前", "件数"])
+        for k, v in sizes.most_common():
+            w.writerow(["判型（コミックのジャンル全体）", k, v])
+        for k, v in Counter(it.get("publisherName") or "" for it, _ in others).most_common():
+            w.writerow(["出版社（判型がコミック以外）", k, v])
+        for k, v in Counter((it.get("publisherName") or "") + "｜" + (it.get("seriesName") or "（シリーズなし）") for it, _ in others).most_common():
+            w.writerow(["出版社｜シリーズ（判型がコミック以外）", k, v])
+    print(f"コミックのジャンル全体：{len(out)} 件、うち判型がコミック以外 {len(others)} 件")
+    print(f"楽天へのリクエスト：{api.request_count} 回")
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--publishers", required=True, help="カンマ区切りの出版社名")
+    ap.add_argument("--publishers", default="", help="カンマ区切りの出版社名")
+    ap.add_argument("--genre", action="store_true", help="コミックのジャンル全体を調べる")
     ap.add_argument("--from", dest="start", required=True, help="YYYY-MM")
     ap.add_argument("--to", dest="end", required=True, help="YYYY-MM")
     ap.add_argument("--db")
@@ -59,6 +95,8 @@ def main(argv=None):
     api = Api(os.environ["RAKUTEN_APP_ID"], os.environ["RAKUTEN_ACCESS_KEY"])
     known = known_isbns(args.db)
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
+    if args.genre:
+        return genre_mode(api, args, known)
     with open(args.out, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, delimiter="\t")
         w.writerow(COLUMNS)
