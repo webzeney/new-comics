@@ -5,6 +5,7 @@ from unittest import mock
 from pathlib import Path
 
 from newcomics import db, publishers, store
+from newcomics import rakuten_select as sel
 from newcomics.fetchers import rakuten
 
 
@@ -49,7 +50,6 @@ class RakutenTest(unittest.TestCase):
         self.assertEqual([a["name"] for a in rec.authors], ["作者A", "作者B"])
         self.assertEqual(rec.rakuten_url, "https://hb.afl.rakuten.co.jp/x/9784098000001")
         self.assertEqual(rec.image_url, "https://thumbnail.image.rakuten.co.jp/9784098000001.jpg")
-        self.assertIsNone(rakuten.to_record(item("9784098000001", "画集", "2026年11月04日", size="単行本"), True))
         self.assertIsNone(rakuten.to_record(item("", "作品", "2026年11月04日"), True))
 
     def test_collect_stops_before_start(self):
@@ -110,6 +110,64 @@ class RakutenTest(unittest.TestCase):
             self.assertIn("すべてたどりました", text)
             self.assertIn("取りこぼしのおそれ", text)
             out.assert_called_once_with("::warning title=楽天ブックス::ジャンル 001001001 は")
+
+    def test_classify(self):
+        def c(title, size="単行本", series="", publisher="小学館", isbn="9784000000001"):
+            return sel.classify({"isbn": isbn, "title": title, "size": size, "seriesName": series, "publisherName": publisher})[0]
+        self.assertEqual(c("作品 1", size="コミック", series=""), sel.ADOPT)
+        self.assertEqual(c("作品 1", isbn="2100000000001"), sel.EXCLUDE)
+        self.assertEqual(c("作品 1", isbn=""), sel.EXCLUDE)
+        self.assertEqual(c("〇〇 ART WORKS"), sel.EXCLUDE)
+        self.assertEqual(c("画業70周年 記念本", series="ビッグ コミックス"), sel.EXCLUDE)
+        self.assertEqual(c("名探偵コナン手帳2027", size="カセット、ＣＤ等"), sel.EXCLUDE)
+        self.assertEqual(c("作品 23 ポストカードブック付特装版", size="カセット、ＣＤ等", series="サンデーGXコミックス"), sel.ADOPT)
+        self.assertEqual(c("作品", series="原画集・イラストブック"), sel.EXCLUDE)
+        self.assertEqual(c("ドラえもん 287 〇〇編", size="ムックその他", series="My First BIG"), sel.ADOPT)
+        self.assertEqual(c("こち亀 10月", size="ムックその他", series="集英社リミックス"), sel.ADOPT)
+        self.assertEqual(c("〇〇ジャンプ", size="ムックその他", series="集英社ムック"), sel.REVIEW)
+        self.assertEqual(c("作品 1", series="ビッグ コミックス"), sel.ADOPT)
+        self.assertEqual(c("〇〇大事典", size="図鑑", series="ビッグ・コロタン"), sel.EXCLUDE)
+        self.assertEqual(c("文庫版 作品 1", size="文庫", series="講談社文庫"), sel.ADOPT)
+        self.assertEqual(c("小説 作品", size="文庫", series="講談社文庫"), sel.REVIEW)
+        self.assertEqual(c("作品 1", publisher="文藝春秋"), sel.ADOPT)
+        self.assertEqual(c("作品 15巻", publisher="三栄"), sel.ADOPT)
+        self.assertEqual(c("コミックエッセイ 〇〇入門", publisher="宝島社"), sel.ADOPT)
+        self.assertEqual(c("作品", publisher="小学館クリエイティブ"), sel.REVIEW)
+        self.assertEqual(c("麻雀の戦術", series="近代麻雀戦術シリーズ", publisher="竹書房"), sel.REVIEW)
+
+    def test_select_and_review_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            conn = db.connect(Path(d) / "newcomics.sqlite")
+            rows = [
+                item("9784000000101", "作品 1", "2026年11月04日"),
+                item("9784000000102", "作品 2", "2026年11月04日", publisher="文藝春秋", series="", size="単行本"),
+                item("9784000000103", "迷う本", "2026年11月10日", publisher="某社", series="", size="単行本"),
+                item("9784000000104", "〇〇 ART WORKS", "2026年11月10日", publisher="某社", series="", size="単行本"),
+                item("2100000000105", "【楽天ブックス限定特典】作品 1", "2026年11月04日", size="単行本", series=""),
+            ]
+            chosen, stats = rakuten.select(conn, rows, "2026-11", "2026-11-01")
+            self.assertEqual([r["isbn"] for r in chosen], ["9784000000101", "9784000000102"])
+            self.assertEqual((stats["auto"], stats["pending"], stats["excluded"], stats["pending_new"]), (1, 1, 1, 1))
+            path = Path(d) / sel.REVIEW_FILE
+            lines = path.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(lines[0].split("\t"), sel.COLUMNS)
+            self.assertEqual([l.split("\t")[3] for l in lines[1:]], ["9784000000103", "9784000000102", "9784000000104"])
+            self.assertNotIn("2100000000105", path.read_text(encoding="utf-8"))
+            pid = db.ensure_publisher(conn, "bunshun", "文藝春秋", None, "楽天ブックス")
+            store.save(conn, pid, rakuten.to_record(rows[1], True), "t1")
+            text = path.read_text(encoding="utf-8").replace("\n\t確認待ち", "\n載せる\t確認待ち").replace("\n\t自動で採用", "\n載せない\t自動で採用")
+            text = text.replace("\n\t自動で除外", "\nのせる\t自動で除外")
+            path.write_text("\ufeff" + text, encoding="utf-8")
+            chosen, stats = rakuten.select(conn, rows, "2026-11", "2026-11-02")
+            self.assertEqual([r["isbn"] for r in chosen], ["9784000000101", "9784000000103"])
+            self.assertEqual((stats["yes"], stats["no"], stats["deleted"], stats["invalid"], stats["pending_new"]), (1, 1, 1, 1, 0))
+            self.assertIsNone(conn.execute("SELECT id FROM books WHERE isbn13 = '9784000000102'").fetchone())
+            again = sel.load(path)[0]
+            self.assertEqual(again["9784000000103"]["初めて見た日"], "2026-11-01")
+            self.assertEqual(again["9784000000104"]["判定"], "のせる")
+            chosen, stats = rakuten.select(conn, rows[:1], "2026-12", "2026-12-01")
+            self.assertEqual(set(sel.load(path)[0]), {"9784000000102", "9784000000103", "9784000000104"})
+            conn.close()
 
     def test_publisher_resolve(self):
         self.assertEqual(publishers.resolve("株式会社 小学館")[:2], ("shogakukan", "小学館"))

@@ -86,10 +86,22 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -q -B main
           git add newcomics.sqlite
+          # 楽天の一覧（rakuten-review.tsv）は運営者が判定を書き込む。取得の途中で書き換えられていたら、
+          # 運営者の書いた内容を残し、今回の一覧は保存しない（判定は次の取得で読み込む）
+          git fetch -q origin main
+          if [ -f rakuten-review.tsv ]; then
+            if git diff --quiet HEAD origin/main -- rakuten-review.tsv; then
+              git add rakuten-review.tsv
+            else
+              echo "楽天の一覧が取得の途中で更新されていたため、今回は一覧を保存しません"
+              git checkout -q HEAD -- rakuten-review.tsv 2>/dev/null || rm -f rakuten-review.tsv
+            fi
+          fi
           if git diff --cached --quiet; then
             echo "変更なし"
           else
             git commit -q -m "data: 取得 $(TZ=Asia/Tokyo date +%Y-%m-%d)"
+            git rebase -q origin/main
             git push -q -u origin main
           fi
       - name: 取得の失敗を通知

@@ -7,9 +7,13 @@ API の決まり：1ページ30件・100ページまで。発売日の新しい�
 import os
 import re
 import time
+from collections import Counter
+from datetime import datetime
 
 import requests
 
+from .. import db
+from .. import rakuten_select as sel
 from ..http import USER_AGENT
 from ..normalize import clean_title, isbn13, nfkc
 from ..store import BookRecord
@@ -71,10 +75,9 @@ def parse_authors(text):
 
 
 def to_record(item, affiliate):
+    """載せると決めた項目を BookRecord にする。どの本を載せるかは rakuten_select で決める。"""
     isbn = isbn13(item.get("isbn"))
     if not isbn:
-        return None
-    if item.get("size") not in COMIC_SIZES:
         return None
     title = clean_title(item.get("title"))
     sub = clean_title(item.get("subTitle"))
@@ -183,10 +186,13 @@ def collect(api, genre, start_month, end_month, log, depth=0, report=None):
     return items
 
 
-def write_summary(start_month, end_month, count, request_count, gaps):
-    """Actions の実行結果のまとめに、楽天の取得がたどりきれたかを書く。"""
+def write_summary(start_month, end_month, count, request_count, gaps, stats=None):
+    """Actions の実行結果のまとめに、楽天の取得がたどりきれたかと、本の選び分けの件数を書く。書名は書かない。"""
     for gap in gaps:
         print(f"::warning title={NAME}::{gap}")
+    stats = stats or {}
+    if stats.get("invalid"):
+        print(f"::warning title={NAME}::{sel.REVIEW_FILE} の判定の欄に「{sel.YES}」「{sel.NO}」以外が書かれた行が {stats['invalid']} 行あります（判定なしとして扱いました）")
     path = os.environ.get("GITHUB_STEP_SUMMARY")
     if not path:
         return
@@ -196,8 +202,81 @@ def write_summary(start_month, end_month, count, request_count, gaps):
         lines += [f"  - {g}" for g in gaps]
     else:
         lines.append("- 100ページの上限に当たらず、対象期間をすべてたどりました")
+    if stats:
+        lines += [
+            f"- 判型がコミック以外の本（一覧は非公開リポジトリの {sel.REVIEW_FILE}）",
+            f"  - 確認待ち（判定なし）：{stats.get('pending', 0)} 件（うち今回新しく加わった本 {stats.get('pending_new', 0)} 件）",
+            f"  - 自動で採用：{stats.get('auto', 0)} 件（うち今回新しく加わった本 {stats.get('auto_new', 0)} 件）",
+            f"  - 自動で除外：{stats.get('excluded', 0)} 件",
+            f"  - 「{sel.YES}」の印で載せた本：{stats.get('yes', 0)} 件",
+            f"  - 「{sel.NO}」の印で外した本：{stats.get('no', 0)} 件（データベースから消した本 {stats.get('deleted', 0)} 件）",
+        ]
+        if stats.get("invalid"):
+            lines.append(f"  - **判定の欄の書き方が正しくない行：{stats['invalid']} 行（判定なしとして扱いました）**")
     with open(path, "a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n\n")
+
+
+def sales_key(item):
+    full, month = parse_sales_date(item.get("salesDate"))
+    return full or month or nfkc(item.get("salesDate"))
+
+
+def select(conn, rows, start_month, today):
+    """載せる項目を選ぶ。判型がコミック以外の本は一覧に残し、一覧の判定を決まりより優先する。"""
+    path = sel.review_path(conn)
+    review, invalid = sel.load(path)
+    chosen, seen, stats = [], set(), Counter(invalid=len(invalid))
+    for item in rows:
+        kind, reason = sel.classify(item)
+        isbn = isbn13(item.get("isbn"))
+        if isbn and isbn in seen:
+            continue
+        if isbn:
+            seen.add(isbn)
+        if item.get("size") in COMIC_SIZES or not sel.has_isbn(isbn):
+            if kind == sel.ADOPT:
+                chosen.append(item)
+            continue
+        entry = review.get(isbn)
+        new = entry is None
+        if new:
+            entry = {c: "" for c in sel.COLUMNS}
+            entry["ISBN"], entry["初めて見た日"] = isbn, today
+            review[isbn] = entry
+        entry.update({
+            "区分": kind, "理由": reason, "発売日": sales_key(item), "出版社": nfkc(item.get("publisherName")),
+            "シリーズ": nfkc(item.get("seriesName")), "判型": nfkc(item.get("size")),
+            "書名": clean_title(nfkc(f"{item.get('title') or ''} {item.get('subTitle') or ''}")), "楽天のページ": item.get("itemUrl") or "",
+        })
+        mark = sel.mark(entry)
+        if mark == sel.YES:
+            stats["yes"] += 1
+            chosen.append(item)
+        elif mark == sel.NO:
+            stats["no"] += 1
+        elif kind == sel.ADOPT:
+            stats["auto"] += 1
+            stats["auto_new"] += new
+            chosen.append(item)
+        elif kind == sel.REVIEW:
+            stats["pending"] += 1
+            stats["pending_new"] += new
+        else:
+            stats["excluded"] += 1
+    refused = [i for i, r in review.items() if sel.mark(r) == sel.NO]
+    for i in refused:
+        for row in conn.execute("SELECT id, series_id FROM books WHERE isbn13 = ? AND origin = 'rakuten'", (i,)).fetchall():
+            db.delete_book(conn, row["id"])
+            stats["deleted"] += 1
+            if row["series_id"]:
+                conn.execute(
+                    "UPDATE series SET latest_volume = (SELECT MAX(volume) FROM books WHERE series_id = ?), "
+                    "latest_release_date = (SELECT MAX(release_date) FROM books WHERE series_id = ?) WHERE id = ?",
+                    (row["series_id"], row["series_id"], row["series_id"]),
+                )
+    sel.save(path, review, start_month)
+    return chosen, stats
 
 
 def fetch(client, conn, publisher_id, months, log, known=None):
@@ -210,6 +289,7 @@ def fetch(client, conn, publisher_id, months, log, known=None):
     end_month = f"{months[-1][0]:04d}-{months[-1][1]:02d}"
     report = {}
     rows = collect(api, ROOT_GENRE, start_month, end_month, log, report=report)
+    rows, stats = select(conn, rows, start_month, datetime.now(db.JST).date().isoformat())
     out, seen = [], set()
     for row in rows:
         rec = to_record(row, api.affiliate)
@@ -219,5 +299,7 @@ def fetch(client, conn, publisher_id, months, log, known=None):
         out.append(rec)
     client.request_count += api.request_count
     log(f"{NAME}: {start_month}〜{end_month} の {len(out)} 件（API {api.request_count} 回）")
-    write_summary(start_month, end_month, len(out), api.request_count, report["gaps"])
+    log(f"{NAME}: 判型がコミック以外の本 自動で採用 {stats['auto']} / 確認待ち {stats['pending']} / 自動で除外 {stats['excluded']} / "
+        f"「{sel.YES}」{stats['yes']} / 「{sel.NO}」{stats['no']}（消した本 {stats['deleted']}）")
+    write_summary(start_month, end_month, len(out), api.request_count, report["gaps"], stats)
     return out
