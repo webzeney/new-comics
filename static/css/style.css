@@ -188,6 +188,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .ticker__label{flex:0 0 auto;align-self:stretch;display:flex;align-items:center;padding:0 20px;background:#FFD15C;color:#222222;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:15px;letter-spacing:0.1em}
 .ticker__viewport{flex:1 1 auto;overflow:hidden;white-space:nowrap}
 .ticker__track{display:inline-flex;gap:40px;padding-left:24px;animation:ticker 40s linear infinite;color:#FFFFFF;font-weight:700;font-size:15px}
+.ticker__track--static{animation:none}
 /* ==========================================================================
 トップ：検索
 ========================================================================== */
@@ -234,6 +235,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .release__more{display:flex;justify-content:center;margin-top:28px}
 .release__more_link{display:inline-flex;align-items:center;gap:12px;min-height:48px;padding:0 32px;border-radius:999px;background:#222222;color:#FFFFFF;font-weight:700;text-decoration:none}
 .release__more_link[hidden]{display:none}
+.release__more[hidden]{display:none}
+.release__empty{grid-column:1/-1;margin:0}
 .card{display:flex;flex-direction:column;gap:8px;position:relative}
 .card__cover{display:block;text-decoration:none;position:relative}
 .card__image{aspect-ratio:2 / 3;background:#F3EEE8;border:2px solid #222222;border-radius:6px;box-shadow:4px 4px 0 #222222;display:flex;align-items:center;justify-content:center;color:#5A5148;font-size:13px}

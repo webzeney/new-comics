@@ -4,7 +4,7 @@
 <div aria-label="本日発売" class="ticker">
 <span class="ticker__label">TODAY</span>
 <div class="ticker__viewport">
-<div class="ticker__track">
+<div class="ticker__track{% if ticker_static %} ticker__track--static{% endif %}">
 {% for t in ticker %}
 <span>★ {{ t }}</span>
 {% endfor %}
@@ -83,6 +83,9 @@
 </div>
 {% for r in releases %}
 <div role="tabpanel" id="release-panel-{{ loop.index }}" aria-labelledby="release-tab-{{ loop.index }}" class="release__grid"{% if not loop.first %} hidden{% endif %}>
+{% if not r.books %}
+<p class="empty release__empty">{{ r.empty }}</p>
+{% endif %}
 {% for b in r.books %}
 <article class="card">
 <a href="{{ b.url }}" class="card__cover">
@@ -102,9 +105,11 @@
 {% endfor %}
 </div>
 {% endfor %}
-<div class="release__more">
+<div class="release__more"{% if not releases[0].more_url %} hidden{% endif %}>
 {% for r in releases %}
+{% if r.more_url %}
 <a href="{{ r.more_url }}" class="release__more_link" data-panel="release-panel-{{ loop.index }}"{% if not loop.first %} hidden{% endif %}>{{ r.date }}発売の新刊をすべて見る{{ arrow() }}</a>
+{% endif %}
 {% endfor %}
 </div>
 </section>

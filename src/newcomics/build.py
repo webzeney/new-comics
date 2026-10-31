@@ -337,13 +337,15 @@ def build_top(site, w):
                 "author": site.author_text(b), "label_price": label_price, "bubble": bubble, "bubble_kind": kind, "stores": site.stores(b),
                 "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b),
             })
-        more = f"date/{d.isoformat()}/" if books else f"calendar/{d.year}/{d.month:02d}/"
-        return {"word": word, "date": md(d), "books": cards, "more_url": more}
+        more = f"date/{d.isoformat()}/" if books else None
+        empty = "本日発売の新刊はありません" if word == "今日" else f"{word}発売の新刊はありません"
+        return {"word": word, "date": md(d), "books": cards, "more_url": more, "empty": empty}
 
-    ticker = [b.title for b in site.by_date.get(today, [])] or ["本日発売の新刊はありません"]
+    ticker = [b.title for b in site.by_date.get(today, [])]
     updates = latest_updates(site, root, 8)
     ctx = {
-        "ticker": ticker + ticker,
+        "ticker": ticker + ticker if ticker else ["本日発売の新刊はありません"],
+        "ticker_static": not ticker,
         "search": search_options(site),
         "calendar": {"url": f"calendar/{today.year}/{today.month:02d}/", "month": today.month},
         "tomorrow": {"url": f"date/{tomorrow.isoformat()}/" if tomorrow in site.by_date else f"calendar/{tomorrow.year}/{tomorrow.month:02d}/", "label": f"{md(tomorrow)}（{dow(tomorrow)}）"},
