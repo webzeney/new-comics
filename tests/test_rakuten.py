@@ -103,12 +103,13 @@ class RakutenTest(unittest.TestCase):
     def test_write_summary(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "s.md"
-            with mock.patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(path)}):
+            with mock.patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(path)}), mock.patch("builtins.print") as out:
                 rakuten.write_summary("2026-11", "2027-01", 10, 20, [])
                 rakuten.write_summary("2026-11", "2027-01", 10, 20, ["ジャンル 001001001 は"])
             text = path.read_text(encoding="utf-8")
             self.assertIn("すべてたどりました", text)
             self.assertIn("取りこぼしのおそれ", text)
+            out.assert_called_once_with("::warning title=楽天ブックス::ジャンル 001001001 は")
 
     def test_publisher_resolve(self):
         self.assertEqual(publishers.resolve("株式会社 小学館")[:2], ("shogakukan", "小学館"))
