@@ -189,6 +189,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .ticker__viewport{flex:1 1 auto;overflow:hidden;white-space:nowrap}
 .ticker__track{display:inline-flex;gap:40px;padding-left:24px;animation:ticker 40s linear infinite;color:#FFFFFF;font-weight:700;font-size:15px}
 .ticker__track--static{animation:none}
+.ticker__dup{display:none}
 /* ==========================================================================
 トップ：検索
 ========================================================================== */
@@ -497,6 +498,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .fav_chip__remove{min-width:32px;min-height:32px;border:0;background:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:#5A5148}
 
 @media (max-width: 720px){
+.ticker__track--static{animation:ticker 40s linear infinite}
+.ticker__dup{display:inline}
 .sidemenu__toggle{display:flex}
 .sidemenu__body--closed{display:none}
 .breadcrumb--pc{display:none}

@@ -289,7 +289,7 @@ $$('li', list).reverse().forEach(function (li) { list.appendChild(li); });
 /* TODAY の流れる文字：文字の量にかかわらず一定の速さ（1秒あたり60px）で流す */
 function initTicker() {
 var track = $('.ticker__track');
-if (!track || track.classList.contains('ticker__track--static')) return;
+if (!track) return;
 var set = function () { track.style.animationDuration = Math.max(20, track.scrollWidth / 2 / 60) + 's'; };
 set();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(set);

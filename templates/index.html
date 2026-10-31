@@ -6,7 +6,7 @@
 <div class="ticker__viewport">
 <div class="ticker__track{% if ticker_static %} ticker__track--static{% endif %}">
 {% for t in ticker %}
-<span>★ {{ t }}</span>
+<span{% if ticker_static and not loop.first %} class="ticker__dup"{% endif %}>★ {{ t }}</span>
 {% endfor %}
 </div>
 </div>

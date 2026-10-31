@@ -344,7 +344,7 @@ def build_top(site, w):
     ticker = [b.title for b in site.by_date.get(today, [])]
     updates = latest_updates(site, root, 8)
     ctx = {
-        "ticker": ticker + ticker if ticker else ["本日発売の新刊はありません"],
+        "ticker": ticker + ticker if ticker else ["本日発売の新刊はありません"] * 2,
         "ticker_static": not ticker,
         "search": search_options(site),
         "calendar": {"url": f"calendar/{today.year}/{today.month:02d}/", "month": today.month},
