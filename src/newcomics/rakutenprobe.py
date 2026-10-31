@@ -21,7 +21,7 @@ def known_isbns(db):
         return set()
     conn = sqlite3.connect(db)
     try:
-        return {r[0] for r in conn.execute("select isbn from books where isbn is not null")}
+        return {r[0] for r in conn.execute("select isbn13 from books where isbn13 is not null")}
     finally:
         conn.close()
 
