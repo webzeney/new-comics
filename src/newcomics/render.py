@@ -34,6 +34,8 @@ def environment():
         lstrip_blocks=True,
         keep_trailing_newline=True,
     )
+    # アドセンスの審査中は仮の広告枠を出さない（審査に通ったら広告ユニットに置き換える）
+    env.globals["show_ad_slots"] = False
     return env
 
 

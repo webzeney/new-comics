@@ -7,10 +7,12 @@
 {%- endmacro %}
 
 {% macro ad(rect=False, extra='') -%}
+{% if show_ad_slots %}
 <aside aria-label="広告" class="ad{% if rect %} ad--rect{% endif %}{% if extra %} {{ extra }}{% endif %}">
 <span class="ad__label">PR</span>
 <span>{% if rect %}広告枠 300×250{% else %}広告枠（楽天ブックス・Amazonのバナー等／レスポンシブ）{% endif %}</span>
 </aside>
+{% endif %}
 {%- endmacro %}
 
 {% macro store_tiles(stores, cls) -%}
