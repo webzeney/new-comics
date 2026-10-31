@@ -63,7 +63,12 @@ def main(argv=None):
         w = csv.writer(f, delimiter="\t")
         w.writerow(COLUMNS)
         for name in [p.strip() for p in args.publishers.split(",") if p.strip()]:
-            items = probe(api, name, args.start, args.end)
+            try:
+                items = probe(api, name, args.start, args.end)
+            except Exception as e:
+                w.writerow([name, "（エラー）", "", f"{type(e).__name__}: {str(e)[:300]}"] + [""] * (len(COLUMNS) - 4))
+                print(f"{name}：エラー（{type(e).__name__}）")
+                continue
             comic = 0
             for it in items:
                 isbn = isbn13(it.get("isbn") or "") or (it.get("isbn") or "")

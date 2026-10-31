@@ -45,7 +45,9 @@ jobs:
           TO: ${{ github.event.inputs.to }}
         run: python -m newcomics.rakutenprobe --publishers "$PUBLISHERS" --from "$FROM" --to "$TO" --db data/newcomics.sqlite --out probe/rakuten-probe.tsv
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: rakuten-probe
-          path: probe/rakuten-probe.tsv
+          path: probe/
+          if-no-files-found: warn
           retention-days: 7
