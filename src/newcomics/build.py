@@ -225,7 +225,7 @@ def chunk_months(today, count=3):
 
 def build(conn, out_dir, today, env):
     site = Site(conn, today, env)
-    w = Writer(out_dir, site.tags_for_menu(), today.year, ga4_id=env.get("GA4_ID"), site_url=env.get("SITE_URL"), rakuten_credit=any(b.origin == "rakuten" or b.rakuten_url for b in site.books))
+    w = Writer(out_dir, site.tags_for_menu(), today.year, ga4_id=env.get("GA4_ID"), adsense_client=env.get("ADSENSE_CLIENT"), site_url=env.get("SITE_URL"), rakuten_credit=any(b.origin == "rakuten" or b.rakuten_url for b in site.books))
     w.copy_assets()
     AUTHOR_KEYS.clear()
     AUTHOR_KEYS.update(author_key(a["name"]) for b in site.dated for a in b.authors)
@@ -283,7 +283,7 @@ def build_partials(site, w):
     dest.mkdir(parents=True, exist_ok=True)
     for name in ("sidemenu", "footer"):
         (dest / f"{name}.html").write_text(w.env.get_template(f"_{name}.html").render(**ctx), encoding="utf-8")
-    ga = w.env.get_template("_analytics.html").render(ga4_id=w.ga4_id)
+    ga = w.env.get_template("_analytics.html").render(ga4_id=w.ga4_id, adsense_client=w.adsense_client)
     (dest / "analytics.html").write_text(ga, encoding="utf-8")
 
 
@@ -940,6 +940,9 @@ def build_contact(w):
 
 
 def build_sitemap(site, w, site_url):
+    if w.adsense_client:
+        pub = w.adsense_client.replace("ca-pub-", "pub-")
+        (Path(w.out) / "ads.txt").write_text(f"google.com, {pub}, DIRECT, f08c47fec0942fa0\n", encoding="utf-8")
     if not site_url:
         return
     base = site_url.rstrip("/")

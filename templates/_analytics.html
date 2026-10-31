@@ -2,3 +2,6 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
 <script>try{if(/[?&]ga_off=1(&|$)/.test(location.search))localStorage.setItem('nc_ga_off','1');if(/[?&]ga_off=0(&|$)/.test(location.search))localStorage.removeItem('nc_ga_off');if(localStorage.getItem('nc_ga_off')==='1')window['ga-disable-{{ ga4_id }}']=true;}catch(e){}window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ ga4_id }}');</script>
 {% endif %}
+{% if adsense_client %}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client }}" crossorigin="anonymous"></script>
+{% endif %}

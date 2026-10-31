@@ -61,6 +61,7 @@ jobs:
         env:
           SITE_URL: ${{ vars.SITE_URL }}
           GA4_ID: ${{ vars.GA4_ID }}
+          ADSENSE_CLIENT: ca-pub-7804029286639938
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
           PRIVACY_DATE: ${{ vars.PRIVACY_DATE }}
           FEATURE_API: ${{ vars.SITE_URL }}/feature/wp-json/wp/v2/posts

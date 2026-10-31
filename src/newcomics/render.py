@@ -59,12 +59,13 @@ def page_defaults(**kw):
 
 
 class Writer:
-    def __init__(self, out_dir, tags, year, ga4_id=None, site_url=None, rakuten_credit=False):
+    def __init__(self, out_dir, tags, year, ga4_id=None, site_url=None, rakuten_credit=False, adsense_client=None):
         self.out = Path(out_dir)
         self.env = environment()
         self.tags = tags
         self.year = year
         self.ga4_id = ga4_id
+        self.adsense_client = adsense_client
         self.site_url = (site_url or "").rstrip("/")
         self.rakuten_credit = rakuten_credit
         self.count = 0
@@ -83,6 +84,7 @@ class Writer:
             "page": page_defaults(**(page or {})),
             "site": site_context("/", self.tags, self.year, self.rakuten_credit),
             "ga4_id": self.ga4_id,
+            "adsense_client": self.adsense_client,
         }
         html = self.env.get_template(template).render(**ctx)
         dest = self.out / "assets" / "partials" / name
@@ -111,6 +113,7 @@ class Writer:
             page=page,
             site=site_context(root, self.tags, self.year, self.rakuten_credit),
             ga4_id=self.ga4_id,
+            adsense_client=self.adsense_client,
             inc=self.includes(page),
             **context,
         )
