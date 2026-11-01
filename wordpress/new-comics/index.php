@@ -1,7 +1,7 @@
 <?php get_header(); ?>
 <article aria-labelledby="page-title" class="panel">
 <?php nc_breadcrumb([['トップ', nc_site_url() . '/'], [is_category() ? single_cat_title('', false) : '特集', null]]); ?>
-<div class="doc">
+<div class="doc doc--wide">
 <div class="heading">
 <span class="heading__en">FEATURE</span>
 <h1 id="page-title" class="heading__title"><?php echo is_category() ? esc_html(single_cat_title('', false)) : '特集'; ?></h1>
