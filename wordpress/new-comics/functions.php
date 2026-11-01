@@ -14,6 +14,22 @@ function nc_partial(string $name): void
     }
 }
 
+add_action('init', function (): void {
+    register_post_meta('post', 'nc_banner', [
+        'type' => 'integer',
+        'single' => true,
+        'default' => 0,
+        'show_in_rest' => true,
+        'auth_callback' => fn() => current_user_can('edit_posts'),
+    ]);
+});
+
+function nc_banner_url(): string
+{
+    $id = (int) get_post_meta(get_the_ID(), 'nc_banner', true);
+    return $id ? (string) wp_get_attachment_image_url($id, 'full') : '';
+}
+
 add_shortcode('books', function ($atts): string {
     $atts = shortcode_atts(['isbn' => ''], $atts, 'books');
     $dir = dirname(rtrim(ABSPATH, '/')) . '/assets/partials/bookrow/';
