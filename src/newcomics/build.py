@@ -58,6 +58,17 @@ def parse(d):
     return date.fromisoformat(d) if d else None
 
 
+RAKUTEN_AFFILIATE_LINK = re.compile(r"^(https://hb\.afl\.rakuten\.co\.jp/(?:hgc|ichiba)/[^/?#]+/)(?:_RTLink\d+)?(\?.*)$")
+
+
+def rakuten_link(url, link_id):
+    """楽天アフィリエイトのリンクに計測ID（_RTLink + 番号）を入れる。アフィリエイトのリンクでないものはそのまま返す。"""
+    m = RAKUTEN_AFFILIATE_LINK.match(url or "")
+    if not m or not re.fullmatch(r"_RTLink\d+", link_id or ""):
+        return url
+    return f"{m.group(1)}{link_id}{m.group(2)}"
+
+
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
@@ -116,6 +127,11 @@ class Site:
             "WHERE (l.is_adult IS NULL OR l.is_adult = 0) AND p.is_adult = 0"
         ).fetchall()
         self.books = [Book(r, tag_rows[r["id"]]) for r in rows]
+        link_id = env.get("RAKUTEN_LINK_ID")
+        if link_id:
+            for b in self.books:
+                b.rakuten_url = rakuten_link(b.rakuten_url, link_id)
+                b.cover_url = rakuten_link(b.cover_url, link_id)
         self.by_key = {b.key: b for b in self.books}
         self.by_id = {b.id: b for b in self.books}
         self.series = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM series")}

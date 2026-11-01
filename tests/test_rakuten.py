@@ -169,6 +169,15 @@ class RakutenTest(unittest.TestCase):
             self.assertEqual(set(sel.load(path)[0]), {"9784000000102", "9784000000103", "9784000000104"})
             conn.close()
 
+    def test_rakuten_link_id(self):
+        from newcomics.build import rakuten_link
+        base = "https://hb.afl.rakuten.co.jp/hgc/a.b.c.d/?pc=https%3A%2F%2Fbooks.rakuten.co.jp%2Frb%2F1%2F"
+        self.assertEqual(rakuten_link(base, "_RTLink153451"), "https://hb.afl.rakuten.co.jp/hgc/a.b.c.d/_RTLink153451?pc=https%3A%2F%2Fbooks.rakuten.co.jp%2Frb%2F1%2F")
+        self.assertEqual(rakuten_link("https://hb.afl.rakuten.co.jp/hgc/a/_RTLink1?pc=x", "_RTLink153451"), "https://hb.afl.rakuten.co.jp/hgc/a/_RTLink153451?pc=x")
+        self.assertEqual(rakuten_link("https://books.rakuten.co.jp/search?sitem=a", "_RTLink153451"), "https://books.rakuten.co.jp/search?sitem=a")
+        self.assertEqual(rakuten_link(base, "new-comics"), base)
+        self.assertIsNone(rakuten_link(None, "_RTLink153451"))
+
     def test_publisher_resolve(self):
         self.assertEqual(publishers.resolve("株式会社 小学館")[:2], ("shogakukan", "小学館"))
         self.assertEqual(publishers.resolve("スクウェア・エニックス")[0], "square-enix")
