@@ -301,6 +301,16 @@ def build_partials(site, w):
         (dest / f"{name}.html").write_text(w.env.get_template(f"_{name}.html").render(**ctx), encoding="utf-8")
     ga = w.env.get_template("_analytics.html").render(ga4_id=w.ga4_id, adsense_client=w.adsense_client)
     (dest / "analytics.html").write_text(ga, encoding="utf-8")
+    build_bookrows(site, w, dest / "bookrow")
+
+
+def build_bookrows(site, w, dest):
+    """特集記事の [books isbn="…"] で使う、本1冊分の欄を本ごとに書き出す（ファイル名は詳細ページと同じキー）。"""
+    dest.mkdir(parents=True, exist_ok=True)
+    tpl = w.env.from_string('{% from "_parts.html" import bookrow %}{{ bookrow(b, b.pub, b.meta, final_badge=final) }}')
+    for book in site.books:
+        html_text = tpl.render(b=site.row("/", book), final=book.is_final)
+        (dest / f"{book.key}.html").write_text(re.sub(r"\n{2,}", "\n", html_text).strip() + "\n", encoding="utf-8")
 
 
 PAGER_SIZE = 4

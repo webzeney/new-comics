@@ -14,6 +14,26 @@ function nc_partial(string $name): void
     }
 }
 
+add_shortcode('books', function ($atts): string {
+    $atts = shortcode_atts(['isbn' => ''], $atts, 'books');
+    $dir = dirname(rtrim(ABSPATH, '/')) . '/assets/partials/bookrow/';
+    $rows = [];
+    foreach (preg_split('/[\s,、]+/u', (string) $atts['isbn'], -1, PREG_SPLIT_NO_EMPTY) as $key) {
+        $key = preg_replace('/-/', '', $key);
+        if (!preg_match('/^[0-9A-Za-z]+$/', $key)) {
+            continue;
+        }
+        $file = $dir . $key . '.html';
+        if (is_file($file)) {
+            $rows[] = trim((string) file_get_contents($file));
+        }
+    }
+    if (!$rows) {
+        return '';
+    }
+    return '<ul class="article__books">' . "\n" . implode("\n", $rows) . "\n" . '</ul>';
+});
+
 add_action('after_setup_theme', function (): void {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
