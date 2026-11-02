@@ -39,9 +39,10 @@ def environment():
     return env
 
 
-def site_context(root, tags, year, rakuten_credit=False):
+def site_context(root, tags, year, rakuten_credit=False, ranking=None):
     return {
         "rakuten_credit": rakuten_credit,
+        "ranking": ranking or [],
         "menu": [{"key": k, "label": label, "url": (root + path) or "./"} for k, label, path in MENU],
         "footer": [{"key": k, "label": label, "url": root + path} for k, label, path in FOOTER],
         "tags": [{"key": t["key"], "label": t["label"], "url": root + t["path"]} for t in tags],
@@ -72,6 +73,7 @@ class Writer:
         self.rakuten_credit = rakuten_credit
         self.count = 0
         self.partials = {}
+        self.ranking = []
 
     def partial(self, name, template, page=None):
         """全ページ共通の部品を assets/partials/ に一度だけ書き出し、ファイル名を返す。
@@ -84,7 +86,7 @@ class Writer:
         ctx = {
             "root": "/",
             "page": page_defaults(**(page or {})),
-            "site": site_context("/", self.tags, self.year, self.rakuten_credit),
+            "site": site_context("/", self.tags, self.year, self.rakuten_credit, self.ranking),
             "ga4_id": self.ga4_id,
             "adsense_client": self.adsense_client,
         }
@@ -113,7 +115,7 @@ class Writer:
         html = self.env.get_template(template).render(
             root=root,
             page=page,
-            site=site_context(root, self.tags, self.year, self.rakuten_credit),
+            site=site_context(root, self.tags, self.year, self.rakuten_credit, self.ranking),
             ga4_id=self.ga4_id,
             adsense_client=self.adsense_client,
             inc=self.includes(page),

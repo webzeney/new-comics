@@ -79,6 +79,13 @@ jobs:
           RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
           RAKUTEN_AFFILIATE_ID: ${{ vars.RAKUTEN_AFFILIATE_ID }}
         run: python -m newcomics.kobo
+      - name: アナリティクスの読み込み（よく見られている新刊）
+        continue-on-error: true
+        env:
+          PYTHONPATH: src
+          GA_SERVICE_ACCOUNT_JSON: ${{ secrets.GA_SERVICE_ACCOUNT_JSON }}
+          GA_PROPERTY_ID: ${{ vars.GA_PROPERTY_ID }}
+        run: python -m newcomics.ga
       - name: セブンネットの取り扱い確認
         continue-on-error: true
         env:

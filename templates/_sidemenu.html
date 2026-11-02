@@ -13,6 +13,24 @@
 {% endfor %}
 </ul>
 </nav>
+{% if site.ranking %}
+<div class="sidemenu__ranking">
+<span class="sidemenu__heading">RANKING</span>
+<span class="sidemenu__ranking_title">よく見られている新刊</span>
+<ol class="ranking">
+{% for r in site.ranking %}
+<li class="ranking__item">
+<a href="{{ r.url }}" class="ranking__cover"><span class="ranking__no ranking__no--{{ r.no }}">{{ r.no }}</span>{% if r.image %}<img src="{{ r.image }}" alt="{{ r.alt }}" class="ranking__image" loading="lazy">{% endif %}</a>
+<div class="ranking__info">
+<a href="{{ r.url }}" class="ranking__name">{{ r.title }}</a>
+<span class="ranking__date">{{ r.date }}</span>
+{% if r.price %}<span class="ranking__price">{{ r.price }}</span>{% endif %}
+</div>
+</li>
+{% endfor %}
+</ol>
+</div>
+{% endif %}
 <div class="sidemenu__tags">
 <span class="sidemenu__heading">TAGS</span>
 <div class="sidemenu__taglist">

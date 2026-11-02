@@ -57,6 +57,11 @@ CREATE TABLE IF NOT EXISTS books (
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_books_release ON books(release_date);
+CREATE TABLE IF NOT EXISTS page_views (
+  book_key TEXT PRIMARY KEY,
+  views INTEGER NOT NULL,
+  updated_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_books_series ON books(series_id);
 CREATE TABLE IF NOT EXISTS tags (
   id INTEGER PRIMARY KEY,

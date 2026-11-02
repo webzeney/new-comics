@@ -267,6 +267,7 @@ def chunk_months(today, count=3):
 def build(conn, out_dir, today, env):
     site = Site(conn, today, env)
     w = Writer(out_dir, site.tags_for_menu(), today.year, ga4_id=env.get("GA4_ID"), adsense_client=env.get("ADSENSE_CLIENT"), site_url=env.get("SITE_URL"), rakuten_credit=any(b.origin == "rakuten" or b.rakuten_url for b in site.books))
+    w.ranking = ranking_items(site)
     w.copy_assets()
     AUTHOR_KEYS.clear()
     AUTHOR_KEYS.update(author_key(a["name"]) for b in site.dated for a in b.authors)
@@ -319,7 +320,7 @@ def build_partials(site, w):
     ctx = {
         "root": "/",
         "page": {"menu": "feature", "tag": None, "footer": None},
-        "site": site_context("/", w.tags, w.year, w.rakuten_credit),
+        "site": site_context("/", w.tags, w.year, w.rakuten_credit, w.ranking),
     }
     dest = Path(w.out) / "assets" / "partials"
     dest.mkdir(parents=True, exist_ok=True)
@@ -897,6 +898,26 @@ def build_series_feeds(site, w, site_url):
         target = Path(w.out) / "series" / str(sid) / "feed.xml"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(xml, encoding="utf-8")
+
+
+# ---- よく見られている新刊（サイドメニュー） ----
+RANKING_COUNT = 5
+RANKING_PAST_DAYS = 30
+
+
+def ranking_items(site):
+    """直近の書籍ページの表示回数（page_views）から、これから発売の本と発売から1か月以内の本を多い順に選ぶ。"""
+    try:
+        views = {r["book_key"]: r["views"] for r in site.conn.execute("SELECT book_key, views FROM page_views")}
+    except sqlite3.OperationalError:
+        return []
+    since = site.today - timedelta(days=RANKING_PAST_DAYS)
+    books = [b for b in site.books if b.key in views and b.release and b.release >= since]
+    books.sort(key=lambda b: (-views[b.key], b.release, b.id))
+    return [{
+        "no": i, "url": f"/book/{b.key}/", "title": b.title, "image": b.image, "alt": site.alt(b),
+        "date": f"{b.release.month}.{b.release.day}発売", "price": f"¥{b.price:,}" if b.price else "",
+    } for i, b in enumerate(books[:RANKING_COUNT], start=1)]
 
 
 # ---- 作品ごとのカレンダー（iCalendar） ----

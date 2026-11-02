@@ -13,8 +13,8 @@ from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 
 SCOPE = "https://www.googleapis.com/auth/analytics.readonly"
-DAYS = 7
-LIMIT = 200
+DAYS = 30
+LIMIT = 1000
 BOOK_PATH = re.compile(r"^/book/([0-9A-Za-z]+)/")
 
 
@@ -49,16 +49,22 @@ def book_views(creds, prop, days=DAYS, limit=LIMIT):
     return views
 
 
+def save(conn, views, now):
+    """ランキング用に、書籍ページの表示回数を入れ替える。"""
+    conn.execute("DELETE FROM page_views")
+    conn.executemany("INSERT INTO page_views (book_key, views, updated_at) VALUES (?, ?, ?)", [(k, n, now) for k, n in views.items()])
+    conn.commit()
+
+
 def main():
+    from . import db
     creds, prop = credentials()
     if creds is None:
         print("アナリティクス：GA_SERVICE_ACCOUNT_JSON / GA_PROPERTY_ID が未設定のため省略します")
         return 0
     views = book_views(creds, prop)
-    total = sum(views.values())
-    print(f"アナリティクス：直近{DAYS}日に見られた書籍ページ {len(views)} 件、表示回数の合計 {total}")
-    for key, n in sorted(views.items(), key=lambda x: -x[1])[:5]:
-        print(f"  /book/{key}/ {n}")
+    save(db.connect(), views, db.now_iso())
+    print(f"アナリティクス：直近{DAYS}日に見られた書籍ページ {len(views)} 件、表示回数の合計 {sum(views.values())}")
     return 0
 
 
