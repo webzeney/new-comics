@@ -24,10 +24,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 一部の出版社の取得に失敗しても（取得は失敗として残る）、保存できたデータで転送する
   deploy:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
+      ((github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure') &&
        github.event.workflow_run.event == 'schedule' &&
        vars.AUTO_DEPLOY == 'true')
     runs-on: ubuntu-latest
