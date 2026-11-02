@@ -273,3 +273,40 @@ class MergeTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MaintenanceTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.conn = db.connect(Path(self.tmp.name) / "t.sqlite")
+        self.pid = db.ensure_publisher(self.conn, "square-enix", "スクウェア・エニックス", "", "HTML")
+
+    def tearDown(self):
+        self.conn.close()
+        self.tmp.cleanup()
+
+    def test_merge_isbnless_duplicates(self):
+        with_isbn = store.BookRecord(source_key="square-enix:9784301000011", title_raw="作品 4", release_date="2026-11-06", isbn13="9784301000011", is_final=True)
+        store.save(self.conn, self.pid, with_isbn, "t1")
+        other = store.BookRecord(source_key="square-enix:t:作品:4", title_raw="作品 4", release_date="2026-11-06", authors=[{"name": "作者", "role": None}], is_final=True)
+        self.conn.execute("INSERT INTO books (source_key, title, title_raw, volume, series_id, publisher_id, authors, release_date, date_status, edition, is_final, origin, first_seen_at, last_seen_at, updated_at) "
+                          "SELECT ?, title, title_raw, volume, series_id, publisher_id, ?, release_date, date_status, edition, 1, 'publisher', 't1', 't1', 't1' FROM books",
+                          (other.source_key, '[{"name": "作者", "role": null}]'))
+        self.assertEqual(store.merge_isbnless_duplicates(self.conn, self.pid), 1)
+        rows = self.conn.execute("SELECT * FROM books").fetchall()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["isbn13"], "9784301000011")
+        self.assertIn("作者", rows[0]["authors"])
+        self.assertEqual(store.merge_isbnless_duplicates(self.conn, self.pid), 0)
+
+    def test_refresh_affiliate_links(self):
+        old = "https://hb.afl.rakuten.co.jp/hgc/OLD.1/?pc=https%3A%2F%2Fbooks.rakuten.co.jp%2Frb%2F1%2F"
+        new = "https://hb.afl.rakuten.co.jp/hgc/NEW.2/?pc=https%3A%2F%2Fbooks.rakuten.co.jp%2Frb%2F2%2F"
+        a = store.BookRecord(source_key="rakuten:9784091000011", title_raw="A 1", isbn13="9784091000011", rakuten_url=old)
+        store.save(self.conn, self.pid, a, "t1")
+        b = store.BookRecord(source_key="rakuten:9784091000028", title_raw="B 1", isbn13="9784091000028", rakuten_url=new)
+        store.save(self.conn, self.pid, b, "t2")
+        self.assertEqual(store.refresh_affiliate_links(self.conn, [b]), 1)
+        urls = sorted(r[0] for r in self.conn.execute("SELECT rakuten_url FROM books"))
+        self.assertEqual(urls, sorted([new, "https://hb.afl.rakuten.co.jp/hgc/NEW.2/?pc=https%3A%2F%2Fbooks.rakuten.co.jp%2Frb%2F1%2F"]))
+        self.assertEqual(store.refresh_affiliate_links(self.conn, []), 0)

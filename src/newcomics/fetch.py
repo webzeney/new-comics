@@ -57,6 +57,13 @@ def run_one(conn, client, module, months, log):
             counts[store.save(conn, pid, rec, run_at)] += 1
         if unknown:
             log(f"{module.NAME}: 対応表にない出版社 {len(unknown)} 社: " + "、".join(sorted(unknown)))
+        if publisher_id is not None:
+            merged = store.merge_isbnless_duplicates(conn, publisher_id)
+            if merged:
+                log(f"{module.NAME}: ISBN のない重複をまとめた {merged} 件")
+        relinked = store.refresh_affiliate_links(conn, records)
+        if relinked:
+            log(f"{module.NAME}: 楽天のリンクを今のIDにそろえた {relinked} 件")
         conn.execute(
             "UPDATE fetch_runs SET finished_at = ?, item_count = ?, status = 'ok' WHERE id = ?",
             (db.now_iso(), len(records), run_id),

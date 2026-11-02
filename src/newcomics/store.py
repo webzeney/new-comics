@@ -1,3 +1,6 @@
+import json
+import re
+from collections import Counter
 from dataclasses import dataclass, field
 
 from . import db
@@ -182,3 +185,60 @@ def known_isbn_dates(conn, publisher_id):
         "SELECT isbn13, source_key, release_date, price, title_raw, authors FROM books WHERE publisher_id = ?", (publisher_id,)
     ).fetchall()
     return {r["source_key"]: r for r in rows}
+
+
+AFFILIATE_LINK = re.compile(r"^(https://hb\.afl\.rakuten\.co\.jp/(?:hgc|ichiba)/)([^/?#]+)(/.*)$")
+
+
+def refresh_affiliate_links(conn, records):
+    """楽天アフィリエイトのリンクのIDを、今回の取得で楽天が返したIDにそろえる。
+
+    今回の取得の範囲に入らなかった本（発売済みの本など）は、前のIDのリンクのまま残るため。
+    今回のリンクのほとんど（9割以上）が同じIDのときだけ書き換える。書き換えた件数を返す。
+    """
+    ids = Counter(m.group(2) for r in records if (m := AFFILIATE_LINK.match(r.rakuten_url or "")))
+    if not ids:
+        return 0
+    current, count = ids.most_common(1)[0]
+    if count < sum(ids.values()) * 0.9:
+        return 0
+    changed = 0
+    for row in conn.execute("SELECT id, rakuten_url FROM books WHERE rakuten_url LIKE 'https://hb.afl.rakuten.co.jp/%'").fetchall():
+        m = AFFILIATE_LINK.match(row["rakuten_url"])
+        if m and m.group(2) != current:
+            conn.execute("UPDATE books SET rakuten_url = ? WHERE id = ?", (m.group(1) + current + m.group(3), row["id"]))
+            changed += 1
+    return changed
+
+
+def merge_isbnless_duplicates(conn, publisher_id):
+    """出版社サイトの本で、ISBN のある本と、同じ本（同じシリーズ・巻・版）で ISBN のない本が両方あるとき、1冊にまとめる。
+
+    ISBN のない本にしかない著者・完結の情報は ISBN のある本に移し、ISBN のない本は消す。まとめた件数を返す。
+    """
+    groups = conn.execute(
+        "SELECT series_id, volume, edition FROM books WHERE publisher_id = ? AND origin = 'publisher' AND series_id IS NOT NULL AND volume IS NOT NULL "
+        "GROUP BY series_id, volume, edition HAVING COUNT(*) > 1",
+        (publisher_id,),
+    ).fetchall()
+    merged = 0
+    for g in groups:
+        rows = conn.execute(
+            "SELECT * FROM books WHERE publisher_id = ? AND origin = 'publisher' AND series_id = ? AND volume = ? AND edition = ?",
+            (publisher_id, g["series_id"], g["volume"], g["edition"]),
+        ).fetchall()
+        keep = [r for r in rows if r["isbn13"]]
+        drop = [r for r in rows if not r["isbn13"]]
+        if len(keep) != 1 or not drop:
+            continue
+        main = keep[0]
+        authors = main["authors"]
+        if not json.loads(authors or "[]"):
+            authors = next((r["authors"] for r in drop if json.loads(r["authors"] or "[]")), authors)
+        is_final = int(bool(main["is_final"]) or any(r["is_final"] for r in drop))
+        conn.execute("UPDATE books SET authors = ?, is_final = ? WHERE id = ?", (authors, is_final, main["id"]))
+        for r in drop:
+            conn.execute("INSERT OR IGNORE INTO book_tags (book_id, tag_id) SELECT ?, tag_id FROM book_tags WHERE book_id = ?", (main["id"], r["id"]))
+            db.delete_book(conn, r["id"])
+            merged += 1
+    return merged

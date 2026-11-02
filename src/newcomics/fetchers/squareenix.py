@@ -176,7 +176,7 @@ def fetch(client, conn, publisher_id, months, log, known=None):
             isbn = item["isbn13"]
             key = f"{SLUG}:{isbn}" if isbn else f"{SLUG}:{item['code']}"
             prev = known.get(key)
-            if prev is not None and prev["title_raw"]:
+            if prev is not None and prev["title_raw"] and (json.loads(prev["authors"] or "[]") or details >= MAX_DETAILS):
                 out.append(record(item, prev["price"], json.loads(prev["authors"] or "[]"), isbn, item["url"]))
                 seen.add(("t", normalized_series(item["title"]), item["volume"]))
                 continue
