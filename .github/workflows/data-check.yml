@@ -1,0 +1,49 @@
+name: データの調査（一時）
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      DATA_REPO: ${{ github.repository_owner }}/new-comics-data
+      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+    steps:
+      - name: データベースの取り出し（非公開リポジトリ）
+        run: git clone --quiet --depth 1 "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
+      - name: 件数だけを出す
+        run: |
+          python3 - <<'PY'
+          import re, sqlite3, json
+          from collections import Counter
+          c = sqlite3.connect("data/newcomics.sqlite"); c.row_factory = sqlite3.Row
+          print("== 楽天リンクのID（件数のみ） ==")
+          ids = Counter()
+          for r in c.execute("SELECT rakuten_url, origin, release_date, last_seen_at FROM books"):
+              m = re.search(r"/hgc/([^/?]+)", r["rakuten_url"] or "")
+              ids[((m.group(1)[:8] if m else "なし"), r["origin"])] += 1
+          for k, v in sorted(ids.items()): print(k, v)
+          print("== 最後に楽天から更新した日ごとのID ==")
+          rows = Counter()
+          for r in c.execute("SELECT rakuten_url, substr(last_seen_at,1,10) d FROM books WHERE rakuten_url LIKE '%/hgc/%'"):
+              rows[(re.search(r"/hgc/([^/?]+)", r["rakuten_url"]).group(1)[:8], r["d"])] += 1
+          for k, v in sorted(rows.items(), key=lambda x: x[0][1])[-12:]: print(k, v)
+          print("== 同じ出版社・シリーズ・巻・版の重複 ==")
+          dup = c.execute("""SELECT b.publisher_id p, b.series_id s, b.volume v, b.edition e, COUNT(*) n
+            FROM books b WHERE b.volume IS NOT NULL GROUP BY 1,2,3,4 HAVING n > 1""").fetchall()
+          pubs = {r["id"]: r["slug"] for r in c.execute("SELECT id, slug FROM publishers")}
+          print("グループ数", len(dup), Counter(pubs.get(d["p"]) for d in dup).most_common(10))
+          shown = 0
+          for d in dup:
+              if pubs.get(d["p"]) != "square-enix" or shown >= 6: continue
+              shown += 1
+              print("-- グループ", shown)
+              for r in c.execute("SELECT * FROM books WHERE publisher_id=? AND series_id=? AND volume=? AND edition=?", (d["p"], d["s"], d["v"], d["e"])):
+                  sk = r["source_key"]; kind = "isbn" if re.search(r":97[89]\d{10}$", sk) else ("title" if ":t:" in sk else sk.split(":")[0] + ":other")
+                  print(dict(id=r["id"], origin=r["origin"], key=kind, isbn=bool(r["isbn13"]), authors=len(json.loads(r["authors"] or "[]")),
+                    release=r["release_date"], first=r["first_seen_at"][:10], last=r["last_seen_at"][:10], final=r["is_final"], label=r["label_id"]))
+          PY
