@@ -109,6 +109,7 @@ class Api:
         if affiliate_id:
             self.params["affiliateId"] = affiliate_id
         self.affiliate = bool(affiliate_id)
+        self.endpoint = ENDPOINT
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": USER_AGENT, "Origin": ORIGIN, "Referer": ORIGIN + "/"})
         self._last = 0.0
@@ -120,7 +121,7 @@ class Api:
             if wait > 0:
                 time.sleep(wait)
             self._last = time.monotonic()
-            res = self.session.get(ENDPOINT, params={**self.params, **params}, timeout=TIMEOUT)
+            res = self.session.get(self.endpoint, params={**self.params, **params}, timeout=TIMEOUT)
             self.request_count += 1
             if res.status_code == 429 or res.status_code >= 500:
                 time.sleep(5 * (attempt + 1))

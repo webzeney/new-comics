@@ -71,6 +71,14 @@ jobs:
           RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
           RAKUTEN_AFFILIATE_ID: ${{ vars.RAKUTEN_AFFILIATE_ID }}
         run: python -m newcomics.rakutencover
+      - name: 楽天Kobo の照らし合わせ（電子版ありの本）
+        continue-on-error: true
+        env:
+          PYTHONPATH: src
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+          RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+          RAKUTEN_AFFILIATE_ID: ${{ vars.RAKUTEN_AFFILIATE_ID }}
+        run: python -m newcomics.kobo
       - name: セブンネットの取り扱い確認
         continue-on-error: true
         env:

@@ -76,7 +76,7 @@ UTC_TZ = timezone.utc
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url",
     )
 
     def __init__(self, row, tags):
@@ -108,6 +108,7 @@ class Book:
             self.image, self.cover_url = None, None
         self.seven_ok = row["seven_ok"] if "seven_ok" in row.keys() else None
         self.title_kana = row["title_kana"] if "title_kana" in row.keys() else None
+        self.kobo_url = row["kobo_url"] if "kobo_url" in row.keys() else None
         self.first_seen = row["first_seen_at"]
         self.tags = tags
         self.key = self.isbn13 or f"b{self.id}"
@@ -140,6 +141,7 @@ class Site:
             for b in self.books:
                 b.rakuten_url = rakuten_link(b.rakuten_url, link_id)
                 b.cover_url = rakuten_link(b.cover_url, link_id)
+                b.kobo_url = rakuten_link(b.kobo_url, link_id)
         self.by_key = {b.key: b for b in self.books}
         self.by_id = {b.id: b for b in self.books}
         self.series = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM series")}
@@ -190,14 +192,17 @@ class Site:
         return out
 
     def ebook_stores(self, b):
-        """電子版ありと分かっている本だけ、Kindle と楽天Kobo の検索結果のページへのボタンを出す。"""
+        """電子版ありと分かっている本だけ、Kindle と楽天Kobo へのボタンを出す。
+
+        楽天Kobo は照らし合わせで見つかった本は商品ページ、それ以外は検索結果のページ。Kindle は検索結果のページ。
+        """
         if not b.has_ebook:
             return []
         q = unicodedata.normalize("NFKC", b.title)
         tag = self.env.get("AMAZON_TAG")
         kindle = f"https://www.amazon.co.jp/s?k={quote(q)}&i=digital-text" + (f"&tag={quote(tag)}" if tag else "")
-        kobo = f"https://books.rakuten.co.jp/search?sitem={quote(q)}&g=101"
-        if self.rakuten_hgc:
+        kobo = b.kobo_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}&g=101"
+        if not b.kobo_url and self.rakuten_hgc:
             kobo = f"https://hb.afl.rakuten.co.jp/hgc/{self.rakuten_hgc}/{self.env.get('RAKUTEN_LINK_ID') or ''}?pc={quote(kobo, safe='')}"
         return [{"name": "Kindle", "url": kindle}, {"name": "楽天Kobo", "url": kobo}]
 

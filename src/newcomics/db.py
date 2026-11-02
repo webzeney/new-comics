@@ -98,6 +98,8 @@ MIGRATIONS = [
     ("books", "seven_checked_at", "TEXT"),
     ("books", "title_kana", "TEXT"),
     ("books", "rakuten_checked_at", "TEXT"),
+    ("books", "kobo_url", "TEXT"),
+    ("books", "kobo_checked_at", "TEXT"),
 ]
 
 
