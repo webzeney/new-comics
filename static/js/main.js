@@ -234,7 +234,7 @@ var mq = window.matchMedia('(max-width: 720px)');
 var pos = n + Number(slider.dataset.start || 0);
 var moving = false;
 var hover = false;
-function perView() { return mq.matches ? 2 : 4; }
+function perView() { return mq.matches ? 2 : 6; }
 function apply(anim) {
 track.style.transition = anim ? 'transform 0.5s ease' : 'none';
 track.style.transform = 'translateX(calc(' + (-pos) + ' * (100% + 14px) / ' + perView() + '))';

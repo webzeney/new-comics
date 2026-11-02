@@ -361,7 +361,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .slider__button{flex:0 0 44px;height:44px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-size:18px;font-weight:900;font-family:inherit;cursor:pointer}
 .slider__viewport{flex:1 1 auto;min-width:0;overflow:hidden;padding:4px 4px 12px;touch-action:pan-y}
 .slider__track{list-style:none;margin:0;padding:0;display:flex;gap:14px;transition:transform 0.5s ease}
-.slider__item{flex:0 0 calc((100% - 42px) / 4)}
+.slider__item{flex:0 0 calc((100% - 70px) / 6)}
 .slider__link{display:flex;flex-direction:column;gap:6px;text-decoration:none}
 .slider__label{text-align:center;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:13px;color:#222222;text-decoration:none;letter-spacing:0.1em}
 .slider__label--current{color:#B5302A}
