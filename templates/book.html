@@ -43,6 +43,16 @@
 {{ store_buttons(book.stores, '') }}
 <span class="book__buy_note">価格・発売日・在庫は各販売店のページでご確認ください。</span>
 </div>
+{% if book.ebook_stores %}
+<div class="ebook_links">
+<span class="ebook_links__title">電子書籍で読む</span>
+<div class="ebook_links__list">
+{% for s in book.ebook_stores %}
+<a href="{{ s.url }}" class="chip_link ebook_links__link" rel="sponsored noopener" target="_blank">{{ s.name }}</a>
+{% endfor %}
+</div>
+</div>
+{% endif %}
 {% if book.gcal %}
 <div class="calendar_add">
 <span class="calendar_add__title">発売日をカレンダーに追加</span>

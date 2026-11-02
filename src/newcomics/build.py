@@ -12,7 +12,7 @@ import re
 import shutil
 import sqlite3
 import unicodedata
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import quote
@@ -58,6 +58,7 @@ def parse(d):
     return date.fromisoformat(d) if d else None
 
 
+AFFILIATE_HGC = re.compile(r"^https://hb\.afl\.rakuten\.co\.jp/hgc/([^/?#]+)/")
 RAKUTEN_AFFILIATE_LINK = re.compile(r"^(https://hb\.afl\.rakuten\.co\.jp/(?:hgc|ichiba)/[^/?#]+/)(?:_RTLink\d+)?(\?.*)$")
 
 
@@ -131,6 +132,9 @@ class Site:
             "WHERE (l.is_adult IS NULL OR l.is_adult = 0) AND p.is_adult = 0"
         ).fetchall()
         self.books = [Book(r, tag_rows[r["id"]]) for r in rows]
+        # 楽天の検索ページを楽天アフィリエイトのリンクにするための ID（取り込んだ本のリンクで一番多いもの）
+        hgc = Counter(m.group(1) for m in (AFFILIATE_HGC.match(r["rakuten_url"] or "") for r in rows) if m)
+        self.rakuten_hgc = hgc.most_common(1)[0][0] if hgc else None
         link_id = env.get("RAKUTEN_LINK_ID")
         if link_id:
             for b in self.books:
@@ -184,6 +188,18 @@ class Site:
         if b.seven_ok != 0:
             out.append({"name": "セブンネットショッピング", "short": "セブン\nネット", "kind": "seven", "button": "セブンネット", "url": seven})
         return out
+
+    def ebook_stores(self, b):
+        """電子版ありと分かっている本だけ、Kindle と楽天Kobo の検索結果のページへのボタンを出す。"""
+        if not b.has_ebook:
+            return []
+        q = unicodedata.normalize("NFKC", b.title)
+        tag = self.env.get("AMAZON_TAG")
+        kindle = f"https://www.amazon.co.jp/s?k={quote(q)}&i=digital-text" + (f"&tag={quote(tag)}" if tag else "")
+        kobo = f"https://books.rakuten.co.jp/search?sitem={quote(q)}&g=101"
+        if self.rakuten_hgc:
+            kobo = f"https://hb.afl.rakuten.co.jp/hgc/{self.rakuten_hgc}/{self.env.get('RAKUTEN_LINK_ID') or ''}?pc={quote(kobo, safe='')}"
+        return [{"name": "Kindle", "url": kindle}, {"name": "楽天Kobo", "url": kobo}]
 
     @staticmethod
     def author_text(b):
@@ -644,7 +660,7 @@ def build_books(site, w):
                 "label": b.label, "label_url": f"{root}label/{b.label_id}/" if b.label_id else "", "ebook": b.has_ebook,
                 "title_main": main, "volume": vol, "title_rest": rest, "authors": authors_ctx(root, b),
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
-                "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "isbn": b.isbn13,
+                "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "ebook_stores": site.ebook_stores(b), "isbn": b.isbn13,
                 "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b),
                 "gcal": gcal_url(b), "ics_date": b.release.strftime("%Y%m%d") if b.release else None,
                 "ics_end": (b.release + timedelta(days=1)).strftime("%Y%m%d") if b.release else None, "ics_name": f"『{b.title}』発売日",

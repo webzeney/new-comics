@@ -483,6 +483,13 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .contact__back{min-width:200px;min-height:56px;padding:0 28px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .contact__submit--link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 /* ==========================================================================
+電子書籍のストアへのボタン
+========================================================================== */
+.ebook_links{display:flex;flex-direction:column;gap:8px}
+.ebook_links__title{font-size:13px;font-weight:900}
+.ebook_links__list{display:inline-grid;grid-template-columns:repeat(2,1fr);gap:8px;align-self:flex-start}
+.ebook_links__link{justify-content:center}
+/* ==========================================================================
 お気に入り・カレンダー追加・RSS
 ========================================================================== */
 .fav_button{align-self:flex-start;box-sizing:content-box;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
