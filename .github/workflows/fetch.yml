@@ -63,6 +63,14 @@ jobs:
           else
             python -m newcomics.fetch
           fi
+      - name: 楽天の書影の補完（書影のない本）
+        continue-on-error: true
+        env:
+          PYTHONPATH: src
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+          RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+          RAKUTEN_AFFILIATE_ID: ${{ vars.RAKUTEN_AFFILIATE_ID }}
+        run: python -m newcomics.rakutencover
       - name: セブンネットの取り扱い確認
         continue-on-error: true
         env:

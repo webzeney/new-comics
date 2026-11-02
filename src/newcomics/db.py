@@ -97,6 +97,7 @@ MIGRATIONS = [
     ("books", "seven_ok", "INTEGER"),
     ("books", "seven_checked_at", "TEXT"),
     ("books", "title_kana", "TEXT"),
+    ("books", "rakuten_checked_at", "TEXT"),
 ]
 
 
