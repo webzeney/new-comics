@@ -33,6 +33,7 @@ class BookRecord:
     rakuten_url: str = None
     image_url: str = None
     publisher_name: str = None
+    title_kana: str = None
 
     def finalize(self):
         self.title = self.title or clean_title(self.title_raw)
@@ -59,12 +60,14 @@ def link_rakuten(conn, existing, rec, run_at):
     """出版社サイトの本には、楽天の情報を混ぜず、楽天の商品ページへのリンクと書影だけを付ける。
 
     書影は楽天の商品ページへのリンクとして表示する（楽天ウェブサービス規約 第8条4項）。
+    読み仮名は画面に出さず、検索のためだけに使う（CLAUDE.md の例外）。
     """
     image = rec.image_url or existing["image_url"]
+    kana = rec.title_kana or existing["title_kana"]
     changed = existing["rakuten_url"] != rec.rakuten_url or existing["image_url"] != image
     conn.execute(
-        f"UPDATE books SET rakuten_url = ?, image_url = ?, last_seen_at = ?{', updated_at = ?' if changed else ''} WHERE id = ?",
-        [rec.rakuten_url, image, run_at] + ([run_at] if changed else []) + [existing["id"]],
+        f"UPDATE books SET rakuten_url = ?, image_url = ?, title_kana = ?, last_seen_at = ?{', updated_at = ?' if changed else ''} WHERE id = ?",
+        [rec.rakuten_url, image, kana, run_at] + ([run_at] if changed else []) + [existing["id"]],
     )
     return "updated" if changed else "same"
 
@@ -107,6 +110,8 @@ def save(conn, publisher_id, rec, run_at):
                         rec.rakuten_url = other["rakuten_url"]
                     if rec.image_url is None:
                         rec.image_url = other["image_url"]
+                    if rec.title_kana is None:
+                        rec.title_kana = other["title_kana"]
                     db.delete_book(conn, other["id"])
                 else:
                     rec.isbn13 = None
@@ -117,6 +122,8 @@ def save(conn, publisher_id, rec, run_at):
                     rec.rakuten_url = dup["rakuten_url"]
                 if rec.image_url is None and existing["image_url"] is None:
                     rec.image_url = dup["image_url"]
+                if rec.title_kana is None and existing["title_kana"] is None:
+                    rec.title_kana = dup["title_kana"]
                 db.delete_book(conn, dup["id"])
     takeover = existing is not None and origin == "publisher" and existing["origin"] == "rakuten"
     values = {
@@ -138,6 +145,7 @@ def save(conn, publisher_id, rec, run_at):
         "source_url": rec.source_url,
         "rakuten_url": rec.rakuten_url,
         "image_url": rec.image_url,
+        "title_kana": rec.title_kana,
         "origin": origin,
     }
     if existing is None:
@@ -151,13 +159,13 @@ def save(conn, publisher_id, rec, run_at):
         status = "new"
     else:
         book_id = existing["id"]
-        keep = ("rakuten_url", "image_url") if takeover else ("isbn13", "price", "has_ebook", "label_id", "volume", "rakuten_url", "image_url")
+        keep = ("rakuten_url", "image_url", "title_kana") if takeover else ("isbn13", "price", "has_ebook", "label_id", "volume", "rakuten_url", "image_url", "title_kana")
         for key in keep:
             if values[key] is None:
                 values[key] = existing[key]
         if values["authors"] == "[]" and not takeover:
             values["authors"] = existing["authors"]
-        changed = [k for k in values if values[k] != existing[k]]
+        changed = [k for k in values if k != "title_kana" and values[k] != existing[k]]
         if existing["release_date"] != rec.release_date and rec.release_date:
             kind = "日付決定" if existing["date_status"] == "未定" or not existing["release_date"] else "日付変更"
             db.log_change(conn, book_id, kind, existing["release_date"], rec.release_date, run_at)

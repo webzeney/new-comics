@@ -99,6 +99,7 @@ def to_record(item, affiliate):
     rec.rakuten_url = (item.get("affiliateUrl") if affiliate else None) or item.get("itemUrl")
     rec.image_url = re.sub(r"\?_ex=\d+x\d+$", "", item.get("largeImageUrl") or "") or None
     rec.publisher_name = item.get("publisherName")
+    rec.title_kana = nfkc(item.get("titleKana")).strip() or None
     return rec
 
 

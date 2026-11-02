@@ -8,7 +8,9 @@ function $(sel, root) { return (root || document).querySelector(sel); }
 function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 
 function normalize(text) {
-return (text || '').normalize('NFKC').toLowerCase().replace(/\s+/g, '');
+return (text || '').normalize('NFKC').toLowerCase().replace(/[\u3041-\u3096]/g, function (c) {
+return String.fromCharCode(c.charCodeAt(0) + 0x60);
+}).replace(/[^\p{L}\p{N}]/gu, '');
 }
 
 function readParams() {
@@ -73,9 +75,10 @@ if (state.month && (item.d || '').slice(0, 7) !== state.month) return false;
 if (state.ebook && !item.e) return false;
 if (state.q) {
 var words = state.q.normalize('NFKC').split(/\s+/).filter(Boolean);
-var hay = normalize([item.t, item.a, item.p, item.l].join(' '));
+var hay = normalize([item.t, item.a, item.p, item.l, item.k].join(' '));
 for (var i = 0; i < words.length; i++) {
-if (hay.indexOf(normalize(words[i])) === -1) return false;
+var word = normalize(words[i]);
+if (word && hay.indexOf(word) === -1) return false;
 }
 }
 return true;

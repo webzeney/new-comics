@@ -72,7 +72,7 @@ def rakuten_link(url, link_id):
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana",
     )
 
     def __init__(self, row, tags):
@@ -103,6 +103,7 @@ class Book:
         else:
             self.image, self.cover_url = None, None
         self.seven_ok = row["seven_ok"] if "seven_ok" in row.keys() else None
+        self.title_kana = row["title_kana"] if "title_kana" in row.keys() else None
         self.first_seen = row["first_seen_at"]
         self.tags = tags
         self.key = self.isbn13 or f"b{self.id}"
@@ -874,16 +875,67 @@ def build_favorites(site, w):
 
 
 # ---- 検索 ----
+ALIASES_PATH = Path(__file__).resolve().parent / "aliases.tsv"
+
+
+def search_key(text):
+    """検索で比べるための形。全角・半角、大文字・小文字、ひらがな・カタカナ、空白・記号の違いをなくす（search.js の normalize と同じ）。"""
+    t = unicodedata.normalize("NFKC", text or "").lower()
+    t = "".join(chr(ord(c) + 0x60) if "\u3041" <= c <= "\u3096" else c for c in t)
+    return "".join(c for c in t if unicodedata.category(c)[0] in "LN")
+
+
+def load_aliases(path=ALIASES_PATH):
+    """略称の対応表。1行目は見出し。「書名に含まれる文字」が書名にあれば、その本は「呼び方」でも見つかる。"""
+    pairs = []
+    for line in Path(path).read_text(encoding="utf-8").splitlines()[1:]:
+        if "\t" not in line:
+            continue
+        key, names = line.split("\t", 1)
+        names = [n.strip() for n in re.split(r"[、,]", names) if n.strip()]
+        if search_key(key) and names:
+            pairs.append((search_key(key), names))
+    return pairs
+
+
+def search_words(books, aliases):
+    """本ごとに、書名には出てこない検索用の言葉（作品の読み仮名と略称）を作る。画面には出さない。"""
+    series_kana = {}
+    for b in books:
+        if b.title_kana and b.series_id not in series_kana:
+            series_kana[b.series_id] = re.sub(r"[\d\s]+$", "", b.title_kana)
+    words = {}
+    for b in books:
+        found = [series_kana.get(b.series_id) or b.title_kana or ""]
+        title = search_key(b.title)
+        for key, names in aliases:
+            if key in title:
+                found.extend(names)
+        hay = title
+        extra = []
+        for f in found:
+            if f and search_key(f) not in hay:
+                extra.append(f)
+                hay += search_key(f)
+        if extra:
+            words[b.id] = " ".join(extra)
+    return words
+
+
 def build_search(site, w):
     root = "../"
     items = []
     order = {b.id: i for i, b in enumerate(sorted(site.books, key=lambda b: (b.first_seen, b.id)))}
+    words = search_words(site.books, load_aliases())
     for b in site.books:
         stores = {s["kind"]: s["url"] for s in site.stores(b)}
-        items.append({
+        item = {
             "t": b.title, "p": b.publisher, "l": b.label or "", "a": site.author_text(b), "d": b.release.isoformat() if b.release else "",
             "e": bool(b.has_ebook), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "ia": site.alt(b), "sr": b.series_id,
-        })
+        }
+        if b.id in words:
+            item["k"] = words[b.id]
+        items.append(item)
     target = Path(w.out) / "search" / "index.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps({"items": items}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

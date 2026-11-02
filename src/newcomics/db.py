@@ -96,6 +96,7 @@ MIGRATIONS = [
     ("publishers", "is_adult", "INTEGER NOT NULL DEFAULT 0"),
     ("books", "seven_ok", "INTEGER"),
     ("books", "seven_checked_at", "TEXT"),
+    ("books", "title_kana", "TEXT"),
 ]
 
 
