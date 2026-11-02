@@ -662,6 +662,13 @@ def build_books(site, w):
 
 
 # ---- 作品 ----
+def calendar_links(site, sid):
+    """作品のカレンダーを購読するリンク。iPhone・Mac は webcal、Google カレンダーは購読の画面へ送る。"""
+    base = (site.env.get("SITE_URL") or "https://new-comics.jp").rstrip("/")
+    webcal = "webcal://" + base.split("://", 1)[-1] + f"/series/{sid}/calendar.ics"
+    return {"webcal": webcal, "google": "https://calendar.google.com/calendar/r?cid=" + quote(webcal, safe="")}
+
+
 def build_series(site, w):
     root = "../../"
     for sid, books in site.series_books.items():
@@ -692,6 +699,7 @@ def build_series(site, w):
             },
             "fav": {"id": sid, "name": info["name"], "url": f"/series/{sid}/"},
             "feed_url": f"{root}series/{sid}/feed.xml",
+            "ical": calendar_links(site, sid),
             "forecast": fc if status != "完結" else None,
             "volumes": [{"no": b.volume, "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else "未定", "latest": b.id == latest.id, "url": site.book_url(root, b), "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b)} for b in reversed(vols)],
         }

@@ -325,7 +325,7 @@ var icon = $('.fav_button__icon', b);
 function paint() {
 var on = loadFavs().some(function (f) { return String(f.id) === id; });
 b.setAttribute('aria-pressed', on ? 'true' : 'false');
-if (label) label.textContent = on ? 'お気に入りに登録済み' : 'この作品をお気に入りに追加';
+if (label) label.textContent = on ? (b.dataset.favLabelOn || 'お気に入りに登録済み') : (b.dataset.favLabelOff || 'この作品をお気に入りに追加');
 if (icon) icon.textContent = on ? '★' : '☆';
 }
 b.addEventListener('click', function () {
