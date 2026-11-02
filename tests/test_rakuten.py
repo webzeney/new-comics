@@ -310,3 +310,16 @@ class MaintenanceTest(unittest.TestCase):
         urls = sorted(r[0] for r in self.conn.execute("SELECT rakuten_url FROM books"))
         self.assertEqual(urls, sorted([new, "https://hb.afl.rakuten.co.jp/hgc/NEW.2/?pc=https%3A%2F%2Fbooks.rakuten.co.jp%2Frb%2F1%2F"]))
         self.assertEqual(store.refresh_affiliate_links(self.conn, []), 0)
+
+
+class KnownCountTest(unittest.TestCase):
+    def test_same_months_only(self):
+        from newcomics.fetch import known_count
+        with tempfile.TemporaryDirectory() as tmp:
+            conn = db.connect(Path(tmp) / "t.sqlite")
+            pid = db.ensure_publisher(conn, "akitashoten", "秋田書店", "", "HTML")
+            for i, d in enumerate(["2026-10-15", "2026-11-04", "2026-11-20", "2027-01-10"]):
+                store.save(conn, pid, store.BookRecord(source_key=f"akitashoten:{i}", title_raw=f"作品{i} 1", release_date=d), "t")
+            store.save(conn, pid, store.BookRecord(source_key="rakuten:9784253000011", title_raw="別 1", isbn13="9784253000011", release_date="2026-11-10"), "t")
+            self.assertEqual(known_count(conn, "akitashoten", [(2026, 11), (2026, 12), (2027, 1)]), 3)
+            conn.close()

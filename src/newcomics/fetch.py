@@ -29,6 +29,19 @@ def previous_count(conn, slug):
     return row["item_count"] if row else None
 
 
+def known_count(conn, slug, months):
+    """今回の対象の月に、この出版社サイトから取った本がデータベースに何冊あるか。
+
+    月が替わると対象の月がずれ、前回の取得件数とは比べられないため、同じ月の範囲で比べる。
+    """
+    start = f"{months[0][0]:04d}-{months[0][1]:02d}-01"
+    end = f"{months[-1][0]:04d}-{months[-1][1]:02d}-31"
+    row = conn.execute(
+        "SELECT COUNT(*) FROM books WHERE source_key LIKE ? AND release_date BETWEEN ? AND ?", (f"{slug}:%", start, end)
+    ).fetchone()
+    return row[0]
+
+
 def run_one(conn, client, module, months, log):
     run_at = db.now_iso()
     cur = conn.execute("INSERT INTO fetch_runs (source, started_at) VALUES (?, ?)", (module.SLUG, run_at))
@@ -41,9 +54,12 @@ def run_one(conn, client, module, months, log):
             publisher_id = db.ensure_publisher(conn, module.SLUG, module.NAME, module.SOURCE_URL, module.FETCH_METHOD)
             known = store.known_isbn_dates(conn, publisher_id)
         records = module.fetch(client, conn, publisher_id, months, log, known=known)
-        prev = previous_count(conn, module.SLUG)
+        if getattr(module, "MULTI", False):
+            prev, what = previous_count(conn, module.SLUG), "前回"
+        else:
+            prev, what = known_count(conn, module.SLUG, months), "同じ月のデータベースの本"
         if prev and len(records) < prev * DROP_RATIO:
-            raise RuntimeError(f"取得件数が前回の半分未満（前回 {prev} 件、今回 {len(records)} 件）。構造変更の疑いがあるため保存しません")
+            raise RuntimeError(f"取得件数が{what}の半分未満（{what} {prev} 件、今回 {len(records)} 件）。構造変更の疑いがあるため保存しません")
         counts = {"new": 0, "updated": 0, "same": 0}
         unknown = set()
         for rec in records:
