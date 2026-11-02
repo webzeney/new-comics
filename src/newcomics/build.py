@@ -13,7 +13,7 @@ import shutil
 import sqlite3
 import unicodedata
 from collections import OrderedDict, defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import quote
 from xml.sax.saxutils import escape as xml_escape
@@ -67,6 +67,9 @@ def rakuten_link(url, link_id):
     if not m or not re.fullmatch(r"_RTLink\d+", link_id or ""):
         return url
     return f"{m.group(1)}{link_id}{m.group(2)}"
+
+
+UTC_TZ = timezone.utc
 
 
 class Book:
@@ -254,6 +257,7 @@ def build(conn, out_dir, today, env):
     build_listings(site, w)
     build_authors(site, w)
     build_series_feeds(site, w, env.get("SITE_URL"))
+    build_series_calendars(site, w, env.get("SITE_URL"))
     build_favorites(site, w)
     build_search(site, w)
     build_updates(site, w)
@@ -864,6 +868,71 @@ def build_series_feeds(site, w, site_url):
         target = Path(w.out) / "series" / str(sid) / "feed.xml"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(xml, encoding="utf-8")
+
+
+# ---- 作品ごとのカレンダー（iCalendar） ----
+def ics_text(text):
+    return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+def ics_fold(line):
+    """1行を75バイト以内で折り返す（RFC 5545）。文字の途中では切らない。"""
+    out, cur = [], ""
+    for c in line:
+        limit = 75 if not out else 74
+        if len((cur + c).encode("utf-8")) > limit:
+            out.append(cur)
+            cur = c
+        else:
+            cur += c
+    out.append(cur)
+    return "\r\n ".join(out)
+
+
+def ics_stamp(value):
+    try:
+        return datetime.fromisoformat(value).astimezone(UTC_TZ).strftime("%Y%m%dT%H%M%SZ")
+    except (TypeError, ValueError):
+        return "20260101T000000Z"
+
+
+def series_calendar(name, books, base):
+    """作品の発売日を終日の予定にする。前日の21時と当日の9時に通知する（通知を使うかはカレンダーアプリ側の設定による）。"""
+    lines = [
+        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//new-comics.jp//series//JA", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+        f"X-WR-CALNAME:{ics_text(name)}の新刊（{SITE_NAME}）", "X-WR-TIMEZONE:Asia/Tokyo",
+        "REFRESH-INTERVAL;VALUE=DURATION:PT12H", "X-PUBLISHED-TTL:PT12H",
+    ]
+    for b in sorted(books, key=lambda b: (b.release, b.id)):
+        url = f"{base}/book/{b.key}/"
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{b.key}@new-comics.jp",
+            f"DTSTAMP:{ics_stamp(b.first_seen)}",
+            f"DTSTART;VALUE=DATE:{b.release.strftime('%Y%m%d')}",
+            f"DTEND;VALUE=DATE:{(b.release + timedelta(days=1)).strftime('%Y%m%d')}",
+            f"SUMMARY:{ics_text(b.title)} 発売日",
+            f"DESCRIPTION:{ics_text(b.publisher + (('・' + b.label) if b.label else '') + chr(10) + url)}",
+            f"URL:{url}",
+            "TRANSP:TRANSPARENT",
+            "BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:明日発売：{ics_text(b.title)}", "TRIGGER:-PT3H", "END:VALARM",
+            "BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:今日発売：{ics_text(b.title)}", "TRIGGER:PT9H", "END:VALARM",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    return "".join(ics_fold(l) + "\r\n" for l in lines)
+
+
+def build_series_calendars(site, w, site_url):
+    base = (site_url or "https://new-comics.jp").rstrip("/")
+    since = site.today - timedelta(days=365)
+    for sid, books in site.series_books.items():
+        if sid not in site.series:
+            continue
+        dated = [b for b in books if b.release and b.release >= since]
+        target = Path(w.out) / "series" / str(sid) / "calendar.ics"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(series_calendar(site.series[sid]["name"], dated, base).encode("utf-8"))
 
 
 # ---- お気に入り ----
