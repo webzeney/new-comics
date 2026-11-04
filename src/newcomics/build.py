@@ -363,6 +363,56 @@ def pager_items(current, last):
     return items
 
 
+# ---- 構造化データ（JSON-LD） ----
+def site_base(site):
+    return (site.env.get("SITE_URL") or "https://new-comics.jp").rstrip("/")
+
+
+def jsonld(*objs):
+    """検索エンジンや AI 向けに、ページの中身を機械が読める形（schema.org）で書く。"""
+    data = [dict({"@context": "https://schema.org"}, **o) for o in objs]
+    text = json.dumps(data[0] if len(data) == 1 else data, ensure_ascii=False, separators=(",", ":"))
+    return text.replace("</", "<\\/")
+
+
+def breadcrumb_ld(base, items):
+    """items は（名前, サイト内のパス）の並び。最後はそのページ自身。"""
+    return {"@type": "BreadcrumbList", "itemListElement": [
+        {"@type": "ListItem", "position": i, "name": name, "item": base + path} for i, (name, path) in enumerate(items, start=1)
+    ]}
+
+
+def book_ld(site, b):
+    base = site_base(site)
+    url = f"{base}/book/{b.key}/"
+    data = {"@type": "Book", "@id": url, "url": url, "name": b.title, "inLanguage": "ja", "genre": "漫画",
+            "publisher": {"@type": "Organization", "name": b.publisher, "url": f"{base}/publisher/{b.publisher_slug}/"}}
+    if b.isbn13:
+        data["isbn"] = b.isbn13
+    if b.authors:
+        data["author"] = [{"@type": "Person", "name": a["name"]} for a in b.authors]
+    if b.release:
+        data["datePublished"] = b.release.isoformat()
+    if b.volume:
+        data["volumeNumber"] = str(b.volume)
+    if b.series_id in site.series:
+        data["isPartOf"] = {"@type": "BookSeries", "name": site.series[b.series_id]["name"], "url": f"{base}/series/{b.series_id}/"}
+    return data
+
+
+def series_ld(site, sid, name, vols, latest):
+    base = site_base(site)
+    url = f"{base}/series/{sid}/"
+    data = {"@type": "BookSeries", "@id": url, "url": url, "name": name, "inLanguage": "ja", "genre": "漫画",
+            "publisher": {"@type": "Organization", "name": latest.publisher, "url": f"{base}/publisher/{latest.publisher_slug}/"},
+            "hasPart": [{"@type": "Book", "@id": f"{base}/book/{b.key}/", "url": f"{base}/book/{b.key}/", "name": b.title}
+                        | ({"isbn": b.isbn13} if b.isbn13 else {}) | ({"datePublished": b.release.isoformat()} if b.release else {})
+                        | {"volumeNumber": str(b.volume)} for b in vols]}
+    if latest.authors:
+        data["author"] = [{"@type": "Person", "name": a["name"]} for a in latest.authors]
+    return data
+
+
 def crumbs(root, *items):
     out = [{"label": "トップ", "url": root or "./"}]
     for label, url in items:
@@ -410,6 +460,11 @@ def build_top(site, w):
         title=f"{SITE_NAME}｜漫画の新刊発売日カレンダー",
         description="漫画（コミック）の新刊発売日を、カレンダーや出版社・作品ごとに探せる情報サイト。発売予定を毎日自動で更新しています。",
         menu="top", is_top=True,
+        jsonld=jsonld({
+            "@type": "WebSite", "name": SITE_NAME, "url": site_base(site) + "/", "inLanguage": "ja",
+            "description": "漫画（コミック）の新刊発売日を、出版社の公式サイトの情報をもとに毎日自動で更新している情報サイト。",
+            "potentialAction": {"@type": "SearchAction", "target": site_base(site) + "/search/?q={search_term_string}", "query-input": "required name=search_term_string"},
+        }),
     )
     w.write("index.html", "index.html", page, **ctx)
 
@@ -676,9 +731,14 @@ def build_books(site, w):
             "sameday": sameday,
         }
         when = f"{b.release.year}年{b.release.month}月{b.release.day}日発売" if b.release else "発売日未定"
+        ld_crumbs = [("トップ", "/"), (b.publisher, f"/publisher/{b.publisher_slug}/")]
+        if b.series_id and vol:
+            ld_crumbs.append((main, f"/series/{b.series_id}/"))
+        ld_crumbs.append((b.title, f"/book/{b.key}/"))
         page = page_defaults(
             title=f"{b.title}（{b.publisher}）{when}｜{SITE_NAME}",
             description=f"{b.title}（{b.publisher}）は{when}。{site.price_text(b)}。予約・購入はAmazon・楽天ブックス・セブンネットで。".replace("。。", "。"),
+            jsonld=jsonld(book_ld(site, b), breadcrumb_ld(site_base(site), ld_crumbs)),
         )
         w.write(f"book/{b.key}/index.html", "book.html", page, **ctx)
 
@@ -729,6 +789,8 @@ def build_series(site, w):
             title=f"{info['name']}の新刊・既刊一覧（{latest.publisher}）｜{SITE_NAME}",
             description=f"{info['name']}（{latest.publisher}）の最新刊と既刊の発売日をまとめています。",
             feed={"title": f"{info['name']}の新刊（{SITE_NAME}）", "url": f"{root}series/{sid}/feed.xml"},
+            jsonld=jsonld(series_ld(site, sid, info["name"], vols, latest), breadcrumb_ld(site_base(site), [
+                ("トップ", "/"), (latest.publisher, f"/publisher/{latest.publisher_slug}/"), (info["name"], f"/series/{sid}/")])),
         )
         w.write(f"series/{sid}/index.html", "series.html", page, **ctx)
 
