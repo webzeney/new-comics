@@ -54,6 +54,9 @@ Text Domain: new-comics
 .article__body table{width:100%;margin:0 0 1.2em;border-collapse:collapse;font-size:14px}
 .article__body th,.article__body td{padding:10px 12px;border:1px solid #D9CFC6;text-align:left;vertical-align:top}
 .article__body th{background:#FFF8F5;font-weight:700}
+.article__body .article__sources{font-size:12px;line-height:1.8;color:#5A5148}
+.article__body .article__sources p,.article__body .article__sources ul{margin-bottom:.6em}
+.article__body .article__sources li{margin-bottom:2px}
 .article__body .article__books{list-style:none;margin:0 0 1.6em;padding:0;border-top:1px dashed #EBCFC9}
 .article__body .article__books li{margin:0}
 .article__body .bookrow__title{color:#222222}
