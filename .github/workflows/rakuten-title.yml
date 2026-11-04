@@ -10,6 +10,10 @@ on:
         description: "楽天Kobo（電子書籍）で調べる"
         type: boolean
         default: false
+      sort:
+        description: "並び順（-releaseDate は新しい順、+releaseDate は古い順）"
+        required: false
+        default: "-releaseDate"
 
 permissions:
   contents: read
@@ -24,6 +28,7 @@ jobs:
           RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
           TITLES: ${{ inputs.titles }}
           KOBO: ${{ inputs.kobo }}
+          SORT: ${{ inputs.sort }}
         run: |
           python3 - <<'PY'
           import json, os, time, urllib.parse, urllib.request
@@ -32,7 +37,7 @@ jobs:
               rows = []
               for page in (1, 2, 3):
                   q = urllib.parse.urlencode({"applicationId": os.environ["RAKUTEN_APP_ID"], "accessKey": os.environ["RAKUTEN_ACCESS_KEY"], "format": "json", "formatVersion": 2,
-                                              "title": title, "sort": "-releaseDate", "hits": 30, "page": page} | ({} if os.environ.get("KOBO") == "true" else {"outOfStockFlag": 1}))
+                                              "title": title, "sort": os.environ.get("SORT") or "-releaseDate", "hits": 30, "page": page} | ({} if os.environ.get("KOBO") == "true" else {"outOfStockFlag": 1}))
                   req = urllib.request.Request(f"{base}?{q}", headers={"Origin": "https://new-comics.jp", "Referer": "https://new-comics.jp/"})
                   try:
                       with urllib.request.urlopen(req, timeout=30) as r:
