@@ -6,6 +6,10 @@ on:
       titles:
         description: "書名を | 区切りで"
         required: true
+      kobo:
+        description: "楽天Kobo（電子書籍）で調べる"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -19,15 +23,16 @@ jobs:
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
           RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
           TITLES: ${{ inputs.titles }}
+          KOBO: ${{ inputs.kobo }}
         run: |
           python3 - <<'PY'
           import json, os, time, urllib.parse, urllib.request
-          base = "https://openapi.rakuten.co.jp/services/api/BooksBook/Search/20170404"
+          base = "https://openapi.rakuten.co.jp/services/api/" + ("Kobo/EbookSearch/20170426" if os.environ.get("KOBO") == "true" else "BooksBook/Search/20170404")
           for title in [t.strip() for t in os.environ["TITLES"].split("|") if t.strip()]:
               rows = []
               for page in (1, 2, 3):
                   q = urllib.parse.urlencode({"applicationId": os.environ["RAKUTEN_APP_ID"], "accessKey": os.environ["RAKUTEN_ACCESS_KEY"], "format": "json", "formatVersion": 2,
-                                              "title": title, "sort": "-releaseDate", "hits": 30, "page": page, "outOfStockFlag": 1})
+                                              "title": title, "sort": "-releaseDate", "hits": 30, "page": page} | ({} if os.environ.get("KOBO") == "true" else {"outOfStockFlag": 1}))
                   req = urllib.request.Request(f"{base}?{q}", headers={"Origin": "https://new-comics.jp", "Referer": "https://new-comics.jp/"})
                   try:
                       with urllib.request.urlopen(req, timeout=30) as r:
@@ -41,5 +46,5 @@ jobs:
                       break
               print("=====", title, len(rows))
               for it in rows:
-                  print(" ", it.get("isbn"), "|", it.get("title"), "|", it.get("publisherName"), "|", it.get("seriesName"), "|", it.get("salesDate"), "|", it.get("itemPrice"), "|", it.get("largeImageUrl"), "|", it.get("itemUrl"))
+                  print(" ", it.get("isbn") or it.get("itemNumber"), "|", it.get("title"), "|", it.get("publisherName"), "|", it.get("seriesName"), "|", it.get("salesDate"), "|", it.get("itemPrice"), "|", it.get("largeImageUrl"), "|", it.get("itemUrl"))
           PY
