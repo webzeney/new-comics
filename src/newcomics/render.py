@@ -75,7 +75,7 @@ class Writer:
         self.partials = {}
         self.ranking = []
         self.lastmod = {}
-        self.noindex = set()
+        self.noindex = set()  # サイトマップに入れないページ（noindex か、正式な URL がほかにあるページ）
 
     def partial(self, name, template, page=None):
         """全ページ共通の部品を assets/partials/ に一度だけ書き出し、ファイル名を返す。
@@ -112,8 +112,11 @@ class Writer:
     def write(self, rel_path, template, page, **context):
         depth = rel_path.count("/")
         root = "../" * depth
+        own = f"{self.site_url}/{rel_path[:-len('index.html')] if rel_path.endswith('index.html') else rel_path}"
         if self.site_url and page.get("canonical") is None:
-            page["canonical"] = f"{self.site_url}/{rel_path[:-len('index.html')] if rel_path.endswith('index.html') else rel_path}"
+            page["canonical"] = own
+        if self.site_url and page.get("canonical") != own:
+            self.noindex.add(rel_path)
         html = self.env.get_template(template).render(
             root=root,
             page=page,

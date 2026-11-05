@@ -79,6 +79,14 @@
 </div>
 </section>
 {% if book.follow %}{{ alarm_dialog(book.follow.name) }}
+{% endif %}{% if summary %}
+<section aria-labelledby="about-title" class="panel">
+<div class="heading">
+<span class="heading__en">ABOUT</span>
+<h2 id="about-title" class="section_head__title">この本について</h2>
+</div>
+<p class="book_about">{{ summary }}</p>
+</section>
 {% endif %}{% if series %}
 <section aria-labelledby="series-title" class="panel">
 <div class="series_head">
@@ -149,6 +157,26 @@
 <span class="sameday__title">{{ b.title }}</span>
 </a>
 {% endif %}
+{% endfor %}
+</div>
+</section>
+{% endif %}
+{% if works %}
+<section aria-labelledby="works-title" class="panel">
+<div class="series_head">
+<div class="heading">
+<span class="heading__en">MORE WORKS</span>
+<h2 id="works-title" class="section_head__title">{{ works.title }}</h2>
+</div>
+{% if works.url %}<a href="{{ works.url }}" class="section_head__link">この作者の本をすべて見る</a>{% endif %}
+</div>
+<div class="sameday">
+{% for b in works.books %}
+<a href="{{ b.url }}" class="sameday__item">
+<span class="cover">{{ cover_photo(b.image, b.alt) }}</span>
+<span class="sameday__pub">{{ b.sub }}</span>
+<span class="sameday__title">{{ b.title }}</span>
+</a>
 {% endfor %}
 </div>
 </section>

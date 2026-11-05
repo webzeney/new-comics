@@ -505,6 +505,8 @@ def build_calendars(site, w):
         rel = f"calendar/{y}/{m:02d}/index.html"
         root = "../../../"
         page, ctx = calendar_context(site, root, y, m, months)
+        if (y, m) == (site.today.year, site.today.month) and w.site_url:
+            page["canonical"] = f"{w.site_url}/calendar/"
         w.write(rel, "calendar.html", page, **ctx)
     y, m = site.today.year, site.today.month
     if (y, m) in months:
@@ -685,6 +687,73 @@ def forecast_for(volumes):
     return {"volume": last.volume + 1, "year": nxt.year, "month": nxt.month, "ym": f"{nxt.year}.{nxt.month}", "interval": max(1, round(avg))}
 
 
+def jp_date(d):
+    return f"{d.year}年{d.month}月{d.day}日（{dow(d)}）"
+
+
+def book_summary(site, b, main, vol, volumes):
+    """書籍ページの「この本について」。表示している事実情報だけを文章にまとめる（あらすじなどは書かない）。"""
+    name = f"『{main}』{vol}巻" if vol else f"『{b.title}』"
+    where = f"{b.publisher}の「{b.label}」から" if b.label else f"{b.publisher}から"
+    out = []
+    if b.release:
+        diff = (b.release - site.today).days
+        verb = "発売される予定です" if diff > 0 else ("発売されます" if diff == 0 else "発売されました")
+        out.append(f"{name}は、{where}{jp_date(b.release)}に{verb}。")
+    else:
+        out.append(f"{name}は、{where}発売される予定です。発売日はまだ決まっていません。")
+    if b.price:
+        out.append(f"定価は{b.price:,}円（税込）です。")
+    if b.has_ebook:
+        out.append("電子書籍版もあります。")
+    if vol == 1:
+        out.append("シリーズの1巻目です。")
+    prev = next((x for x in volumes if x.volume == (vol or 0) - 1 and x.release), None) if vol else None
+    if prev and b.release and b.release > prev.release:
+        days = (b.release - prev.release).days
+        gap = f"約{round(days / 30.44)}か月" if days >= 28 else f"{days}日"
+        out.append(f"前の巻（{prev.volume}巻）は{jp_date(prev.release)}の発売で、{gap}ぶりの新刊です。")
+    if b.is_final:
+        out.append("この巻で完結します。" if b.release and b.release > site.today else "この巻で完結しています。")
+    return "".join(out)
+
+
+WORKS_COUNT = 6
+
+
+def author_works(site, root, b):
+    """同じ作者のほかの作品（作品ごとに一番新しい巻を1冊）。"""
+    keys = {author_key(a["name"]) for a in b.authors}
+    if not keys:
+        return None
+    if not hasattr(site, "by_author"):
+        site.by_author = defaultdict(list)
+        for x in site.dated:
+            for k in {author_key(a["name"]) for a in x.authors}:
+                site.by_author[k].append(x)
+    works = {}
+    for x in {x.id: x for k in keys for x in site.by_author.get(k, [])}.values():
+        if x.id == b.id or (b.series_id and x.series_id == b.series_id):
+            continue
+        k = ("s", x.series_id) if x.series_id else ("b", x.id)
+        if k not in works or x.release > works[k].release:
+            works[k] = x
+    if not works:
+        return None
+    items = sorted(works.values(), key=lambda x: x.release, reverse=True)
+    names = [a["name"] for a in b.authors]
+    one = len(names) == 1 and author_key(names[0]) in AUTHOR_KEYS
+    out = []
+    for x in items[:WORKS_COUNT]:
+        m, v, _ = title_parts(x)
+        out.append({"title": m, "sub": (f"{v}巻・" if v else "") + f"{md(x.release)}発売", "url": site.book_url(root, x), "image": x.image, "cover_url": x.cover_url, "alt": site.alt(x)})
+    return {
+        "title": f"{names[0]}さんのほかの作品" if len(names) == 1 else "この本の作者のほかの作品",
+        "count": len(items), "books": out,
+        "url": f"{root}author/{author_key(names[0])}/" if one else None,
+    }
+
+
 def build_books(site, w):
     root = "../../"
     for b in site.books:
@@ -734,6 +803,8 @@ def build_books(site, w):
             },
             "series": series,
             "sameday": sameday,
+            "summary": book_summary(site, b, main, vol, volumes),
+            "works": author_works(site, root, b),
         }
         when = f"{b.release.year}年{b.release.month}月{b.release.day}日発売" if b.release else "発売日未定"
         ld_crumbs = [("トップ", "/"), (b.publisher, f"/publisher/{b.publisher_slug}/")]
@@ -799,6 +870,7 @@ def build_series(site, w):
             jsonld=jsonld(series_ld(site, sid, info["name"], vols, latest), breadcrumb_ld(site_base(site), [
                 ("トップ", "/"), (latest.publisher, f"/publisher/{latest.publisher_slug}/"), (info["name"], f"/series/{sid}/")])),
             lastmod=lastmod(site, vols),
+            noindex=len(vols) < 2,
         )
         w.write(f"series/{sid}/index.html", "series.html", page, **ctx)
 
