@@ -334,10 +334,13 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .book__image{aspect-ratio:2 / 3;background:#F3EEE8;border:2px solid #222222;border-radius:6px;box-shadow:6px 6px 0 #222222;display:flex;align-items:center;justify-content:center;color:#5A5148;font-size:14px}
 .book__bubble{position:absolute;top:-12px;left:-8px;padding:4px 12px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-size:12px;font-weight:900}
 .book__bubble--onsale{background:#222222;color:#FFFFFF}
+.book__bubble--today{padding:8px 18px;background:#D9483B;color:#FFFFFF;font-size:16px;box-shadow:2px 2px 0 #222222}
+.book__fact--date.book__fact--today{background:#D9483B;color:#FFFFFF}
+.book__fact_today{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:#FFFFFF;color:#D9483B;font-size:11px;font-weight:900}
 .book__info{flex:1 1 360px;min-width:0;display:flex;flex-direction:column;gap:14px}
 .book__tags{display:flex;flex-wrap:wrap;gap:6px}
 .book__titles{display:flex;flex-direction:column;gap:4px}
-.book__title{margin:0;font-size:30px;font-weight:900;line-height:1.35}
+.book__title{margin:0;font-family:'Yusei Magic',sans-serif;font-size:30px;font-weight:400;line-height:1.35;letter-spacing:0.1em}
 .book__authors{font-size:14px;color:#5A5148}
 .book__author{color:#5A5148}
 .book__facts{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
@@ -483,6 +486,21 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .contact__back{min-width:200px;min-height:56px;padding:0 28px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .contact__submit--link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 /* ==========================================================================
+新刊のお知らせ（書籍ページ）
+========================================================================== */
+.follow{display:flex;flex-direction:column;gap:12px;padding:18px 20px;border:2px solid #222222;border-radius:14px;background:#FFF6EC;box-shadow:3px 3px 0 #222222}
+.follow__head{display:flex;flex-direction:column;gap:4px}
+.follow__label{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:11px;letter-spacing:0.1em;color:#D9483B}
+.follow__title{margin:0;font-size:17px;font-weight:900;line-height:1.5}
+.follow__title em{font-style:normal;background:linear-gradient(transparent 60%,#FFD15C 60%)}
+.follow__lead{margin:0;font-size:13px;line-height:1.7;color:#5A5148}
+.follow__buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.follow__button{display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 8px;box-sizing:border-box;border:2px solid #222222;border-radius:999px;background:#222222;color:#FFFFFF;font-size:13px;font-weight:700;text-decoration:none}
+.follow__button--light{background:#FFFFFF;color:#222222}
+.follow__single{margin:0;font-size:12px;color:#5A5148}
+.follow__single a,.follow__single_button{color:#5A5148;text-decoration:underline}
+.follow__single_button{padding:0;border:0;background:none;font:inherit;cursor:pointer}
+/* ==========================================================================
 カレンダー登録のお知らせ選び
 ========================================================================== */
 .alarm_dialog__backdrop{position:fixed;inset:0;z-index:50;background:rgba(34,34,34,.45)}
@@ -569,6 +587,13 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .bookrow__stores{flex:1 1 100%;grid-template-columns:repeat(3,minmax(0,1fr))}
 .bookrow__store{letter-spacing:0.15em}
 .book__cover{flex:1 1 100%;max-width:200px;margin:0 auto}
+.book__facts{flex-wrap:nowrap;gap:8px}
+.book__fact{flex:2 1 0;min-width:0;padding:10px 12px}
+.book__fact--date{flex:3 1 0}
+.book__fact_label{font-size:11px}
+.book__fact_num{font-size:16px;letter-spacing:0.1em;white-space:nowrap}
+.follow__buttons{grid-template-columns:1fr}
+.book__fact_unit{font-size:11px}
 .book__info{flex:1 1 100%}
 .store_button{letter-spacing:0.15em}
 .slider__item{flex:0 0 calc((100% - 14px) / 2)}

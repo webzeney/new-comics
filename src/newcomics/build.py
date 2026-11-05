@@ -726,6 +726,8 @@ def build_books(site, w):
                 "gcal": gcal_url(b), "ics_date": b.release.strftime("%Y%m%d") if b.release else None,
                 "ics_end": (b.release + timedelta(days=1)).strftime("%Y%m%d") if b.release else None, "ics_name": f"『{b.title}』発売日",
                 "fav": {"id": b.series_id, "name": site.series[b.series_id]["name"], "url": f"/series/{b.series_id}/"} if b.series_id in site.series else None,
+                "follow": dict(calendar_links(site, b.series_id), name=site.series[b.series_id]["name"], released=bool(b.release and b.release <= site.today),
+                               next_vol=(int(b.volume) + 1) if str(b.volume or "").isdigit() else None) if b.series_id in site.series else None,
             },
             "series": series,
             "sameday": sameday,

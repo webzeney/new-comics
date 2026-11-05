@@ -218,6 +218,13 @@ $('[data-month-count]', heading).textContent = tab.dataset.count + '点';
 }
 
 /* 既刊スライダー（最新刊を除く・ループ・自動送り） */
+function initReleaseToday() {
+var box = $('.book__fact--date[data-release]');
+if (!box || !$('.book__bubble--today')) return;
+box.classList.add('book__fact--today');
+$('.book__fact_label', box).insertAdjacentHTML('beforeend', '<span class="book__fact_today">本日発売</span>');
+}
+
 function initCalendarDialog() {
 var dialog = $('.alarm_dialog');
 if (!dialog) return;
@@ -420,6 +427,7 @@ initCalendar();
 initMonthTabs();
 initSlider();
 initVolumeSort();
+initReleaseToday();
 initCalendarDialog();
 if (window.NewComicsSearch) window.NewComicsSearch();
 });

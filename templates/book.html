@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble, cover_photo %}
+{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble, cover_photo, alarm_dialog %}
 {% block content %}
 <section aria-labelledby="book-title" class="panel panel--head">
 {{ breadcrumb(crumbs, 'breadcrumb--wide') }}
@@ -26,7 +26,7 @@
 </div>
 {% if book.fav %}<button type="button" aria-pressed="false" class="fav_button" data-fav-id="{{ book.fav.id }}" data-fav-name="{{ book.fav.name }}" data-fav-url="{{ book.fav.url }}"><span aria-hidden="true" class="fav_button__icon">☆</span><span class="fav_button__label">この作品をお気に入りに追加</span></button>{% endif %}
 <div class="book__facts">
-<div class="book__fact book__fact--date">
+<div class="book__fact book__fact--date"{% if book.release_iso %} data-release="{{ book.release_iso }}"{% endif %}>
 <span class="book__fact_label">発売日</span>
 <span class="book__fact_value book__fact_value--date">{% if book.date %}<span class="book__fact_num">{{ book.date }}</span><span class="book__fact_unit">（{{ book.dow }}）</span>{% else %}<span class="book__fact_num">未定</span>{% endif %}</span>
 </div>
@@ -43,6 +43,28 @@
 {{ store_buttons(book.stores, '') }}
 <span class="book__buy_note">価格・発売日・在庫は各販売店のページでご確認ください。</span>
 </div>
+{% if book.follow %}
+<div class="follow">
+<div class="follow__head">
+<span class="follow__label">NEW RELEASE ALERT</span>
+<p class="follow__title">{% if book.follow.released %}{% if book.follow.next_vol %}<span class="en">{{ book.follow.next_vol }}</span>巻以降の{% else %}次の巻の{% endif %}発売日も、<em>あなたのカレンダーに自動で届く</em>{% else %}この巻も、次の巻も、<em>発売日をカレンダーでお知らせ</em>{% endif %}</p>
+<p class="follow__lead">{{ book.follow.name }}の新刊が決まるたびに、発売日がカレンダーに入ります。「1週間前」「前日」など、お知らせのタイミングも選べます。</p>
+</div>
+<div class="follow__buttons">
+<a href="{{ book.follow.webcal }}" class="follow__button" data-subscribe="apple" data-subscribe-endpoint="{{ book.follow.endpoint }}">iPhone・Macで受け取る</a>
+<a href="{{ book.follow.google }}" class="follow__button follow__button--light" target="_blank" rel="noopener" data-subscribe="google" data-subscribe-endpoint="{{ book.follow.endpoint }}">Googleカレンダーで受け取る</a>
+</div>
+{% if book.gcal %}<p class="follow__single">この巻の発売日だけ追加する：<a href="{{ book.gcal }}" target="_blank" rel="noopener">Googleカレンダー</a>／<button type="button" class="follow__single_button" data-ics-name="{{ book.ics_name }}" data-ics-start="{{ book.ics_date }}" data-ics-end="{{ book.ics_end }}" data-ics-file="{{ book.isbn or 'release' }}.ics">iPhone・その他</button></p>{% endif %}
+</div>
+{% elif book.gcal %}
+<div class="calendar_add">
+<span class="calendar_add__title">発売日をカレンダーに追加</span>
+<div class="calendar_add__links">
+<a href="{{ book.gcal }}" class="chip_link" target="_blank" rel="noopener">Googleカレンダー</a>
+<button type="button" class="chip_link chip_link--button" data-ics-name="{{ book.ics_name }}" data-ics-start="{{ book.ics_date }}" data-ics-end="{{ book.ics_end }}" data-ics-file="{{ book.isbn or 'release' }}.ics">iPhone・その他（.ics）</button>
+</div>
+</div>
+{% endif %}
 {% if book.ebook_stores %}
 <div class="ebook_links">
 <span class="ebook_links__title">電子書籍で読む</span>
@@ -53,19 +75,11 @@
 </div>
 </div>
 {% endif %}
-{% if book.gcal %}
-<div class="calendar_add">
-<span class="calendar_add__title">発売日をカレンダーに追加</span>
-<div class="calendar_add__links">
-<a href="{{ book.gcal }}" class="chip_link" target="_blank" rel="noopener">Googleカレンダー</a>
-<button type="button" class="chip_link chip_link--button" data-ics-name="{{ book.ics_name }}" data-ics-start="{{ book.ics_date }}" data-ics-end="{{ book.ics_end }}" data-ics-file="{{ book.isbn or 'release' }}.ics">iPhone・その他（.ics）</button>
-</div>
-</div>
-{% endif %}
 </div>
 </div>
 </section>
-{% if series %}
+{% if book.follow %}{{ alarm_dialog(book.follow.name) }}
+{% endif %}{% if series %}
 <section aria-labelledby="series-title" class="panel">
 <div class="series_head">
 <div class="heading">

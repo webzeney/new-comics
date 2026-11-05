@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble, cover_photo %}
+{% from "_parts.html" import alarm_dialog, ad, breadcrumb, store_buttons, release_bubble, cover_photo %}
 {% block content %}
 <section aria-labelledby="series-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -96,24 +96,5 @@
 </ol>
 </section>
 {{ ad() -}}
-<div class="alarm_dialog__backdrop" data-alarm-close hidden></div>
-<div class="alarm_dialog" role="dialog" aria-modal="true" aria-labelledby="alarm_dialog_title" hidden>
-<div class="alarm_dialog__head">
-<span class="alarm_dialog__label">CALENDAR</span>
-<p class="alarm_dialog__title" id="alarm_dialog_title"><span data-alarm-target>iPhone・Macのカレンダー</span>に登録</p>
-<p class="alarm_dialog__lead">{{ series.name }}の発売日を、カレンダーに自動で追加します。お知らせを受け取るタイミングを選んでください（いくつでも選べます）。</p>
-</div>
-<fieldset class="alarm_dialog__options">
-<label class="alarm_dialog__option"><input type="checkbox" value="7d">1週間前<span class="alarm_dialog__time">9:00</span></label>
-<label class="alarm_dialog__option"><input type="checkbox" value="3d">3日前<span class="alarm_dialog__time">9:00</span></label>
-<label class="alarm_dialog__option"><input type="checkbox" value="1d" checked>前日<span class="alarm_dialog__time">21:00</span></label>
-<label class="alarm_dialog__option"><input type="checkbox" value="0d" checked>発売日の当日<span class="alarm_dialog__time">9:00</span></label>
-</fieldset>
-<p class="alarm_dialog__note" data-alarm-note="apple">何も選ばないと、お知らせなしで発売日だけが入ります。</p>
-<p class="alarm_dialog__note" data-alarm-note="google" hidden>Googleカレンダーでは、ここで選んだお知らせが届かないことがあります。届かないときは、Googleカレンダーの設定でこのカレンダーのお知らせを設定してください。</p>
-<div class="alarm_dialog__actions">
-<button type="button" class="alarm_dialog__cancel" data-alarm-close>やめる</button>
-<a href="#" class="alarm_dialog__submit" data-alarm-submit>登録する</a>
-</div>
-</div>
+{{ alarm_dialog(series.name) }}
 {% endblock %}
