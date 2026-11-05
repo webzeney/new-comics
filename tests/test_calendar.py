@@ -27,6 +27,15 @@ class CalendarTest(unittest.TestCase):
         self.assertIn("TRIGGER:-PT3H\r\n", text)
         self.assertIn("TRIGGER:PT9H\r\n", text)
         self.assertTrue(text.endswith("END:VCALENDAR\r\n"))
+        self.assertIn("URL:https://new-comics.jp/book/9784090000001/\r\n", text)
+
+    def test_amazon_link(self):
+        amazon = "https://www.amazon.co.jp/dp/4090000001?tag=newcomicsjp-22"
+        text = series_calendar("作品", [FakeBook(1, "作品 2", date(2026, 12, 4))], "https://new-comics.jp", amazon_url=lambda b: amazon)
+        unfolded = text.replace("\r\n ", "")
+        self.assertIn(f"URL:{amazon}\r\n", unfolded)
+        self.assertIn("Amazonで見る：" + amazon, unfolded)
+        self.assertIn("漫画新刊JPで見る：https://new-comics.jp/book/9784090000001/", unfolded)
 
 
 if __name__ == "__main__":

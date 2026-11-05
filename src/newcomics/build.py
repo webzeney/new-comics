@@ -1008,8 +1008,11 @@ def ics_stamp(value):
         return "20260101T000000Z"
 
 
-def series_calendar(name, books, base):
-    """作品の発売日を終日の予定にする。前日の21時と当日の9時に通知する（通知を使うかはカレンダーアプリ側の設定による）。"""
+def series_calendar(name, books, base, amazon_url=None):
+    """作品の発売日を終日の予定にする。前日の21時と当日の9時に通知する（通知を使うかはカレンダーアプリ側の設定による）。
+
+    amazon_url（本 → Amazon のアフィリエイトリンク）を渡すと、予定のリンク先を Amazon にし、説明にも入れる（2026-11-05 運営者の判断）。
+    """
     lines = [
         "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//new-comics.jp//series//JA", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
         f"X-WR-CALNAME:{ics_text(name)}の新刊（{SITE_NAME}）", "X-WR-TIMEZONE:Asia/Tokyo",
@@ -1017,6 +1020,9 @@ def series_calendar(name, books, base):
     ]
     for b in sorted(books, key=lambda b: (b.release, b.id)):
         url = f"{base}/book/{b.key}/"
+        amazon = amazon_url(b) if amazon_url else None
+        about = b.publisher + (("・" + b.label) if b.label else "")
+        desc = f"{about}\nAmazonで見る：{amazon}\n漫画新刊JPで見る：{url}" if amazon else f"{about}\n{url}"
         lines += [
             "BEGIN:VEVENT",
             f"UID:{b.key}@new-comics.jp",
@@ -1024,8 +1030,8 @@ def series_calendar(name, books, base):
             f"DTSTART;VALUE=DATE:{b.release.strftime('%Y%m%d')}",
             f"DTEND;VALUE=DATE:{(b.release + timedelta(days=1)).strftime('%Y%m%d')}",
             f"SUMMARY:{ics_text(b.title)} 発売日",
-            f"DESCRIPTION:{ics_text(b.publisher + (('・' + b.label) if b.label else '') + chr(10) + url)}",
-            f"URL:{url}",
+            f"DESCRIPTION:{ics_text(desc)}",
+            f"URL:{amazon or url}",
             "TRANSP:TRANSPARENT",
             "BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:明日発売：{ics_text(b.title)}", "TRIGGER:-PT3H", "END:VALARM",
             "BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:今日発売：{ics_text(b.title)}", "TRIGGER:PT9H", "END:VALARM",
@@ -1044,7 +1050,8 @@ def build_series_calendars(site, w, site_url):
         dated = [b for b in books if b.release and b.release >= since]
         target = Path(w.out) / "series" / str(sid) / "calendar.ics"
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(series_calendar(site.series[sid]["name"], dated, base).encode("utf-8"))
+        target.write_bytes(series_calendar(site.series[sid]["name"], dated, base, amazon_url=lambda b: next(
+            (s["url"] for s in site.stores(b) if s["kind"] == "amazon"), None)).encode("utf-8"))
 
 
 # ---- お気に入り ----
