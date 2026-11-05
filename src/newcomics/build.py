@@ -748,7 +748,8 @@ def calendar_links(site, sid):
     """作品のカレンダーを購読するリンク。iPhone・Mac は webcal、Google カレンダーは購読の画面へ送る。"""
     base = (site.env.get("SITE_URL") or "https://new-comics.jp").rstrip("/")
     webcal = "webcal://" + base.split("://", 1)[-1] + f"/series/{sid}/calendar.ics"
-    return {"webcal": webcal, "google": "https://calendar.google.com/calendar/r?cid=" + quote(webcal, safe="")}
+    return {"webcal": webcal, "google": "https://calendar.google.com/calendar/r?cid=" + quote(webcal, safe=""),
+            "endpoint": "webcal://" + base.split("://", 1)[-1] + f"/series/calendar.php?s={sid}"}
 
 
 def build_series(site, w):
@@ -1203,6 +1204,8 @@ def build_contact(w):
     shutil.copyfile(php / "lib.php", dest / "lib.php")
     shutil.copyfile(php / "send.php", dest / "send.php")
     shutil.copyfile(php / "htaccess", dest / ".htaccess")
+    (Path(w.out) / "series").mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(php / "calendar.php", Path(w.out) / "series" / "calendar.php")
 
 
 def build_sitemap(site, w, site_url):

@@ -218,6 +218,54 @@ $('[data-month-count]', heading).textContent = tab.dataset.count + '点';
 }
 
 /* 既刊スライダー（最新刊を除く・ループ・自動送り） */
+function initCalendarDialog() {
+var dialog = $('.alarm_dialog');
+if (!dialog) return;
+var backdrop = $('.alarm_dialog__backdrop');
+var target = $('[data-alarm-target]', dialog);
+var submit = $('[data-alarm-submit]', dialog);
+var current = null;
+var opener = null;
+var boxes = Array.prototype.slice.call(dialog.querySelectorAll('input[type="checkbox"]'));
+function mark() {
+boxes.forEach(function (b) { b.parentNode.classList.toggle('alarm_dialog__option--on', b.checked); });
+}
+function url() {
+var picked = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
+var webcal = current.endpoint + '&alarm=' + (picked.length ? picked.join(',') : 'none');
+return current.kind === 'google' ? 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(webcal) : webcal;
+}
+function close() {
+dialog.hidden = true;
+backdrop.hidden = true;
+if (opener) opener.focus();
+}
+document.querySelectorAll('[data-subscribe]').forEach(function (a) {
+a.addEventListener('click', function (e) {
+e.preventDefault();
+opener = a;
+current = { kind: a.getAttribute('data-subscribe'), endpoint: a.getAttribute('data-subscribe-endpoint') };
+target.textContent = current.kind === 'google' ? 'Googleカレンダー' : 'iPhone・Macのカレンダー';
+dialog.querySelectorAll('[data-alarm-note]').forEach(function (n) { n.hidden = n.getAttribute('data-alarm-note') !== current.kind; });
+mark();
+dialog.hidden = false;
+backdrop.hidden = false;
+boxes[0].focus();
+});
+});
+boxes.forEach(function (b) { b.addEventListener('change', mark); });
+dialog.querySelectorAll('[data-alarm-close]').forEach(function (b) { b.addEventListener('click', close); });
+backdrop.addEventListener('click', close);
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !dialog.hidden) close(); });
+submit.addEventListener('click', function (e) {
+e.preventDefault();
+var href = url();
+close();
+if (current.kind === 'google') window.open(href, '_blank', 'noopener');
+else location.href = href;
+});
+}
+
 function initSlider() {
 var slider = $('.slider');
 if (!slider) return;
@@ -372,6 +420,7 @@ initCalendar();
 initMonthTabs();
 initSlider();
 initVolumeSort();
+initCalendarDialog();
 if (window.NewComicsSearch) window.NewComicsSearch();
 });
 })();
