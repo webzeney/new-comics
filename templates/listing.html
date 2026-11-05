@@ -1,5 +1,21 @@
 {% extends "layout.html" %}
 {% from "_parts.html" import ad, breadcrumb, bookrow %}
+{% macro date_groups(dates) %}
+{% for g in dates %}
+<div class="group">
+<h3 class="group__title"><span class="group__date">{{ g.md }}</span>（{{ g.dow }}）<span class="group__count">{{ g.books|length }}点</span>{% if g.on_sale %}<span class="group__onsale">発売中</span>{% endif %}</h3>
+<ul class="booklist">
+{% for b in g.books %}
+{% if listing.kind in ('tag', 'author') %}
+{{ bookrow(b, b.pub, b.meta, final_badge=listing.final_badge) }}
+{% else %}
+{{ bookrow(b, b.label or b.pub, b.meta) }}
+{% endif %}
+{% endfor %}
+</ul>
+</div>
+{% endfor %}
+{% endmacro %}
 {% block content %}
 <section aria-labelledby="pub-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -43,25 +59,22 @@
 </div>
 {% for m in months %}
 <div role="tabpanel" id="month-panel-{{ m.no }}" aria-labelledby="month-tab-{{ m.no }}" class="monthpanel"{% if not m.current %} hidden{% endif %}>
-{% for g in m.dates %}
-<div class="group">
-<h3 class="group__title"><span class="group__date">{{ g.md }}</span>（{{ g.dow }}）<span class="group__count">{{ g.books|length }}点</span>{% if g.on_sale %}<span class="group__onsale">発売中</span>{% endif %}</h3>
-<ul class="booklist">
-{% for b in g.books %}
-{% if listing.kind in ('tag', 'author') %}
-{{ bookrow(b, b.pub, b.meta, final_badge=listing.final_badge) }}
-{% else %}
-{{ bookrow(b, b.label or b.pub, b.meta) }}
-{% endif %}
-{% endfor %}
-</ul>
-</div>
-{% else %}
+{{ date_groups(m.dates) }}
+{% if not m.dates %}
 <p class="empty">この月の発売予定はまだありません</p>
-{% endfor %}
+{% endif %}
 </div>
 {% endfor %}
 </section>
+{% if past and past.count %}
+<section aria-labelledby="past-title" class="panel">
+<div class="section_head section_head--title">
+<h2 id="past-title" class="section_head__title">これまでに発売された本<span class="heading__count">{{ past.count }}点</span></h2>
+{% if past.limited %}<span class="section_head__note">新しい順に{{ past.limit }}点まで表示しています</span>{% endif %}
+</div>
+{{ date_groups(past.dates) }}
+</section>
+{% endif %}
 {% if others %}
 <section aria-labelledby="other-title" class="panel">
 <h2 id="other-title" class="others__title">{{ others.title }}</h2>

@@ -76,7 +76,7 @@ UTC_TZ = timezone.utc
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated",
     )
 
     def __init__(self, row, tags):
@@ -110,6 +110,7 @@ class Book:
         self.title_kana = row["title_kana"] if "title_kana" in row.keys() else None
         self.kobo_url = row["kobo_url"] if "kobo_url" in row.keys() else None
         self.first_seen = row["first_seen_at"]
+        self.updated = row["updated_at"] if "updated_at" in row.keys() else None
         self.tags = tags
         self.key = self.isbn13 or f"b{self.id}"
 
@@ -459,7 +460,7 @@ def build_top(site, w):
     page = page_defaults(
         title=f"{SITE_NAME}｜漫画の新刊発売日カレンダー",
         description="漫画（コミック）の新刊発売日を、カレンダーや出版社・作品ごとに探せる情報サイト。発売予定を毎日自動で更新しています。",
-        menu="top", is_top=True,
+        menu="top", is_top=True, lastmod=site.today.isoformat(),
         jsonld=jsonld({
             "@type": "WebSite", "name": SITE_NAME, "url": site_base(site) + "/", "inLanguage": "ja",
             "description": "漫画（コミック）の新刊発売日を、出版社の公式サイトの情報をもとに毎日自動で更新している情報サイト。",
@@ -571,6 +572,7 @@ def calendar_context(site, root, y, m, months):
         title=f"{y}年{m}月の漫画新刊発売日カレンダー｜{SITE_NAME}",
         description=f"{y}年{m}月に発売される漫画（コミック）の新刊{total:,}点を、発売日ごとのカレンダーで紹介しています。",
         menu="calendar",
+        lastmod=lastmod(site, [b for v in days.values() for b in v]),
     )
     return page, ctx
 
@@ -606,6 +608,7 @@ def build_dates(site, w):
             title=f"{d.year}年{d.month}月{d.day}日（{dow(d)}）発売の漫画新刊{len(books)}点｜{SITE_NAME}",
             description=f"{d.year}年{d.month}月{d.day}日（{dow(d)}）に発売される漫画（コミック）の新刊{len(books)}点を出版社別に紹介しています。",
             menu="calendar",
+            lastmod=lastmod(site, books),
         )
         w.write(f"date/{d.isoformat()}/index.html", "date.html", page, **ctx)
 
@@ -741,6 +744,7 @@ def build_books(site, w):
             title=f"{b.title}（{b.publisher}）{when}｜{SITE_NAME}",
             description=f"{b.title}（{b.publisher}）は{when}。{site.price_text(b)}。予約・購入はAmazon・楽天ブックス・セブンネットで。".replace("。。", "。"),
             jsonld=jsonld(book_ld(site, b), breadcrumb_ld(site_base(site), ld_crumbs)),
+            lastmod=lastmod(site, [b]),
         )
         w.write(f"book/{b.key}/index.html", "book.html", page, **ctx)
 
@@ -794,6 +798,7 @@ def build_series(site, w):
             feed={"title": f"{info['name']}の新刊（{SITE_NAME}）", "url": f"{root}series/{sid}/feed.xml"},
             jsonld=jsonld(series_ld(site, sid, info["name"], vols, latest), breadcrumb_ld(site_base(site), [
                 ("トップ", "/"), (latest.publisher, f"/publisher/{latest.publisher_slug}/"), (info["name"], f"/series/{sid}/")])),
+            lastmod=lastmod(site, vols),
         )
         w.write(f"series/{sid}/index.html", "series.html", page, **ctx)
 
@@ -824,6 +829,34 @@ def listing_common(site, root, books):
     }
 
 
+PAST_COUNT = 30
+
+
+def listing_past(site, root, books, keys):
+    """今月より前に発売された本を新しい順に並べる（発売日が過ぎてもページが空にならないようにする）。"""
+    start = date(site.today.year, site.today.month, 1)
+    past = sorted([b for b in books if b.release and b.release < start], key=lambda b: (b.release, b.publisher, b.title), reverse=True)
+    dates = OrderedDict()
+    for b in past[:PAST_COUNT]:
+        dates.setdefault(b.release, []).append(b)
+    groups = [{"md": md(d), "dow": dow(d), "on_sale": True, "books": [site.row(root, b, keys) for b in v]} for d, v in dates.items()]
+    return {"count": len(past), "limited": len(past) > PAST_COUNT, "limit": PAST_COUNT, "dates": groups}
+
+
+def lastmod(site, books):
+    """サイトマップの lastmod：本の情報が変わった日と、発売日（発売中になって表示が変わる日）の新しいほう。"""
+    days = []
+    for b in books:
+        if b.updated:
+            try:
+                days.append(datetime.fromisoformat(b.updated).date())
+            except ValueError:
+                pass
+        if b.release and b.release <= site.today:
+            days.append(b.release)
+    return max(days).isoformat() if days else None
+
+
 def build_listings(site, w):
     root = "../../"
     # 出版社
@@ -838,10 +871,11 @@ def build_listings(site, w):
             "listing": {"en": "PUBLISHER", "title": f"{p['name']}の新刊発売予定", "lead": None, "kind": "publisher", "final_badge": False},
             "label_links": [{"name": n, "url": f"{root}label/{i}/"} for n, i in labels.items()],
             "months": listing_months(site, root, books, ("author", "price"), "publisher"),
+            "past": listing_past(site, root, books, ("author", "price")),
             "others": {"title": "ほかの出版社の新刊", "links": [{"name": o["name"], "url": f"{root}publisher/{o['slug']}/"} for o in site.publishers if o["name"] != p["name"]]},
             **listing_common(site, root, books),
         }
-        page = page_defaults(title=f"{p['name']}の漫画新刊発売予定｜{SITE_NAME}", description=f"{p['name']}から発売される漫画（コミック）の新刊を、発売日順に紹介しています。", menu="publisher")
+        page = page_defaults(title=f"{p['name']}の漫画新刊発売予定｜{SITE_NAME}", description=f"{p['name']}から発売される漫画（コミック）の新刊を、発売日順に紹介しています。", menu="publisher", lastmod=lastmod(site, books))
         w.write(f"publisher/{p['slug']}/index.html", "listing.html", page, **ctx)
     # レーベル
     label_rows = site.conn.execute("SELECT l.id, l.name, p.name AS pub, p.slug FROM labels l JOIN publishers p ON p.id = l.publisher_id WHERE l.is_adult = 0 AND p.is_adult = 0").fetchall()
@@ -854,10 +888,11 @@ def build_listings(site, w):
             "listing": {"en": "LABEL", "title": f"{l['name']}の新刊発売予定", "lead": None, "kind": "label", "final_badge": False},
             "label_links": [],
             "months": listing_months(site, root, books, ("author", "price"), "label"),
+            "past": listing_past(site, root, books, ("author", "price")),
             "others": None,
             **listing_common(site, root, books),
         }
-        page = page_defaults(title=f"{l['name']}（{l['pub']}）の漫画新刊発売予定｜{SITE_NAME}", description=f"{l['pub']}のレーベル「{l['name']}」から発売される漫画の新刊を、発売日順に紹介しています。", menu="label")
+        page = page_defaults(title=f"{l['name']}（{l['pub']}）の漫画新刊発売予定｜{SITE_NAME}", description=f"{l['pub']}のレーベル「{l['name']}」から発売される漫画の新刊の発売予定と、これまでに発売された本をまとめています。", menu="label", lastmod=lastmod(site, books))
         w.write(f"label/{l['id']}/index.html", "listing.html", page, **ctx)
     # タグ
     for slug, (name, lead) in TAG_INFO.items():
@@ -869,10 +904,11 @@ def build_listings(site, w):
             "listing": {"en": "TAG", "title": f"#{name}の新刊発売予定", "lead": lead, "kind": "tag", "final_badge": slug == "final"},
             "label_links": [],
             "months": listing_months(site, root, books, ("author", "label", "price"), "tag"),
+            "past": listing_past(site, root, books, ("author", "label", "price")),
             "others": None,
             **listing_common(site, root, books),
         }
-        page = page_defaults(title=f"#{name}の漫画新刊発売予定｜{SITE_NAME}", description=lead, tag=f"tag:{slug}")
+        page = page_defaults(title=f"#{name}の漫画新刊発売予定｜{SITE_NAME}", description=lead, tag=f"tag:{slug}", lastmod=lastmod(site, books))
         w.write(f"tag/{slug}/index.html", "listing.html", page, **ctx)
     # 一覧ページ
     root1 = "../"
@@ -916,13 +952,14 @@ def build_authors(site, w):
         name = names[k]
         ctx = {
             "crumbs": crumbs(root, (f"{name}", None)),
-            "listing": {"en": "AUTHOR", "title": f"{name}の新刊発売予定", "lead": f"{name}さんが関わる漫画の新刊を、発売日順に紹介しています。", "kind": "author", "final_badge": False},
+            "listing": {"en": "AUTHOR", "title": f"{name}の新刊発売予定", "lead": f"{name}さんが関わる漫画の新刊の発売予定と、これまでに発売された本をまとめています。", "kind": "author", "final_badge": False},
             "label_links": [],
             "months": listing_months(site, root, books, ("label", "price"), "author"),
+            "past": listing_past(site, root, books, ("label", "price")),
             "others": None,
             **listing_common(site, root, books),
         }
-        page = page_defaults(title=f"{name}の漫画新刊発売予定｜{SITE_NAME}", description=f"{name}さんの漫画（コミック）の新刊を、発売日順に紹介しています。")
+        page = page_defaults(title=f"{name}の漫画新刊発売予定｜{SITE_NAME}", description=f"{name}さんの漫画（コミック）の新刊の発売予定と、これまでに発売された本をまとめています。", lastmod=lastmod(site, books))
         w.write(f"author/{k}/index.html", "listing.html", page, **ctx)
 
 
@@ -1217,13 +1254,14 @@ def build_sitemap(site, w, site_url):
     if not site_url:
         return
     base = site_url.rstrip("/")
-    urls = []
+    body = ""
     for p in sorted(Path(w.out).rglob("index.html")):
-        rel = p.relative_to(w.out).as_posix()[: -len("index.html")]
-        if rel.startswith(("contact/thanks/", "favorites/")):
+        rel_file = p.relative_to(w.out).as_posix()
+        if rel_file in w.noindex:
             continue
-        urls.append(f"{base}/{rel}")
-    body = "".join(f"<url><loc>{u}</loc></url>" for u in urls)
+        rel = rel_file[: -len("index.html")]
+        mod = w.lastmod.get(rel_file)
+        body += f"<url><loc>{base}/{rel}</loc>" + (f"<lastmod>{mod}</lastmod>" if mod else "") + "</url>"
     (Path(w.out) / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>', encoding="utf-8")
     (Path(w.out) / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n", encoding="utf-8")
 

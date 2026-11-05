@@ -74,6 +74,8 @@ class Writer:
         self.count = 0
         self.partials = {}
         self.ranking = []
+        self.lastmod = {}
+        self.noindex = set()
 
     def partial(self, name, template, page=None):
         """全ページ共通の部品を assets/partials/ に一度だけ書き出し、ファイル名を返す。
@@ -121,6 +123,10 @@ class Writer:
             inc=self.includes(page),
             **context,
         )
+        if page.get("lastmod"):
+            self.lastmod[rel_path] = page["lastmod"]
+        if page.get("noindex"):
+            self.noindex.add(rel_path)
         target = self.out / rel_path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(html, encoding="utf-8")
