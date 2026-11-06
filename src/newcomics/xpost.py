@@ -105,11 +105,29 @@ def post(text, keys):
     return (r.json().get("data") or {}).get("id")
 
 
+def check(keys):
+    """認証情報で投稿先のアカウント名を確かめる（投稿はしない）。"""
+    url = "https://api.x.com/2/users/me"
+    r = requests.get(url, headers={"Authorization": oauth_header("GET", url, keys)}, timeout=30)
+    if r.status_code != 200:
+        raise SystemExit(f"認証を確かめられませんでした（HTTP {r.status_code}）：{r.text[:300]}")
+    print("投稿先のアカウント：@" + ((r.json().get("data") or {}).get("username") or "?"))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--date", help="投稿する日（YYYY-MM-DD）。省略すると今日（日本時間）")
     ap.add_argument("--dry-run", action="store_true", help="投稿せずに文面だけを表示する")
+    ap.add_argument("--check", action="store_true", help="認証情報と投稿先のアカウントだけを確かめる")
     args = ap.parse_args(argv)
+    keys = {"api_key": os.environ.get("X_API_KEY"), "api_secret": os.environ.get("X_API_SECRET"),
+            "token": os.environ.get("X_ACCESS_TOKEN"), "token_secret": os.environ.get("X_ACCESS_SECRET")}
+    if args.check:
+        missing = [k for k, v in keys.items() if not v]
+        if missing:
+            raise SystemExit("登録されていない認証情報があります：" + ", ".join(missing))
+        check(keys)
+        return 0
     day = date.fromisoformat(args.date) if args.date else datetime.now(db.JST).date()
     base = (os.environ.get("SITE_URL") or "https://new-comics.jp").rstrip("/")
     conn = db.connect(os.environ.get("NEWCOMICS_DB") or db.DEFAULT_PATH)
@@ -120,8 +138,6 @@ def main(argv=None):
         return 0
     print(text)
     print(f"（文字数の目安 {weight(text)}／{LIMIT}）")
-    keys = {"api_key": os.environ.get("X_API_KEY"), "api_secret": os.environ.get("X_API_SECRET"),
-            "token": os.environ.get("X_ACCESS_TOKEN"), "token_secret": os.environ.get("X_ACCESS_SECRET")}
     if args.dry_run:
         print("（確認だけのため投稿していません）")
         return 0

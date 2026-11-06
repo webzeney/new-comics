@@ -12,6 +12,10 @@ on:
         description: 投稿せずに文面だけ確認する
         type: boolean
         default: true
+      check:
+        description: 投稿先のアカウントだけを確かめる（投稿しない）
+        type: boolean
+        default: false
 
 concurrency:
   group: x-post
@@ -46,4 +50,5 @@ jobs:
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
           POST_DATE: ${{ inputs.date }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
-        run: python -m newcomics.xpost ${POST_DATE:+--date "$POST_DATE"} $DRY_RUN
+          CHECK: ${{ github.event_name == 'workflow_dispatch' && inputs.check && '--check' || '' }}
+        run: python -m newcomics.xpost ${POST_DATE:+--date "$POST_DATE"} $DRY_RUN $CHECK
