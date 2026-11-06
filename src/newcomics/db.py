@@ -105,6 +105,9 @@ MIGRATIONS = [
     ("books", "rakuten_checked_at", "TEXT"),
     ("books", "kobo_url", "TEXT"),
     ("books", "kobo_checked_at", "TEXT"),
+    ("books", "kindle_asin", "TEXT"),
+    ("books", "kindle_checked_at", "TEXT"),
+    ("books", "amazon_checked_at", "TEXT"),
 ]
 
 

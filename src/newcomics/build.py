@@ -76,7 +76,7 @@ UTC_TZ = timezone.utc
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin",
     )
 
     def __init__(self, row, tags):
@@ -109,6 +109,7 @@ class Book:
         self.seven_ok = row["seven_ok"] if "seven_ok" in row.keys() else None
         self.title_kana = row["title_kana"] if "title_kana" in row.keys() else None
         self.kobo_url = row["kobo_url"] if "kobo_url" in row.keys() else None
+        self.kindle_asin = row["kindle_asin"] if "kindle_asin" in row.keys() else None
         self.first_seen = row["first_seen_at"]
         self.updated = row["updated_at"] if "updated_at" in row.keys() else None
         self.tags = tags
@@ -195,13 +196,16 @@ class Site:
     def ebook_stores(self, b):
         """電子版ありと分かっている本だけ、Kindle と楽天Kobo へのボタンを出す。
 
-        楽天Kobo は照らし合わせで見つかった本は商品ページ、それ以外は検索結果のページ。Kindle は検索結果のページ。
+        Kindle・楽天Kobo とも、照らし合わせで見つかった本は商品ページ、それ以外は検索結果のページ。
         """
         if not b.has_ebook:
             return []
         q = unicodedata.normalize("NFKC", b.title)
         tag = self.env.get("AMAZON_TAG")
-        kindle = f"https://www.amazon.co.jp/s?k={quote(q)}&i=digital-text" + (f"&tag={quote(tag)}" if tag else "")
+        if b.kindle_asin:
+            kindle = f"https://www.amazon.co.jp/dp/{b.kindle_asin}" + (f"?tag={quote(tag)}" if tag else "")
+        else:
+            kindle = f"https://www.amazon.co.jp/s?k={quote(q)}&i=digital-text" + (f"&tag={quote(tag)}" if tag else "")
         kobo = b.kobo_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}&g=101"
         if not b.kobo_url and self.rakuten_hgc:
             kobo = f"https://hb.afl.rakuten.co.jp/hgc/{self.rakuten_hgc}/{self.env.get('RAKUTEN_LINK_ID') or ''}?pc={quote(kobo, safe='')}"

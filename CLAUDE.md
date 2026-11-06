@@ -45,6 +45,14 @@
 - 成人向けの内容は載せない
 - 楽天のクレジット表示をサイトに入れる
 
+## Amazon Creators API のルール
+
+- 認証情報は GitHub の Secrets（AMAZON_CREATORS_ID・AMAZON_CREATORS_SECRET）から読む。リクエストは 1 秒に 1 回以下
+- Amazon から取った情報は、Amazon の商品ページへのリンク（ASIN）を付けるためだけに使う。書名・価格・書影・発売日などの項目は埋めない
+  - 電子版ありの本：Kindle版の ASIN（`books.kindle_asin`）
+  - ISBN の分からない本：紙の本の ASIN（`books.asin`）
+- 照らし合わせの決まりは `src/newcomics/amazonlink.py` に書く。成人向けの商品は選ばない
+
 ## ページの構成
 
 - ページは静的な .html として書き出す。head の共通部分・サイドメニュー・フッターは `assets/partials/` に1か所だけ書き出し、各ページは PHP の readfile で読み込む（共通部分を変えたときに転送するファイルを少なくするため）

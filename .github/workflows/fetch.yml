@@ -79,6 +79,14 @@ jobs:
           RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
           RAKUTEN_AFFILIATE_ID: ${{ vars.RAKUTEN_AFFILIATE_ID }}
         run: python -m newcomics.kobo
+      - name: Amazon の照らし合わせ（Kindle版・ISBN の分からない本）
+        continue-on-error: true
+        env:
+          PYTHONPATH: src
+          AMAZON_CREATORS_ID: ${{ secrets.AMAZON_CREATORS_ID }}
+          AMAZON_CREATORS_SECRET: ${{ secrets.AMAZON_CREATORS_SECRET }}
+          AMAZON_TAG: ${{ vars.AMAZON_TAG }}
+        run: python -m newcomics.amazonlink
       - name: アナリティクスの読み込み（よく見られている新刊）
         continue-on-error: true
         env:
