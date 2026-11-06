@@ -172,7 +172,7 @@ class Site:
 
     def cart_asin(self, b):
         """Amazon のカートにまとめて入れるときに使う紙の本の ASIN。分からなければ None。"""
-        return b.asin or isbn13_to_10(b.isbn13) or None
+        return isbn13_to_10(b.isbn13) or b.asin or None
 
     def cart(self):
         """「まとめてAmazonのカートへ」のバーに渡す値。"""
@@ -181,8 +181,9 @@ class Site:
     def stores(self, b):
         tag = self.env.get("AMAZON_TAG")
         q = b.isbn13 or b.title
-        # ISBN が分かる本は Amazon・セブンネットとも商品ページへ。分からない本だけ書名の検索ページにする
-        asin = b.asin or isbn13_to_10(b.isbn13)
+        # ISBN が分かる本は Amazon・セブンネットとも商品ページへ。ISBN が分からない本は、Amazon の照らし合わせで見つかった ASIN、
+        # それもなければ書名の検索ページにする（ISBN をあとから取り込んだときは、照らし合わせの結果より ISBN を優先する）
+        asin = isbn13_to_10(b.isbn13) or b.asin
         if asin:
             amazon = f"https://www.amazon.co.jp/dp/{asin}"
             if tag:
