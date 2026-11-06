@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb %}
+{% from "_parts.html" import ad, breadcrumb, cart_intro, cart_bar %}
 {% block content %}
 <section aria-labelledby="fav-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -16,12 +16,16 @@
 <div class="section_head section_head--title">
 <h2 id="fav-list-title" class="section_head__title">お気に入りの新刊<span class="heading__count" data-fav-count>0点</span></h2>
 </div>
+<div data-fav-cart hidden>
+{{ cart_intro("チェックを入れた本を、まとめてAmazonのカートに入れられます。予約中の本もOKです。", "すべて選ぶ") }}
+</div>
 <ul class="booklist" data-fav-books></ul>
 <p class="empty" data-fav-empty>お気に入りに登録した作品は、まだありません。</p>
 </section>
 {{ ad() -}}
 <template id="fav-row-template">
 <li class="bookrow">
+<label class="pick"><input type="checkbox" class="pick__input" value="" aria-label="カートに入れる本に選ぶ" data-cart-pick><span class="pick__box" aria-hidden="true"></span></label>
 <a href="#" class="bookrow__cover" data-book-url>
 <span class="bookrow__image">書影</span>
 </a>
@@ -42,6 +46,7 @@
 </div>
 </li>
 </template>
+{{ cart_bar(cart) }}
 {% endblock %}
 {% block scripts %}
 {% if favorites_js %}<script src="{{ root }}assets/js/favorites.js" defer></script>{% endif %}

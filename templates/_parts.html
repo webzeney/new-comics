@@ -29,9 +29,10 @@
 </div>
 {%- endmacro %}
 
-{% macro bookrow(b, chip, meta, top=False, final_badge=False, date_badge=False) -%}
+{% macro bookrow(b, chip, meta, top=False, final_badge=False, date_badge=False, pick=False) -%}
 <li class="bookrow{% if top %} bookrow--top{% endif %}" data-pub="{{ b.pub }}">
-<a href="{{ b.url }}" class="bookrow__cover{% if final_badge %} bookrow__cover--badge{% endif %}">
+{% if pick and b.asin %}{{ cart_pick(b.asin, b.alt) }}
+{% endif %}<a href="{{ b.url }}" class="bookrow__cover{% if final_badge %} bookrow__cover--badge{% endif %}">
 <span class="bookrow__image">{{ cover_photo(b.image, b.alt) }}</span>
 {% if final_badge %}<span class="bookrow__final">完結</span>{% endif %}
 </a>
@@ -49,6 +50,25 @@
 {{ store_tiles(b.stores, 'bookrow__store') }}
 </div>
 </li>
+{%- endmacro %}
+
+{% macro cart_pick(asin, alt, cls='') -%}
+<label class="pick{% if cls %} {{ cls }}{% endif %}"><input type="checkbox" class="pick__input" value="{{ asin }}" aria-label="{{ alt }}をカートに入れる本に選ぶ" data-cart-pick><span class="pick__box" aria-hidden="true"></span></label>
+{%- endmacro %}
+
+{% macro cart_intro(text, all_label) -%}
+<div class="cart_intro" data-cart-intro>
+<p class="cart_intro__text">{{ text }}</p>
+<button type="button" class="cart_intro__all" data-cart-all data-label-on="{{ all_label }}" data-label-off="選択を外す">{{ all_label }}</button>
+</div>
+{%- endmacro %}
+
+{% macro cart_bar(cart) -%}
+<div class="cart_bar" data-cart-bar data-tag="{{ cart.tag }}" hidden>
+<span class="cart_bar__count"><span class="cart_bar__num" data-cart-count>0</span>冊を選択中</span>
+<button type="button" class="cart_bar__clear" data-cart-clear>選択を外す</button>
+<a href="#" class="cart_bar__button" target="_blank" rel="sponsored noopener" data-cart-go>まとめてAmazonのカートへ</a>
+</div>
 {%- endmacro %}
 
 {% macro stat(label, num, unit, main=False, size='', value_cls='') -%}

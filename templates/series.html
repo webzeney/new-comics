@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import alarm_dialog, ad, breadcrumb, store_buttons, release_bubble, cover_photo %}
+{% from "_parts.html" import alarm_dialog, ad, breadcrumb, store_buttons, release_bubble, cover_photo, cart_pick, cart_intro, cart_bar %}
 {% block content %}
 <section aria-labelledby="series-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -71,9 +71,13 @@
 <button type="button" aria-pressed="false" class="toggle_button" data-sort="asc">古い順</button>
 </div>
 </div>
+{% if volumes|selectattr("asin")|list|length > 1 %}{{ cart_intro("持っていない巻にチェックを入れると、まとめてAmazonのカートに入れられます。予約中の巻もOKです。", "全巻を選ぶ") }}
+{% endif %}
 <ol class="volumes">
 {% for v in volumes %}
 <li>
+{% if v.asin %}{{ cart_pick(v.asin, v.alt, 'pick--cover') }}
+{% endif %}
 {% if v.cover_url %}
 <div class="volumes__link">
 <a href="{{ v.url }}" class="cover_link"><span class="cover">{{ cover_photo(v.image, v.alt) }}</span></a>
@@ -97,4 +101,5 @@
 </section>
 {{ ad() -}}
 {{ alarm_dialog(series.name) }}
+{{ cart_bar(cart) }}
 {% endblock %}

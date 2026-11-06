@@ -45,6 +45,9 @@ if (cover && item.i) { var img = document.createElement('img'); img.src = item.i
 $('[data-field="meta"]', li).textContent = item.m;
 if (!item.e) $('[data-field="ebook"]', li).remove();
 $$('[data-store]', li).forEach(function (a) { var u = item.s && item.s[a.dataset.store]; if (u) { a.href = u; } else { a.remove(); } });
+var pick = $('[data-cart-pick]', li);
+var asin = ((item.s && item.s.amazon) || '').match(/\/dp\/([0-9A-Z]{10})/);
+if (asin) { pick.value = asin[1]; pick.setAttribute('aria-label', (item.ia || item.t) + 'をカートに入れる本に選ぶ'); } else { pick.parentNode.remove(); }
 return li;
 }
 
@@ -81,6 +84,8 @@ var found = items.filter(function (it) { return it.sr != null && ids.indexOf(Str
 found.sort(function (a, b) { return (a.d || '9999') < (b.d || '9999') ? -1 : (a.d || '9999') > (b.d || '9999') ? 1 : 0; });
 found.forEach(function (it) { booksBox.appendChild(renderRow(it, today)); });
 count.textContent = found.length + '点';
+$('[data-fav-cart]').hidden = !$('[data-cart-pick]', booksBox);
+document.dispatchEvent(new Event('cart:refresh'));
 empty.hidden = found.length > 0;
 empty.textContent = favs.length ? 'お気に入りの作品の新刊は、今のところありません。' : 'お気に入りに登録した作品は、まだありません。';
 }

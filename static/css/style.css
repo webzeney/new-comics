@@ -378,6 +378,26 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .sameday__pub{font-size:11px;font-weight:700;color:#5A5148}
 .sameday__title{font-size:13px;font-weight:900;line-height:1.4}
 /* ==========================================================================
+まとめてAmazonのカートへ
+========================================================================== */
+.pick{flex:0 0 auto;position:relative;display:flex;align-items:center;justify-content:center;width:32px;height:32px;cursor:pointer}
+.pick--cover{position:absolute;top:6px;right:6px;z-index:2;border-radius:8px;background:#FFFFFF}
+.pick__input{position:absolute;width:1px;height:1px;margin:0;opacity:0}
+.pick__box{display:flex;align-items:center;justify-content:center;width:24px;height:24px;box-sizing:border-box;border:2px solid #222222;border-radius:6px;background:#FFFFFF}
+.pick__input:checked+.pick__box{background:#222222}
+.pick__input:checked+.pick__box::after{content:"";width:6px;height:11px;margin-top:-3px;border:solid #FFFFFF;border-width:0 3px 3px 0;transform:rotate(45deg)}
+.pick__input:focus-visible+.pick__box{outline:2px solid #B5302A;outline-offset:2px}
+.volumes>li{position:relative}
+.cart_intro{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:14px 0 6px;padding:12px 16px;border-radius:14px;background:#FFF6EC}
+.cart_intro__text{flex:1 1 260px;margin:0;font-size:13px;font-weight:700;line-height:1.7}
+.cart_intro__all{flex:0 0 auto;padding:6px 16px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;font:inherit;font-size:13px;font-weight:900;cursor:pointer}
+.cart_bar{position:fixed;left:50%;bottom:16px;z-index:60;display:flex;align-items:center;gap:14px;width:max-content;max-width:calc(100% - 32px);box-sizing:border-box;padding:8px 8px 8px 22px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;box-shadow:4px 4px 0 #222222;transform:translateX(-50%)}
+.cart_bar[hidden]{display:none}
+.cart_bar__count{font-size:14px;font-weight:900;white-space:nowrap}
+.cart_bar__num{margin-right:2px;font-family:'Yusei Magic',sans-serif;font-size:20px;font-weight:400;letter-spacing:0.1em}
+.cart_bar__clear{padding:0;border:0;background:none;color:#5A5148;font:inherit;font-size:12px;text-decoration:underline;white-space:nowrap;cursor:pointer}
+.cart_bar__button{display:inline-flex;align-items:center;padding:12px 22px;border-radius:999px;background:#222222;color:#FFFFFF;font-size:14px;font-weight:900;text-decoration:none;white-space:nowrap}
+/* ==========================================================================
 この本について
 ========================================================================== */
 .book_about{margin:14px 0 0;font-size:15px;line-height:1.9}
@@ -598,6 +618,9 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .book__fact_num{font-size:16px;letter-spacing:0.1em;white-space:nowrap}
 .book__title{font-family:'Noto Sans JP',system-ui,sans-serif;font-size:26px;font-weight:900;letter-spacing:normal}
 .follow__buttons{grid-template-columns:1fr}
+.cart_bar{left:12px;right:12px;bottom:12px;width:auto;max-width:none;gap:10px;padding:8px 8px 8px 16px;transform:none}
+.cart_bar__clear{display:none}
+.cart_bar__button{margin-left:auto;padding:12px 16px;font-size:13px}
 .book__fact_unit{font-size:11px}
 .book__info{flex:1 1 100%}
 .store_button{letter-spacing:0.15em}

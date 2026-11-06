@@ -169,6 +169,14 @@ class Site:
     def book_url(self, root, b):
         return f"{root}book/{b.key}/"
 
+    def cart_asin(self, b):
+        """Amazon のカートにまとめて入れるときに使う紙の本の ASIN。分からなければ None。"""
+        return b.asin or isbn13_to_10(b.isbn13) or None
+
+    def cart(self):
+        """「まとめてAmazonのカートへ」のバーに渡す値。"""
+        return {"tag": self.env.get("AMAZON_TAG") or ""}
+
     def stores(self, b):
         tag = self.env.get("AMAZON_TAG")
         q = b.isbn13 or b.title
@@ -235,6 +243,7 @@ class Site:
         return {
             "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook,
             "first": b.is_first, "meta": self.meta(b, keys), "stores": self.stores(b), "image": b.image, "cover_url": b.cover_url, "alt": self.alt(b),
+            "asin": self.cart_asin(b),
         }
 
     def holiday(self, d):
@@ -608,6 +617,7 @@ def build_dates(site, w):
             "next": {"md": md(next_d), "dow": dow(next_d), "url": f"{root}date/{next_d.isoformat()}/"} if next_d else None,
             "stats": {"total": len(books), "first": sum(1 for b in books if b.is_first), "publishers": len(groups)},
             "groups": [{"name": n, "books": [dict(site.row(root, b, ("author", "price")), label=b.label or n) for b in g]} for n, g in groups.items()],
+            "cart": site.cart(),
             "calendar_url": f"{root}calendar/{d.year}/{d.month:02d}/",
         }
         page = page_defaults(
@@ -865,7 +875,8 @@ def build_series(site, w):
             "feed_url": f"{root}series/{sid}/feed.xml",
             "ical": calendar_links(site, sid),
             "forecast": fc if status != "完結" else None,
-            "volumes": [{"no": b.volume, "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else "未定", "latest": b.id == latest.id, "url": site.book_url(root, b), "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b)} for b in reversed(vols)],
+            "volumes": [{"no": b.volume, "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else "未定", "latest": b.id == latest.id, "url": site.book_url(root, b), "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b), "asin": site.cart_asin(b)} for b in reversed(vols)],
+            "cart": site.cart(),
         }
         page = page_defaults(
             title=f"{info['name']}の新刊・既刊一覧（{latest.publisher}）｜{SITE_NAME}",
@@ -1173,7 +1184,7 @@ def build_series_calendars(site, w, site_url):
 # ---- お気に入り ----
 def build_favorites(site, w):
     root = "../"
-    ctx = {"crumbs": crumbs(root, ("お気に入り", None)), "favorites_js": True}
+    ctx = {"crumbs": crumbs(root, ("お気に入り", None)), "favorites_js": True, "cart": site.cart()}
     page = page_defaults(title=f"お気に入り｜{SITE_NAME}", description="お気に入りに登録した作品の新刊をまとめて見られます。", menu="favorites", noindex=True)
     w.write("favorites/index.html", "favorites.html", page, **ctx)
 

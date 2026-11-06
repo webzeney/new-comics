@@ -415,8 +415,43 @@ setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 });
 }
 
+/* チェックした本を、まとめて Amazon のカートに入れる（「ショッピングカートに入れる」フォームの URL を組み立てる） */
+function initCart() {
+var bar = $('[data-cart-bar]');
+if (!bar) return;
+var count = $('[data-cart-count]', bar);
+var go = $('[data-cart-go]', bar);
+function picks() { return $$('[data-cart-pick]'); }
+function visible(el) { return el.offsetParent !== null; }
+function update() {
+var chosen = picks().filter(function (el) { return el.checked && el.value; });
+var seen = {};
+var asins = chosen.map(function (el) { return el.value; }).filter(function (a) { if (seen[a]) return false; seen[a] = true; return true; });
+count.textContent = asins.length;
+bar.hidden = asins.length === 0;
+var q = asins.map(function (a, i) { return 'ASIN.' + (i + 1) + '=' + encodeURIComponent(a) + '&Quantity.' + (i + 1) + '=1'; }).join('&');
+go.href = 'https://www.amazon.co.jp/gp/aws/cart/add.html?' + (bar.dataset.tag ? 'AssociateTag=' + encodeURIComponent(bar.dataset.tag) + '&' : '') + q;
+var shown = picks().filter(visible);
+var all = shown.length > 0 && shown.every(function (el) { return el.checked; });
+$$('[data-cart-all]').forEach(function (b) { b.textContent = all ? b.dataset.labelOff : b.dataset.labelOn; b.setAttribute('aria-pressed', all ? 'true' : 'false'); });
+}
+document.addEventListener('change', function (e) { if (e.target.matches && e.target.matches('[data-cart-pick]')) update(); });
+document.addEventListener('cart:refresh', update);
+$$('[data-cart-all]').forEach(function (b) {
+b.addEventListener('click', function () {
+var shown = picks().filter(visible);
+var on = !shown.every(function (el) { return el.checked; });
+shown.forEach(function (el) { el.checked = on; });
+update();
+});
+});
+$('[data-cart-clear]', bar).addEventListener('click', function () { picks().forEach(function (el) { el.checked = false; }); update(); });
+update();
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 initSidemenu();
+initCart();
 initTicker();
 initFilterMore();
 initFavButtons();
