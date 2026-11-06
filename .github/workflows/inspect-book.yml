@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       title:
-        description: 書名の一部
+        description: 書名の一部（重複を数えるときは「--dups」）
         required: true
 
 jobs:
@@ -16,9 +16,17 @@ jobs:
       DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
       TITLE: ${{ inputs.title }}
     steps:
+      - uses: actions/checkout@v4
       - name: データベースの取り出し（非公開リポジトリ）
         run: git clone --quiet --depth 1 "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
+      - name: ISBN のない重複を数える
+        if: inputs.title == '--dups'
+        env:
+          PYTHONPATH: src
+          NEWCOMICS_DB: data/newcomics.sqlite
+        run: python -m newcomics.dedupe
       - name: 確認
+        if: inputs.title != '--dups'
         run: |
           python3 - <<'PY'
           import os, sqlite3

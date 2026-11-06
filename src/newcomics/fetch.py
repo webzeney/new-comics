@@ -74,7 +74,7 @@ def run_one(conn, client, module, months, log):
         if unknown:
             log(f"{module.NAME}: 対応表にない出版社 {len(unknown)} 社: " + "、".join(sorted(unknown)))
         if publisher_id is not None:
-            merged = store.merge_isbnless_duplicates(conn, publisher_id)
+            merged = store.merge_isbnless_duplicates(conn, publisher_id) + store.merge_isbnless_by_title(conn, publisher_id)
             if merged:
                 log(f"{module.NAME}: ISBN のない重複をまとめた {merged} 件")
         relinked = store.refresh_affiliate_links(conn, records)

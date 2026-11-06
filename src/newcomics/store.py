@@ -1,5 +1,6 @@
 import json
 import re
+import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
 
@@ -217,6 +218,52 @@ def refresh_affiliate_links(conn, records):
             conn.execute("UPDATE books SET rakuten_url = ? WHERE id = ?", (m.group(1) + current + m.group(3), row["id"]))
             changed += 1
     return changed
+
+
+def title_key(text):
+    """書名を比べるための形（全角半角・大文字小文字・空白の違いをなくす）。"""
+    return re.sub(r"\s+", "", unicodedata.normalize("NFKC", text or "")).lower()
+
+
+def isbnless_title_duplicates(conn, publisher_id=None):
+    """出版社サイトの本で、ISBN のない本と、同じ出版社・同じ発売日・同じ書名で ISBN のある本の組を返す。
+
+    出版社のカレンダーのページ（ISBN なし）と書籍の詳細ページ（ISBN あり）から同じ本を取り込み、
+    巻数が読み取れなかったなどの理由で、シリーズ・巻・版での照らし合わせ（merge_isbnless_duplicates）から漏れたものを拾う。
+    同じ書名の ISBN のある本が1冊だけのときに限る。
+    """
+    where = "AND publisher_id = ?" if publisher_id is not None else ""
+    args = (publisher_id,) if publisher_id is not None else ()
+    rows = conn.execute(
+        f"SELECT * FROM books WHERE origin = 'publisher' AND release_date IS NOT NULL {where}", args
+    ).fetchall()
+    with_isbn = {}
+    for r in rows:
+        if r["isbn13"]:
+            with_isbn.setdefault((r["publisher_id"], r["release_date"], title_key(r["title"])), []).append(r)
+    pairs = []
+    for r in rows:
+        if r["isbn13"]:
+            continue
+        cands = with_isbn.get((r["publisher_id"], r["release_date"], title_key(r["title"])), [])
+        if len(cands) == 1:
+            pairs.append((cands[0], r))
+    return pairs
+
+
+def merge_isbnless_by_title(conn, publisher_id=None):
+    """isbnless_title_duplicates の組をまとめる（著者・完結・タグを ISBN のある本に移し、ISBN のない本は消す）。まとめた件数を返す。"""
+    merged = 0
+    for main, r in isbnless_title_duplicates(conn, publisher_id):
+        authors = main["authors"]
+        if not json.loads(authors or "[]") and json.loads(r["authors"] or "[]"):
+            authors = r["authors"]
+        is_final = int(bool(main["is_final"]) or bool(r["is_final"]))
+        conn.execute("UPDATE books SET authors = ?, is_final = ? WHERE id = ?", (authors, is_final, main["id"]))
+        conn.execute("INSERT OR IGNORE INTO book_tags (book_id, tag_id) SELECT ?, tag_id FROM book_tags WHERE book_id = ?", (main["id"], r["id"]))
+        db.delete_book(conn, r["id"])
+        merged += 1
+    return merged
 
 
 def merge_isbnless_duplicates(conn, publisher_id):
