@@ -95,7 +95,7 @@
 <p class="empty release__empty">{{ r.empty }}</p>
 {% endif %}
 {% for b in r.books %}
-<article class="card">
+<article class="card{% if loop.index > r.base %} card--off{% endif %}">
 <a href="{{ b.url }}" class="card__cover">
 <div class="card__image">{{ cover_photo(b.image, b.alt) }}</div>
 <span class="card__bubble{% if b.bubble_kind %} card__bubble--{{ b.bubble_kind }}{% endif %}">{{ b.bubble }}</span>

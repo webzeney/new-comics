@@ -33,7 +33,8 @@ UPDATE_KINDS = [
     ("fixed", "日付決定", "発売日の決定", "発売日が決定した本は、今のところありません。"),
 ]
 KIND_LABELS = {"日付変更": "発売日の変更", "日付決定": "発売日の決定"}
-TOP_BOOKS = 8
+TOP_BOOKS = 20  # PC は幅に合わせて「1段の数×2」だけ表示する（JavaScript で調整）
+TOP_BOOKS_BASE = 8  # スマホと JavaScript が動かないときに表示する数
 TAG_INFO = {
     "new-series": ("新シリーズ1巻", "シリーズの1巻として発売される新刊です。"),
     "final": ("完結巻", "最終巻・完結巻として発売される新刊です。"),
@@ -468,7 +469,7 @@ def build_top(site, w):
             })
         more = f"date/{d.isoformat()}/" if books else None
         empty = "本日発売の新刊はありません" if word == "今日" else f"{word}発売の新刊はありません"
-        return {"word": word, "date": md(d), "books": cards, "more_url": more, "empty": empty}
+        return {"word": word, "date": md(d), "books": cards, "more_url": more, "empty": empty, "base": TOP_BOOKS_BASE}
 
     ticker = [b.title for b in site.by_date.get(today, [])]
     updates = latest_updates(site, root, 8)
