@@ -19,6 +19,28 @@ label.textContent = open ? button.dataset.openLabel : button.dataset.closedLabel
 }
 
 /* トップ：今日・明日のタブ */
+/* 「今日・明日発売の新刊」：PC は1段に並ぶ数×2段ぶんだけ表示し、段の途中で欠けないようにする */
+function fitReleaseRows() {
+var grids = $$('.release__grid');
+if (!grids.length) return;
+var shown = grids.filter(function (g) { return !g.hidden; })[0];
+var limit = 8;
+if (shown && window.matchMedia('(min-width: 721px)').matches) {
+var cols = getComputedStyle(shown).gridTemplateColumns.split(' ').filter(Boolean).length;
+if (cols > 0) limit = cols * 2;
+}
+grids.forEach(function (g) {
+$$('.card', g).forEach(function (c, i) { c.classList.toggle('card--off', i >= limit); });
+});
+}
+
+function initReleaseRows() {
+if (!$('.release__grid')) return;
+var timer = null;
+window.addEventListener('resize', function () { clearTimeout(timer); timer = setTimeout(fitReleaseRows, 100); });
+fitReleaseRows();
+}
+
 function initReleaseTabs() {
 var tabs = $$('.release__tab');
 if (!tabs.length) return;
@@ -33,6 +55,7 @@ $$('.release__more_link[data-panel="' + panelId + '"]').forEach(function (a) { a
 });
 var more = $('.release__more');
 if (more) more.hidden = !$('.release__more_link[data-panel="' + tab.getAttribute('aria-controls') + '"]');
+fitReleaseRows();
 });
 });
 }
@@ -467,6 +490,7 @@ initFilterMore();
 initFavButtons();
 initIcs();
 initReleaseTabs();
+initReleaseRows();
 initDayPage();
 initCalendar();
 initMonthTabs();
