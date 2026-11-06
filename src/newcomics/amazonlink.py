@@ -1,6 +1,6 @@
 """Amazon の商品ページへの直リンクを付ける（Amazon Creators API）。
 
-1. 電子版ありの本：Kindle版を作品名で探し、書名に作品名と同じ巻数が入っている Kindle版を同じ本とみなす（books.kindle_asin）。
+1. 電子版ありの本と、電子版の有無が分からない本：Kindle版を作品名で探し、書名に作品名と同じ巻数が入っている Kindle版を同じ本とみなす（books.kindle_asin）。
 2. ISBN の分からない本：紙の本を書名で探し、作品名・巻数・発売日が合う本を同じ本とみなす（books.asin）。
 付けるのは Amazon の商品ページへのリンク（ASIN）だけで、書名や価格などは変えない。
 単話・分冊・カラー版などは、こちらの書名に同じ言葉がないかぎり選ばない。成人向けの商品は選ばない。
@@ -81,8 +81,8 @@ def pick(items, series, title, volume, release, kindle):
 def targets(conn, now, kind, limit):
     since = (now - timedelta(days=RECHECK_DAYS)).isoformat(timespec="seconds")
     if kind == "kindle":
-        where = "b.has_ebook = 1 AND b.kindle_asin IS NULL AND (b.kindle_checked_at IS NULL OR b.kindle_checked_at < ?)"
-        order = "b.kindle_checked_at IS NOT NULL"
+        where = "(b.has_ebook = 1 OR b.has_ebook IS NULL) AND b.kindle_asin IS NULL AND (b.kindle_checked_at IS NULL OR b.kindle_checked_at < ?)"
+        order = "b.kindle_checked_at IS NOT NULL, b.has_ebook IS NULL"
     else:
         where = "COALESCE(b.isbn13, '') = '' AND COALESCE(b.asin, '') = '' AND b.release_date IS NOT NULL AND (b.amazon_checked_at IS NULL OR b.amazon_checked_at < ?)"
         order = "b.amazon_checked_at IS NOT NULL"
@@ -129,7 +129,7 @@ def main(argv=None):
     deadline = time.monotonic() + TIME_LIMIT
     paper = run(conn, api, "paper", targets(conn, now, "paper", args.max_paper), deadline)
     kindle = run(conn, api, "kindle", targets(conn, now, "kindle", args.max_kindle), deadline)
-    left = conn.execute("SELECT COUNT(*) FROM books WHERE has_ebook = 1 AND kindle_asin IS NULL AND kindle_checked_at IS NULL").fetchone()[0]
+    left = conn.execute("SELECT COUNT(*) FROM books WHERE (has_ebook = 1 OR has_ebook IS NULL) AND kindle_asin IS NULL AND kindle_checked_at IS NULL").fetchone()[0]
     print(f"Amazon の照らし合わせ：ISBN の分からない本 見つかった {paper['found']}／見つからない {paper['missing']}／エラー {paper['error']}、"
           f"Kindle版 見つかった {kindle['found']}／見つからない {kindle['missing']}／エラー {kindle['error']}"
           f"（API {api.calls} 回、Kindle版をまだ探していない本 残り {left} 冊）")

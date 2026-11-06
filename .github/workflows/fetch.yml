@@ -63,6 +63,14 @@ jobs:
           else
             python -m newcomics.fetch
           fi
+      - name: Amazon の照らし合わせ（Kindle版・ISBN の分からない本。楽天の書影を探す前に行う）
+        continue-on-error: true
+        env:
+          PYTHONPATH: src
+          AMAZON_CREATORS_ID: ${{ secrets.AMAZON_CREATORS_ID }}
+          AMAZON_CREATORS_SECRET: ${{ secrets.AMAZON_CREATORS_SECRET }}
+          AMAZON_TAG: ${{ vars.AMAZON_TAG }}
+        run: python -m newcomics.amazonlink
       - name: 楽天の書影の補完（書影のない本）
         continue-on-error: true
         env:
@@ -79,14 +87,6 @@ jobs:
           RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
           RAKUTEN_AFFILIATE_ID: ${{ vars.RAKUTEN_AFFILIATE_ID }}
         run: python -m newcomics.kobo
-      - name: Amazon の照らし合わせ（Kindle版・ISBN の分からない本）
-        continue-on-error: true
-        env:
-          PYTHONPATH: src
-          AMAZON_CREATORS_ID: ${{ secrets.AMAZON_CREATORS_ID }}
-          AMAZON_CREATORS_SECRET: ${{ secrets.AMAZON_CREATORS_SECRET }}
-          AMAZON_TAG: ${{ vars.AMAZON_TAG }}
-        run: python -m newcomics.amazonlink
       - name: アナリティクスの読み込み（よく見られている新刊）
         continue-on-error: true
         env:
@@ -94,11 +94,6 @@ jobs:
           GA_SERVICE_ACCOUNT_JSON: ${{ secrets.GA_SERVICE_ACCOUNT_JSON }}
           GA_PROPERTY_ID: ${{ vars.GA_PROPERTY_ID }}
         run: python -m newcomics.ga
-      - name: セブンネットの取り扱い確認
-        continue-on-error: true
-        env:
-          PYTHONPATH: src
-        run: python -m newcomics.sevencheck
       - name: 件数の集計
         env:
           PYTHONPATH: src

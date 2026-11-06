@@ -35,5 +35,14 @@ class PickTest(unittest.TestCase):
         self.assertIsNone(amazonlink.pick(items, "作品名", "作品名 3", 3, date(2026, 11, 18), True))
 
 
+
+class Isbn10Test(unittest.TestCase):
+    def test_isbn10_to_13(self):
+        from newcomics.rakutencover import isbn10_to_13
+        self.assertEqual(isbn10_to_13("4301008675"), "9784301008675")
+        self.assertEqual(isbn10_to_13("409855011X"[:9] + "3"), "9784098550111")
+        self.assertIsNone(isbn10_to_13("B0ABCDEFGH"))
+
+
 if __name__ == "__main__":
     unittest.main()

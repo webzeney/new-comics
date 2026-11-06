@@ -49,8 +49,10 @@
 
 - 認証情報は GitHub の Secrets（AMAZON_CREATORS_ID・AMAZON_CREATORS_SECRET）から読む。リクエストは 1 秒に 1 回以下
 - Amazon から取った情報は、Amazon の商品ページへのリンク（ASIN）を付けるためだけに使う。書名・価格・書影・発売日などの項目は埋めない
-  - 電子版ありの本：Kindle版の ASIN（`books.kindle_asin`）
+  - 電子版ありの本と、電子版の有無が分からない本：Kindle版の ASIN（`books.kindle_asin`）。有無が分からない本は、Kindle版が見つかったときだけ Kindle のボタンを出す（2026-11-06 運営者の判断）
   - ISBN の分からない本：紙の本の ASIN（`books.asin`）
+  - 例外：ISBN の分からない本は、紙の本の ASIN（= ISBN の10桁）を13桁に直して楽天に問い合わせ、楽天の書影と商品ページへのリンクを付けてよい。書影を付けることを優先する（2026-11-06 運営者の判断）。この ISBN は問い合わせに使うだけで `books.isbn13` には入れない
+  - 夜間の取得では、Amazon の照らし合わせを楽天の書影の補完より先に行う
 - 照らし合わせの決まりは `src/newcomics/amazonlink.py` に書く。成人向けの商品は選ばない
 
 ## ページの構成

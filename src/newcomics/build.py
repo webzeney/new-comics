@@ -204,11 +204,14 @@ class Site:
         return out
 
     def ebook_stores(self, b):
-        """電子版ありと分かっている本だけ、Kindle と楽天Kobo へのボタンを出す。
+        """電子版のボタン。電子版ありと分かっている本には Kindle と楽天Kobo、
+        電子版の有無が分からない本には、照らし合わせで見つかったストアだけを出す（2026-11-06 運営者の判断）。
 
         Kindle・楽天Kobo とも、照らし合わせで見つかった本は商品ページ、それ以外は検索結果のページ。
         """
-        if not b.has_ebook:
+        if b.has_ebook is False:
+            return []
+        if b.has_ebook is None and not (b.kindle_asin or b.kobo_url):
             return []
         q = unicodedata.normalize("NFKC", b.title)
         tag = self.env.get("AMAZON_TAG")
@@ -219,7 +222,12 @@ class Site:
         kobo = b.kobo_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}&g=101"
         if not b.kobo_url and self.rakuten_hgc:
             kobo = f"https://hb.afl.rakuten.co.jp/hgc/{self.rakuten_hgc}/{self.env.get('RAKUTEN_LINK_ID') or ''}?pc={quote(kobo, safe='')}"
-        return [{"name": "Kindle", "url": kindle}, {"name": "楽天Kobo", "url": kobo}]
+        out = []
+        if b.has_ebook or b.kindle_asin:
+            out.append({"name": "Kindle", "url": kindle})
+        if b.has_ebook or b.kobo_url:
+            out.append({"name": "楽天Kobo", "url": kobo})
+        return out
 
     @staticmethod
     def author_text(b):

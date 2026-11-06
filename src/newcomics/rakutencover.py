@@ -2,12 +2,15 @@
 
 毎晩の楽天の取り込みは「今月から数か月分」の発売予定だけを見るので、それより前に発売された本は楽天と照らし合わせていない。
 ここでは、ISBN が分かっていて書影がない本を 1 冊ずつ ISBN で楽天に問い合わせ、見つかれば書影・楽天の商品ページへのリンク・読み仮名を付ける。
+ISBN が分からない本でも、Amazon の照らし合わせで紙の本の ASIN（= ISBN の10桁）が見つかっていれば、それを13桁に直して問い合わせる
+（書影を付けることを優先する。2026-11-06 運営者の判断）。この ISBN は問い合わせに使うだけで、books.isbn13 には入れない。
 出版社サイトの本の書名・価格などは変えない（CLAUDE.md の楽天ブックスAPIのルール）。
 まだ問い合わせていない本を、発売日の新しい順に 1 回あたり MAX_CHECKS 冊まで問い合わせる。
 見つからなかった本は RECHECK_DAYS 日たったら問い合わせ直す。
 """
 import argparse
 import os
+import re
 import sys
 import time
 from datetime import datetime, timedelta
@@ -22,15 +25,34 @@ TIME_LIMIT = 15 * 60
 RECHECK_DAYS = 30
 
 
+ISBN10 = re.compile(r"^\d{9}[\dX]$")
+
+
+def isbn10_to_13(isbn10):
+    """10桁の ISBN（紙の本の ASIN）を13桁に直す。ISBN でなければ None。"""
+    if not isbn10 or not ISBN10.match(isbn10):
+        return None
+    core = "978" + isbn10[:9]
+    total = sum(int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(core))
+    return core + str((10 - total % 10) % 10)
+
+
 def targets(conn, now, limit):
+    """問い合わせる本と、問い合わせに使う ISBN の組。"""
     since = (now - timedelta(days=RECHECK_DAYS)).isoformat(timespec="seconds")
-    return conn.execute(
-        """SELECT id, isbn13 FROM books
-        WHERE isbn13 IS NOT NULL AND image_url IS NULL AND (rakuten_checked_at IS NULL OR rakuten_checked_at < ?)
+    rows = conn.execute(
+        """SELECT id, isbn13, asin FROM books
+        WHERE (isbn13 IS NOT NULL OR asin IS NOT NULL) AND image_url IS NULL AND (rakuten_checked_at IS NULL OR rakuten_checked_at < ?)
         ORDER BY (rakuten_checked_at IS NOT NULL), release_date DESC, id
         LIMIT ?""",
         (since, limit),
     ).fetchall()
+    out = []
+    for r in rows:
+        isbn = r["isbn13"] or isbn10_to_13(r["asin"])
+        if isbn:
+            out.append((r["id"], isbn))
+    return out
 
 
 def apply(conn, book_id, rec, checked_at):
@@ -66,22 +88,22 @@ def main(argv=None):
     rows = targets(conn, datetime.now(db.JST), args.max)
     start = time.monotonic()
     counts = {"found": 0, "image": 0, "missing": 0, "error": 0}
-    for i, r in enumerate(rows, start=1):
+    for i, (book_id, isbn) in enumerate(rows, start=1):
         if time.monotonic() - start > TIME_LIMIT:
             break
         try:
-            rec = lookup(api, r["isbn13"])
+            rec = lookup(api, isbn)
         except (requests.RequestException, rakuten.RakutenError, ValueError):
             counts["error"] += 1
             continue
         now = db.now_iso()
         if rec is None:
             counts["missing"] += 1
-            conn.execute("UPDATE books SET rakuten_checked_at = ? WHERE id = ?", (now, r["id"]))
+            conn.execute("UPDATE books SET rakuten_checked_at = ? WHERE id = ?", (now, book_id))
         else:
             counts["found"] += 1
             counts["image"] += 1 if rec.image_url else 0
-            apply(conn, r["id"], rec, now)
+            apply(conn, book_id, rec, now)
         if i % 50 == 0:
             conn.commit()
     conn.commit()
