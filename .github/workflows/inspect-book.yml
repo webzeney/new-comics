@@ -1,0 +1,30 @@
+name: 書籍データの確認（手動）
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 書名の一部
+        required: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DATA_REPO: ${{ github.repository_owner }}/new-comics-data
+      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+      TITLE: ${{ inputs.title }}
+    steps:
+      - name: データベースの取り出し（非公開リポジトリ）
+        run: git clone --quiet --depth 1 "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
+      - name: 確認
+        run: |
+          python3 - <<'PY'
+          import os, sqlite3
+          c = sqlite3.connect("data/newcomics.sqlite"); c.row_factory = sqlite3.Row
+          cols = [r[1] for r in c.execute("PRAGMA table_info(books)")]
+          want = [k for k in ("id","title","volume","isbn13","asin","release_date","origin","has_ebook","image_url","rakuten_url","rakuten_checked_at","amazon_checked_at","kindle_asin","source_url") if k in cols]
+          for r in c.execute(f"SELECT {', '.join('b.'+k for k in want)}, p.name AS publisher FROM books b JOIN publishers p ON p.id = b.publisher_id WHERE b.title LIKE ?", (f"%{os.environ['TITLE']}%",)):
+              print("----"); [print(f"{k}: {r[k]}") for k in r.keys()]
+          PY
