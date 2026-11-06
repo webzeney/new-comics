@@ -27,6 +27,7 @@ POST_URL = "https://api.x.com/2/tweets"
 LIMIT = 280      # X の文字数の上限（全角は2、URL は23として数える）
 URL_WEIGHT = 23
 HASHTAGS = "#漫画 #新刊"
+NAME_MAX = 24   # 書名がこれより長いときは「…」で切る（1件で枠を使い切らないように）
 
 
 def weight(text):
@@ -47,6 +48,8 @@ def short(b):
     main, vol, _ = title_parts(b)
     name = main if vol else b.title
     name = re.sub(r"\s*[~〜～][^~〜～]+[~〜～]\s*", " ", name).strip() or name
+    if len(name) > NAME_MAX:
+        name = name[:NAME_MAX - 1].rstrip() + "…"
     return f"{name} {vol}巻" if vol else name
 
 
