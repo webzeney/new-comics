@@ -5,6 +5,7 @@
 {% for item in site.footer %}
 <a href="{{ item.url }}" class="footer__link{% if item.key == page.footer %} footer__link--current{% endif %}"{% if item.key == page.footer %} aria-current="page"{% endif %}>{{ item.label }}</a>
 {% endfor %}
+<a href="{{ site.x.url }}" class="footer__link" target="_blank" rel="noopener">X（{{ site.x.handle }}）</a>
 </nav>
 <p class="footer__text">当サイトのリンクにはアフィリエイトリンク（Amazonアソシエイト・楽天アフィリエイト等）が含まれます。発売日・価格は変更される場合があります。最新情報は各出版社・販売店でご確認ください。</p>
 {% if site.rakuten_credit %}

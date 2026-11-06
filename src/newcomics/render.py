@@ -39,8 +39,12 @@ def environment():
     return env
 
 
+X_ACCOUNT = {"handle": "@newcomics_jp", "url": "https://x.com/newcomics_jp"}
+
+
 def site_context(root, tags, year, rakuten_credit=False, ranking=None):
     return {
+        "x": X_ACCOUNT,
         "rakuten_credit": rakuten_credit,
         "ranking": ranking or [],
         "menu": [{"key": k, "label": label, "url": (root + path) or "./"} for k, label, path in MENU],

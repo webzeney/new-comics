@@ -525,6 +525,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .follow__single{margin:0;font-size:12px;color:#5A5148}
 .follow__single a,.follow__single_button{color:#5A5148;text-decoration:underline}
 .follow__single_button{padding:0;border:0;background:none;font:inherit;cursor:pointer}
+.x_follow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0;padding-top:12px;border-top:1px dashed #E3B9A8;font-size:12px;color:#5A5148}
+.x_follow__link{color:#222222;font-weight:700;text-decoration:underline}
 /* ==========================================================================
 カレンダー登録のお知らせ選び
 ========================================================================== */
@@ -550,6 +552,9 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 ========================================================================== */
 .sidemenu__ranking{display:flex;flex-direction:column;gap:10px}
 .sidemenu__ranking_title{font-size:14px;font-weight:900}
+.sidemenu__x{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:2px solid #222222;border-radius:14px;background:#FFFFFF;color:#222222;text-decoration:none}
+.sidemenu__x_text{font-size:13px;font-weight:700;line-height:1.6}
+.sidemenu__x_button{display:flex;align-items:center;justify-content:center;min-height:38px;border-radius:999px;background:#222222;color:#FFFFFF;font-size:13px;font-weight:700}
 .ranking{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
 .ranking__item{display:flex;align-items:flex-start;gap:12px;padding:10px 0 0}
 .ranking__cover{position:relative;flex:0 0 76px;display:block;aspect-ratio:7/10;box-sizing:border-box;border:2px solid #222222;border-radius:6px;box-shadow:2px 2px 0 #222222;background:#F3EDE6}
