@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, stat, store_tiles, bookrow %}
+{% from "_parts.html" import ad, breadcrumb, stat, store_tiles, bookrow, cart_intro, cart_bar %}
 {% block content %}
 <section aria-labelledby="cal-title" class="panel panel--head calendar" data-calendar data-selected="{{ selected.day }}">
 {{ breadcrumb(crumbs, 'breadcrumb--pc') }}
@@ -107,16 +107,18 @@
 </div>
 <span class="section_head__note" data-sel-note>すべての出版社</span>
 </div>
+{{ cart_intro("気になる本にチェックを入れると、まとめてAmazonのカートに入れられます。ほかの日付に切り替えても、チェックはそのまま残ります。", "この日をすべて選ぶ") }}
 <p class="empty" data-sel-empty{% if selected.books %} hidden{% endif %}>この条件で発売予定の新刊はありません</p>
 <ul class="booklist" data-day-list>
 {% for b in selected.books %}
-{{ bookrow(b, b.pub, b.meta, top=True) }}
+{{ bookrow(b, b.pub, b.meta, top=True, pick=True) }}
 {% endfor %}
 </ul>
 </section>
 {{ ad(extra='page__ad') -}}
 <template id="bookrow-template">
 <li class="bookrow bookrow--top">
+<label class="pick"><input type="checkbox" class="pick__input" value="" aria-label="カートに入れる本に選ぶ" data-cart-pick><span class="pick__box" aria-hidden="true"></span></label>
 <a href="#" class="bookrow__cover" data-book-url>
 <span class="bookrow__image">書影</span>
 </a>
@@ -138,4 +140,5 @@
 </li>
 </template>
 <script type="application/json" id="calendar-data">{{ calendar_json|safe }}</script>
+{{ cart_bar(cart) }}
 {% endblock %}

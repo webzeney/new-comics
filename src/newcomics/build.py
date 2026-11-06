@@ -594,6 +594,7 @@ def calendar_context(site, root, y, m, months):
         "list_days": list_days,
         "selected": {"day": sel, "label": f"{md(sel_date)}（{dow(sel_date)}）", "books": [site.row(root, b) for b in days.get(sel, [])]},
         "calendar_json": json.dumps(data, ensure_ascii=False).replace("</", "<\\/"),
+        "cart": site.cart(),
     }
     page = page_defaults(
         title=f"{y}年{m}月の漫画新刊発売日カレンダー｜{SITE_NAME}",

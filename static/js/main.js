@@ -133,6 +133,9 @@ $('[data-field="meta"]', li).textContent = b.meta;
 if (!b.ebook) $('[data-field="ebook"]', li).remove();
 if (!b.first) $('[data-field="first"]', li).remove();
 $$('[data-store]', li).forEach(function (a) { var url = b.stores[a.dataset.store]; if (url) { a.href = url; } else { a.remove(); } });
+var pick = $('[data-cart-pick]', li);
+var asin = (b.stores.amazon || '').match(/\/dp\/([0-9A-Z]{10})/);
+if (asin) { pick.value = asin[1]; pick.setAttribute('aria-label', (b.ia || b.title) + 'をカートに入れる本に選ぶ'); } else { pick.parentNode.remove(); }
 return li;
 }
 
@@ -140,6 +143,7 @@ function render() {
 var books = booksOf(state.day);
 list.textContent = '';
 books.forEach(function (b) { list.appendChild(renderRow(b)); });
+document.dispatchEvent(new Event('cart:refresh'));
 $('[data-sel-label]').textContent = data.labels[state.day];
 $('[data-sel-count]').textContent = books.length + '点';
 $('[data-sel-note]').textContent = filterNote(state.pubs);
@@ -421,31 +425,37 @@ var bar = $('[data-cart-bar]');
 if (!bar) return;
 var count = $('[data-cart-count]', bar);
 var go = $('[data-cart-go]', bar);
-function picks() { return $$('[data-cart-pick]'); }
+var chosen = [];
+function picks() { return $$('[data-cart-pick]').filter(function (el) { return el.value; }); }
 function visible(el) { return el.offsetParent !== null; }
+function set(asin, on) {
+var i = chosen.indexOf(asin);
+if (on && i === -1) chosen.push(asin);
+if (!on && i !== -1) chosen.splice(i, 1);
+}
 function update() {
-var chosen = picks().filter(function (el) { return el.checked && el.value; });
-var seen = {};
-var asins = chosen.map(function (el) { return el.value; }).filter(function (a) { if (seen[a]) return false; seen[a] = true; return true; });
-count.textContent = asins.length;
-bar.hidden = asins.length === 0;
-var q = asins.map(function (a, i) { return 'ASIN.' + (i + 1) + '=' + encodeURIComponent(a) + '&Quantity.' + (i + 1) + '=1'; }).join('&');
+picks().forEach(function (el) { el.checked = chosen.indexOf(el.value) !== -1; });
+count.textContent = chosen.length;
+bar.hidden = chosen.length === 0;
+var q = chosen.map(function (a, i) { return 'ASIN.' + (i + 1) + '=' + encodeURIComponent(a) + '&Quantity.' + (i + 1) + '=1'; }).join('&');
 go.href = 'https://www.amazon.co.jp/gp/aws/cart/add.html?' + (bar.dataset.tag ? 'AssociateTag=' + encodeURIComponent(bar.dataset.tag) + '&' : '') + q;
 var shown = picks().filter(visible);
 var all = shown.length > 0 && shown.every(function (el) { return el.checked; });
 $$('[data-cart-all]').forEach(function (b) { b.textContent = all ? b.dataset.labelOff : b.dataset.labelOn; b.setAttribute('aria-pressed', all ? 'true' : 'false'); });
 }
-document.addEventListener('change', function (e) { if (e.target.matches && e.target.matches('[data-cart-pick]')) update(); });
+document.addEventListener('change', function (e) {
+if (e.target.matches && e.target.matches('[data-cart-pick]') && e.target.value) { set(e.target.value, e.target.checked); update(); }
+});
 document.addEventListener('cart:refresh', update);
 $$('[data-cart-all]').forEach(function (b) {
 b.addEventListener('click', function () {
 var shown = picks().filter(visible);
 var on = !shown.every(function (el) { return el.checked; });
-shown.forEach(function (el) { el.checked = on; });
+shown.forEach(function (el) { set(el.value, on); });
 update();
 });
 });
-$('[data-cart-clear]', bar).addEventListener('click', function () { picks().forEach(function (el) { el.checked = false; }); update(); });
+$('[data-cart-clear]', bar).addEventListener('click', function () { chosen = []; update(); });
 update();
 }
 
