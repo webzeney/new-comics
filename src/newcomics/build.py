@@ -435,6 +435,18 @@ def crumbs(root, *items):
 
 
 # ---- トップ ----
+def tomorrow_card(site, tomorrow):
+    """トップの「TOMORROW」。明日発売の本がない日は、リンクにせず「ありません」と出し、次の発売日へ案内する。"""
+    card = {"label": f"{md(tomorrow)}（{dow(tomorrow)}）", "url": None, "next": None}
+    if tomorrow in site.by_date:
+        card["url"] = f"date/{tomorrow.isoformat()}/"
+    else:
+        nxt = min((d for d in site.by_date if d > tomorrow), default=None)
+        if nxt:
+            card["next"] = {"label": f"{md(nxt)}（{dow(nxt)}）", "url": f"date/{nxt.isoformat()}/"}
+    return card
+
+
 def build_top(site, w):
     root = ""
     today, tomorrow = site.today, site.today + timedelta(days=1)
@@ -465,7 +477,7 @@ def build_top(site, w):
         "ticker_static": not ticker,
         "search": search_options(site),
         "calendar": {"url": f"calendar/{today.year}/{today.month:02d}/", "month": today.month},
-        "tomorrow": {"url": f"date/{tomorrow.isoformat()}/" if tomorrow in site.by_date else f"calendar/{tomorrow.year}/{tomorrow.month:02d}/", "label": f"{md(tomorrow)}（{dow(tomorrow)}）"},
+        "tomorrow": tomorrow_card(site, tomorrow),
         "releases": [release(today, "今日"), release(tomorrow, "明日")],
         "updates": updates,
         "features": load_features(site.env),

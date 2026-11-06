@@ -63,10 +63,18 @@
 <span class="calendar_card__month"><span class="calendar_card__num">{{ calendar.month }}</span><span class="calendar_card__text">月の新刊<br>カレンダー</span></span>
 <span class="calendar_card__link">日付から探す{{ arrow('#222222', 18) }}</span>
 </a>
+{% if tomorrow.url %}
 <a href="{{ tomorrow.url }}" class="tomorrow_card">
 <span class="tomorrow_card__en">TOMORROW</span>
 <span class="tomorrow_card__text">明日 {{ tomorrow.label }}発売の新刊をチェック</span>
 </a>
+{% else %}
+<div class="tomorrow_card">
+<span class="tomorrow_card__en">TOMORROW</span>
+<span class="tomorrow_card__text">明日 {{ tomorrow.label }}は<br>新刊の発売がありません</span>
+{% if tomorrow.next %}<a href="{{ tomorrow.next.url }}" class="tomorrow_card__next">次の発売日 {{ tomorrow.next.label }}の新刊を見る{{ arrow('#222222', 14) }}</a>{% endif %}
+</div>
+{% endif %}
 </div>
 </div>
 <section aria-labelledby="new-title" class="panel">
