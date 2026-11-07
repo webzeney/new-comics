@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import sqlite3
+import time
 import unicodedata
 from collections import Counter, OrderedDict, defaultdict
 from datetime import date, datetime, timedelta, timezone
@@ -313,18 +314,51 @@ def build(conn, out_dir, today, env):
     return w.count
 
 
-def load_features(env, limit=3):
-    """特集（WordPress）の新しい記事を、REST API から取る。取れないときは空にする。"""
+FEATURE_TRIES = 3
+FEATURE_WAIT = 5
+FEATURE_CACHE = "assets/features.json"
+
+
+def fetch_features(api, limit):
+    """WordPress の REST API から特集の新しい記事を取る。失敗したら間をあけて FEATURE_TRIES 回までやり直す。"""
+    import requests
+    last = None
+    for attempt in range(FEATURE_TRIES):
+        if attempt:
+            time.sleep(FEATURE_WAIT * attempt)
+        try:
+            res = requests.get(api, params={"per_page": limit, "_embed": "wp:term", "_fields": "title,link,_embedded,_links"}, timeout=20)
+            res.raise_for_status()
+            return res.json()
+        except Exception as exc:
+            last = exc
+    raise last
+
+
+def load_features(env, limit=3, base=None):
+    """特集（WordPress）の新しい記事を、REST API から取る。
+
+    取れたときは公開しているサイトに assets/features.json として書き出しておき、
+    やり直しても取れないときは、前回の公開分（公開中の features.json）を使う。それも取れなければ空にする。
+    """
     api = env.get("FEATURE_API")
     if not api:
         return []
     try:
-        import requests
-        res = requests.get(api, params={"per_page": limit, "_embed": "wp:term", "_fields": "title,link,_embedded,_links"}, timeout=20)
-        res.raise_for_status()
-        posts = res.json()
+        posts = fetch_features(api, limit)
     except Exception as exc:
         print(f"特集記事を取得できませんでした：{exc}")
+        if base:
+            try:
+                import requests
+                res = requests.get(f"{base}/{FEATURE_CACHE}", timeout=20)
+                res.raise_for_status()
+                cached = res.json()
+                if isinstance(cached, list) and cached:
+                    print(f"前回の公開分の特集記事 {len(cached)} 件を使います")
+                    return cached[:limit]
+            except Exception as exc2:
+                print(f"前回の公開分の特集記事も取得できませんでした：{exc2}")
         return []
     out = []
     for i, post in enumerate(posts[:limit], 1):
@@ -490,8 +524,12 @@ def build_top(site, w):
         "tomorrow": tomorrow_card(site, tomorrow),
         "releases": [release(today, "今日"), release(tomorrow, "明日")],
         "updates": updates,
-        "features": load_features(site.env),
+        "features": load_features(site.env, base=site_base(site)),
     }
+    if ctx["features"]:
+        cache = Path(w.out) / FEATURE_CACHE
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(ctx["features"], ensure_ascii=False), encoding="utf-8")
     page = page_defaults(
         title=f"{SITE_NAME}｜漫画の新刊発売日カレンダー",
         description="漫画（コミック）の新刊発売日を、カレンダーや出版社・作品ごとに探せる情報サイト。発売予定を毎日自動で更新しています。",
