@@ -10,7 +10,7 @@ STATIC = ROOT / "static"
 
 MENU = [
     ("top", "トップ", ""),
-    ("calendar", "新刊カレンダー", "calendar/"),
+    ("calendar", "漫画新刊カレンダー", "calendar/"),
     ("publisher", "出版社から探す", "publisher/"),
     ("label", "レーベルから探す", "label/"),
     ("favorites", "お気に入り", "favorites/"),

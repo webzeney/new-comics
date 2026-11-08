@@ -670,7 +670,7 @@ def calendar_context(site, root, y, m, months):
     }
     ctx = {
         "crumbs": crumbs(root, ("新刊カレンダー", f"{root}calendar/"), (f"{y}年{m}月", None)),
-        "month": {"no": m, "title": f"{y}年{m}月の新刊カレンダー"},
+        "month": {"no": m, "title": f"{y}年{m}月の漫画新刊カレンダー", "lead": f"{m}月に発売される漫画・コミックの新刊は{total:,}点。日付を選ぶと、その日の新刊が見られます。"},
         "month_nav": nav,
         "stats": {
             "total": f"{total:,}", "active_days": len(active),
