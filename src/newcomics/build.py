@@ -310,6 +310,7 @@ def build(conn, out_dir, today, env):
     build_updates(site, w)
     build_static(site, w)
     build_sitemap(site, w, env.get("SITE_URL"))
+    build_llms(site, w)
     build_partials(site, w)
     return w.count
 
@@ -471,6 +472,45 @@ def series_ld(site, sid, name, vols, latest):
     return data
 
 
+def date_ld(site, d, books):
+    """日付ページ：その日に発売される本の一覧（ItemList）。"""
+    base = site_base(site)
+    return {"@type": "ItemList", "name": f"{d.year}年{d.month}月{d.day}日発売の漫画・コミック新刊", "numberOfItems": len(books),
+            "itemListElement": [{"@type": "ListItem", "position": i, "url": f"{base}/book/{b.key}/", "name": b.title} for i, b in enumerate(books, start=1)]}
+
+
+ZEN_DIGITS = str.maketrans("０１２３４５６７８９", "0123456789")
+
+
+def display_title(b, main=None, vol=None):
+    """ページのタイトル（title タグ）用の書名。巻数が読み取れた本は「作品名 N巻」、全角の数字は半角にそろえる。"""
+    if main and vol and b.title.translate(ZEN_DIGITS).replace(" ", "").endswith(str(vol)):
+        return f"{main} {vol}巻".translate(ZEN_DIGITS)
+    return b.title.translate(ZEN_DIGITS)
+
+
+def jp_day(d):
+    return f"{d.year}年{d.month}月{d.day}日"
+
+
+def series_title(site, name, latest, vol):
+    """作品ページのタイトル。「（作品名） 最新刊 発売日」で探す人に合わせる。"""
+    if vol and latest.release:
+        if latest.release > site.today:
+            return f"{name}の最新刊{vol}巻はいつ発売？ 発売日・既刊一覧｜{SITE_NAME}"
+        return f"{name}の最新刊は{vol}巻（{jp_day(latest.release)}発売） 既刊一覧｜{SITE_NAME}"
+    return f"{name}の新刊・既刊一覧（{latest.publisher}）｜{SITE_NAME}"
+
+
+def series_description(site, name, latest, vol, count):
+    """作品ページの説明文。最初に答え（最新刊の巻数と発売日）を書く。"""
+    if vol and latest.release:
+        verb = "発売予定です" if latest.release > site.today else ("発売されます" if latest.release == site.today else "発売されました")
+        known = f"既刊{count}冊" if str(vol).isdigit() and count == int(vol) else "既刊"
+        return f"{name}（{latest.publisher}）の最新刊は{vol}巻で、{jp_day(latest.release)}に{verb}。{known}の発売日をまとめています。"
+    return f"{name}（{latest.publisher}）の最新刊と既刊の発売日をまとめています。"
+
+
 def crumbs(root, *items):
     out = [{"label": "トップ", "url": root or "./"}]
     for label, url in items:
@@ -531,12 +571,12 @@ def build_top(site, w):
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps(ctx["features"], ensure_ascii=False), encoding="utf-8")
     page = page_defaults(
-        title=f"{SITE_NAME}｜漫画の新刊発売日カレンダー",
-        description="漫画（コミック）の新刊発売日を、カレンダーや出版社・作品ごとに探せる情報サイト。発売予定を毎日自動で更新しています。",
+        title=f"{SITE_NAME}｜漫画・コミックの新刊発売日カレンダー",
+        description="漫画・コミックの新刊発売日を、カレンダーや出版社・作品ごとに探せる情報サイト。今日・明日発売の漫画新刊から来月の発売予定まで、毎日自動で更新しています。",
         menu="top", is_top=True, lastmod=site.today.isoformat(),
         jsonld=jsonld({
             "@type": "WebSite", "name": SITE_NAME, "url": site_base(site) + "/", "inLanguage": "ja",
-            "description": "漫画（コミック）の新刊発売日を、出版社の公式サイトの情報をもとに毎日自動で更新している情報サイト。",
+            "description": "漫画・コミックの新刊発売日を、出版社の公式サイトの情報をもとに毎日自動で更新している情報サイト。",
             "potentialAction": {"@type": "SearchAction", "target": site_base(site) + "/search/?q={search_term_string}", "query-input": "required name=search_term_string"},
         }),
     )
@@ -645,8 +685,8 @@ def calendar_context(site, root, y, m, months):
         "cart": site.cart(),
     }
     page = page_defaults(
-        title=f"{y}年{m}月の漫画新刊発売日カレンダー｜{SITE_NAME}",
-        description=f"{y}年{m}月に発売される漫画（コミック）の新刊{total:,}点を、発売日ごとのカレンダーで紹介しています。",
+        title=f"{y}年{m}月発売の漫画・コミック新刊一覧（発売日カレンダー）｜{SITE_NAME}",
+        description=f"{y}年{m}月に発売される漫画・コミックの新刊{total:,}点を、発売日カレンダーと一覧で紹介しています。出版社の発売情報をもとに毎日更新。",
         menu="calendar",
         lastmod=lastmod(site, [b for v in days.values() for b in v]),
     )
@@ -682,8 +722,10 @@ def build_dates(site, w):
             "calendar_url": f"{root}calendar/{d.year}/{d.month:02d}/",
         }
         page = page_defaults(
-            title=f"{d.year}年{d.month}月{d.day}日（{dow(d)}）発売の漫画新刊{len(books)}点｜{SITE_NAME}",
-            description=f"{d.year}年{d.month}月{d.day}日（{dow(d)}）に発売される漫画（コミック）の新刊{len(books)}点を出版社別に紹介しています。",
+            title=f"{d.year}年{d.month}月{d.day}日（{dow(d)}）発売の漫画・コミック新刊{len(books)}点｜{SITE_NAME}",
+            description=f"{d.year}年{d.month}月{d.day}日（{dow(d)}）に発売される漫画・コミックの新刊{len(books)}点を出版社別に紹介しています。",
+            jsonld=jsonld(date_ld(site, d, books), breadcrumb_ld(site_base(site), [
+                ("トップ", "/"), (f"{d.year}年{d.month}月の漫画新刊カレンダー", f"/calendar/{d.year}/{d.month:02d}/"), (f"{d.year}年{d.month}月{d.day}日発売の漫画新刊", f"/date/{d.isoformat()}/")])),
             menu="calendar",
             lastmod=lastmod(site, books),
         )
@@ -887,8 +929,8 @@ def build_books(site, w):
             ld_crumbs.append((main, f"/series/{b.series_id}/"))
         ld_crumbs.append((b.title, f"/book/{b.key}/"))
         page = page_defaults(
-            title=f"{b.title}（{b.publisher}）{when}｜{SITE_NAME}",
-            description=f"{b.title}（{b.publisher}）は{when}。{site.price_text(b)}。予約・購入はAmazon・楽天ブックス・セブンネットで。".replace("。。", "。"),
+            title=f"{display_title(b, main, vol)}（{b.publisher}）{when}｜{SITE_NAME}",
+            description=f"{display_title(b, main, vol)}（{b.publisher}）は{when}。{site.price_text(b)}。予約・購入はAmazon・楽天ブックス・セブンネットで。".replace("。。", "。"),
             jsonld=jsonld(book_ld(site, b), breadcrumb_ld(site_base(site), ld_crumbs)),
             lastmod=lastmod(site, [b]),
         )
@@ -940,8 +982,8 @@ def build_series(site, w):
             "cart": site.cart(),
         }
         page = page_defaults(
-            title=f"{info['name']}の新刊・既刊一覧（{latest.publisher}）｜{SITE_NAME}",
-            description=f"{info['name']}（{latest.publisher}）の最新刊と既刊の発売日をまとめています。",
+            title=series_title(site, info["name"], latest, vol),
+            description=series_description(site, info["name"], latest, vol, len(vols)),
             feed={"title": f"{info['name']}の新刊（{SITE_NAME}）", "url": f"{root}series/{sid}/feed.xml"},
             jsonld=jsonld(series_ld(site, sid, info["name"], vols, latest), breadcrumb_ld(site_base(site), [
                 ("トップ", "/"), (latest.publisher, f"/publisher/{latest.publisher_slug}/"), (info["name"], f"/series/{sid}/")])),
@@ -1393,6 +1435,41 @@ def build_contact(w):
     shutil.copyfile(php / "htaccess", dest / ".htaccess")
     (Path(w.out) / "series").mkdir(parents=True, exist_ok=True)
     shutil.copyfile(php / "calendar.php", Path(w.out) / "series" / "calendar.php")
+
+
+def build_llms(site, w):
+    """AI 向けの案内（llms.txt）。サイトの内容と主なページを短く書く。"""
+    base = site_base(site)
+    t = site.today
+    months = []
+    for k in range(3):
+        y, m = t.year + (t.month - 1 + k) // 12, (t.month - 1 + k) % 12 + 1
+        months.append(f"- [{y}年{m}月発売の漫画・コミック新刊一覧]({base}/calendar/{y}/{m:02d}/)")
+    lines = [
+        f"# {SITE_NAME}（NEW COMICS JP）",
+        "",
+        "> 漫画・コミックの新刊発売日を、出版社の公式サイトなどの情報をもとに毎日自動で更新している日本語の情報サイトです。発売日カレンダー、出版社・レーベル・作品・作者ごとの新刊一覧、各書籍の発売日・価格・ISBN・電子版の有無を掲載しています。成人向けの作品は掲載していません。",
+        "",
+        "## 主なページ",
+        f"- [トップ（今日・明日発売の漫画新刊）]({base}/)",
+        f"- [漫画新刊カレンダー（今月）]({base}/calendar/)",
+        *months,
+        f"- [出版社から探す]({base}/publisher/)",
+        f"- [レーベルから探す]({base}/label/)",
+        f"- [発売日の変更・決定]({base}/updates/)",
+        f"- [特集記事]({base}/feature/)",
+        "",
+        "## ページの種類",
+        f"- 日付ごとの新刊：{base}/date/YYYY-MM-DD/ （その日に発売される漫画・コミックの一覧）",
+        f"- 書籍：{base}/book/ISBN/ （発売日・価格・出版社・レーベル・著者・電子版の有無）",
+        f"- 作品：{base}/series/ID/ （最新刊と既刊の発売日、次の巻の発売予定）",
+        "",
+        "## 情報について",
+        "- 発売日・価格などは出版社の公式サイトの情報をもとにしています。発売日は変更されることがあるため、最新の情報は各ページの「発売日の変更・決定」や出版社の発表をご確認ください。",
+        f"- 情報は毎日自動で更新しています（最終更新：{t.year}年{t.month}月{t.day}日）。",
+        "",
+    ]
+    (Path(w.out) / "llms.txt").write_text("\n".join(lines), encoding="utf-8")
 
 
 def build_sitemap(site, w, site_url):
