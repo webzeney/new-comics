@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, arrow, breadcrumb, stat, bookrow, cart_intro, cart_bar %}
+{% block content %}
+<section aria-labelledby="day-title" class="panel panel--head" data-daypage>
+{{ breadcrumb(crumbs) }}
+<div class="page_head">
+<div class="heading">
+<span class="heading__en">TODAY</span>
+<h1 id="day-title" class="heading__title">今日<span class="en">{{ day.md }}</span>（{{ day.dow }}）発売の漫画新刊</h1>
+<span class="heading__sub">{% if stats.total %}{{ day.long }}に発売される漫画・コミックの新刊は{{ stats.total }}点です。毎朝自動で更新しています{% else %}{{ day.long }}に発売される漫画・コミックの新刊はありません{% endif %}</span>
+</div>
+<nav aria-label="ほかの発売日" class="daynav">
+{% if next %}<a href="{{ next.url }}" class="daynav__item">{{ next.word or '次の発売日' }}の新刊<span aria-hidden="true">›</span></a>{% endif %}
+<a href="{{ week_url }}" class="daynav__item">今週の新刊<span aria-hidden="true">›</span></a>
+</nav>
+</div>
+{% if stats.total %}
+<div class="stats">
+{{ stat('今日の発売点数', stats.total, '点', main=True) }}
+<div class="stat daypage__stat">
+<span class="stat__label">新シリーズ1巻</span>
+<span class="stat__value"><span class="stat__num">{{ stats.first }}</span><span class="stat__unit">点</span></span>
+</div>
+<div class="stat daypage__stat">
+<span class="stat__label">出版社</span>
+<span class="stat__value"><span class="stat__num">{{ stats.publishers }}</span><span class="stat__unit">社</span></span>
+</div>
+</div>
+<div class="filter">
+<span class="filter__label">出版社で絞り込む</span>
+<button type="button" aria-pressed="true" class="chip" data-pub="">すべて<span class="chip__count">{{ stats.total }}</span></button>
+{% for g in groups %}
+<button type="button" aria-pressed="false" class="chip" data-pub="{{ g.name }}">{{ g.name }}<span class="chip__count">{{ g.books|length }}</span></button>
+{% endfor %}
+</div>
+{% endif %}
+</section>
+{% if stats.total %}
+<section aria-labelledby="list-title" class="panel">
+<div class="section_head">
+<h2 id="list-title" class="section_head__title">今日発売の新刊<span class="heading__count" data-shown-count>{{ stats.total }}点</span></h2>
+<span class="section_head__note" data-filter-note>すべての出版社</span>
+</div>
+{{ cart_intro("気になる本にチェックを入れると、まとめてAmazonのカートに入れられます。", "すべて選ぶ") }}
+{% for g in groups %}
+<div class="group" data-group="{{ g.name }}" data-count="{{ g.books|length }}">
+<h3 class="group__title">{{ g.name }}<span class="group__count">{{ g.books|length }}点</span></h3>
+<ul class="booklist">
+{% for b in g.books %}
+{{ bookrow(b, b.label, b.meta, pick=True) }}
+{% endfor %}
+</ul>
+</div>
+{% endfor %}
+</section>
+{% endif %}
+{% if next %}
+<section aria-labelledby="next-title" class="panel">
+<div class="section_head">
+<h2 id="next-title" class="section_head__title">{% if next.word %}明日{% endif %}<span class="en">{{ next.md }}</span>（{{ next.dow }}）発売の新刊<span class="heading__count">{{ next.total }}点</span></h2>
+</div>
+<ul class="booklist">
+{% for b in next.books %}
+{{ bookrow(b, b.label or b.pub, b.meta, pick=True) }}
+{% endfor %}
+</ul>
+<div class="daypage__foot">
+<a href="{{ next.url }}" class="arrow_button">{{ next.md }}（{{ next.dow }}）の新刊をすべて見る（{{ next.total }}点）{{ arrow() }}</a>
+<a href="{{ week_url }}" class="arrow_button">今週発売の新刊へ{{ arrow() }}</a>
+</div>
+</section>
+{% endif %}
+{{ ad() -}}
+{{ cart_bar(cart) }}
+{% endblock %}
