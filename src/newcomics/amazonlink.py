@@ -2,6 +2,9 @@
 
 1. 電子版ありの本と、電子版の有無が分からない本：Kindle版を作品名で探し、書名に作品名と同じ巻数が入っている Kindle版を同じ本とみなす（books.kindle_asin）。
 2. ISBN の分からない本：紙の本を書名で探し、作品名・巻数・発売日が合う本を同じ本とみなす（books.asin）。
+3. ISBN の分かる本：ISBN-10 の商品ページ（/dp/ISBN-10）が Amazon にあるかを確かめる（books.amazon_isbn_ok）。
+   ない本（Amazon が ISBN-10 ではない ASIN で登録している本）は、ISBN-13 で探して EAN が同じ紙の本を同じ本とみなす（books.asin）。
+   商品ページがあった本は確かめ直さない。見つからなかった本は ISBN_RECHECK_DAYS 日たったら確かめ直す。
 付けるのは Amazon の商品ページへのリンク（ASIN）だけで、書名や価格などは変えない。
 単話・分冊・カラー版などは、こちらの書名に同じ言葉がないかぎり選ばない。成人向けの商品は選ばない。
 見つからなかった本は RECHECK_DAYS 日たったら探し直す。
@@ -18,11 +21,15 @@ import requests
 from . import db
 from .amazon import AmazonError, Api, release_of, title_of
 from .kobo import SKIP_WORDS, has_volume, key, series_name
+from .normalize import isbn13_to_10
 
 MAX_KINDLE = 400
 MAX_PAPER = 150
 TIME_LIMIT = 14 * 60
 RECHECK_DAYS = 7
+MAX_ISBN = 3000   # 1晩に確かめる ISBN の数（10冊ずつまとめて問い合わせる）
+ISBN_RECHECK_DAYS = 1
+ISBN_TIME = 6 * 60  # ISBN の確認に使う時間の上限（Kindle版などの照らし合わせの時間を残す）
 PAPER_DAYS = 14   # 紙の本：発売日の差がこの日数以内なら同じ本とみなす
 KINDLE_EARLY = 14  # Kindle版：紙の本の発売日よりこの日数より前に出ているものは、昔の版とみなして選ばない
 
@@ -115,10 +122,66 @@ def run(conn, api, kind, rows, deadline):
     return counts
 
 
+def eans(item):
+    ids = (item.get("itemInfo") or {}).get("externalIds") or {}
+    return set((ids.get("eans") or {}).get("displayValues") or [])
+
+
+def isbn_targets(conn, now, limit):
+    since = (now - timedelta(days=ISBN_RECHECK_DAYS)).isoformat(timespec="seconds")
+    return conn.execute(
+        """SELECT id, isbn13 FROM books WHERE COALESCE(isbn13, '') <> ''
+        AND (amazon_isbn_ok IS NULL OR (amazon_isbn_ok = 0 AND COALESCE(asin, '') = '' AND (isbn_checked_at IS NULL OR isbn_checked_at < ?)))
+        ORDER BY amazon_isbn_ok IS NOT NULL, release_date IS NULL, release_date DESC, id LIMIT ?""",
+        (since, limit),
+    ).fetchall()
+
+
+def check_isbn(conn, api, rows, deadline):
+    """ISBN-10 の商品ページがあるかを10冊ずつ確かめ、ない本は ISBN-13 で紙の本を探す。"""
+    counts = {"ok": 0, "asin": 0, "missing": 0, "error": 0}
+    batch = []
+    for r in rows:
+        isbn10 = isbn13_to_10(r["isbn13"])
+        if isbn10:
+            batch.append((r["id"], r["isbn13"], isbn10))
+    for i in range(0, len(batch), 10):
+        if time.monotonic() > deadline:
+            break
+        chunk = batch[i:i + 10]
+        try:
+            found = {it.get("asin") for it in api.get([c[2] for c in chunk])}
+        except (requests.RequestException, AmazonError, ValueError):
+            counts["error"] += len(chunk)
+            continue
+        for book_id, isbn13, isbn10 in chunk:
+            if isbn10 in found:
+                counts["ok"] += 1
+                conn.execute("UPDATE books SET amazon_isbn_ok = 1, isbn_checked_at = ? WHERE id = ?", (db.now_iso(), book_id))
+                continue
+            if time.monotonic() > deadline:
+                break
+            try:
+                items = api.search(isbn13, index="Books", availability="IncludeOutOfStock",
+                                   resources=["itemInfo.title", "itemInfo.classifications", "itemInfo.productInfo", "itemInfo.externalIds"])
+            except (requests.RequestException, AmazonError, ValueError):
+                counts["error"] += 1
+                continue
+            hit = next((it for it in items if isbn13 in eans(it) and binding(it) != "Kindle版" and not adult(it)), None)
+            counts["asin" if hit else "missing"] += 1
+            conn.execute("UPDATE books SET amazon_isbn_ok = 0, asin = ?, isbn_checked_at = ? WHERE id = ?",
+                         (hit.get("asin") if hit else None, db.now_iso(), book_id))
+        conn.commit()
+    return counts
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--max-kindle", type=int, default=MAX_KINDLE)
     ap.add_argument("--max-paper", type=int, default=MAX_PAPER)
+    ap.add_argument("--max-isbn", type=int, default=MAX_ISBN)
+    ap.add_argument("--isbn-only", action="store_true", help="ISBN-10 の商品ページの確認だけを行う（全件の確認用）")
+    ap.add_argument("--minutes", type=int, help="使う時間の上限（分）")
     args = ap.parse_args(argv)
     api = Api()
     if not api.ready():
@@ -126,7 +189,16 @@ def main(argv=None):
         return 0
     conn = db.connect()
     now = datetime.now(db.JST)
-    deadline = time.monotonic() + TIME_LIMIT
+    limit = args.minutes * 60 if args.minutes else TIME_LIMIT
+    start = time.monotonic()
+    isbn = check_isbn(conn, api, isbn_targets(conn, now, args.max_isbn), start + (limit if args.isbn_only else ISBN_TIME))
+    rest = conn.execute("SELECT COUNT(*) FROM books WHERE COALESCE(isbn13, '') <> '' AND amazon_isbn_ok IS NULL").fetchone()[0]
+    print(f"Amazon の商品ページの確認：ISBN-10 のページあり {isbn['ok']}／別の ASIN で見つかった {isbn['asin']}／見つからない {isbn['missing']}／エラー {isbn['error']}"
+          f"（まだ確かめていない本 残り {rest} 冊）")
+    if args.isbn_only:
+        print(f"（API {api.calls} 回）")
+        return 0
+    deadline = start + limit
     paper = run(conn, api, "paper", targets(conn, now, "paper", args.max_paper), deadline)
     kindle = run(conn, api, "kindle", targets(conn, now, "kindle", args.max_kindle), deadline)
     left = conn.execute("SELECT COUNT(*) FROM books WHERE (has_ebook = 1 OR has_ebook IS NULL) AND kindle_asin IS NULL AND kindle_checked_at IS NULL").fetchone()[0]

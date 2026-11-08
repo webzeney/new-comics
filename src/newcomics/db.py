@@ -108,6 +108,8 @@ MIGRATIONS = [
     ("books", "kindle_asin", "TEXT"),
     ("books", "kindle_checked_at", "TEXT"),
     ("books", "amazon_checked_at", "TEXT"),
+    ("books", "amazon_isbn_ok", "INTEGER"),
+    ("books", "isbn_checked_at", "TEXT"),
 ]
 
 

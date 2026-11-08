@@ -78,7 +78,7 @@ UTC_TZ = timezone.utc
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok",
     )
 
     def __init__(self, row, tags):
@@ -98,6 +98,7 @@ class Book:
         self.edition = row["edition"]
         self.is_final = bool(row["is_final"])
         self.asin = row["asin"]
+        self.amazon_isbn_ok = row["amazon_isbn_ok"] if "amazon_isbn_ok" in row.keys() else None
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
         image = row["image_url"] if "image_url" in row.keys() else None
@@ -171,9 +172,15 @@ class Site:
     def book_url(self, root, b):
         return f"{root}book/{b.key}/"
 
+    def amazon_asin(self, b):
+        """Amazon の紙の本の ASIN。ISBN-10 の商品ページがないと分かった本は、照らし合わせで見つけた ASIN にする。"""
+        if b.isbn13 and b.amazon_isbn_ok == 0:
+            return b.asin or None
+        return isbn13_to_10(b.isbn13) or b.asin or None
+
     def cart_asin(self, b):
         """Amazon のカートにまとめて入れるときに使う紙の本の ASIN。分からなければ None。"""
-        return isbn13_to_10(b.isbn13) or b.asin or None
+        return self.amazon_asin(b)
 
     def cart(self):
         """「まとめてAmazonのカートへ」のバーに渡す値。"""
@@ -182,9 +189,10 @@ class Site:
     def stores(self, b):
         tag = self.env.get("AMAZON_TAG")
         q = b.isbn13 or b.title
-        # ISBN が分かる本は Amazon・セブンネットとも商品ページへ。ISBN が分からない本は、Amazon の照らし合わせで見つかった ASIN、
+        # ISBN が分かる本は Amazon・セブンネットとも商品ページへ（Amazon に ISBN-10 のページがない本は、ISBN-13 で見つけた ASIN。
+        # それもなければ ISBN の検索ページ）。ISBN が分からない本は、Amazon の照らし合わせで見つかった ASIN、
         # それもなければ書名の検索ページにする（ISBN をあとから取り込んだときは、照らし合わせの結果より ISBN を優先する）
-        asin = isbn13_to_10(b.isbn13) or b.asin
+        asin = self.amazon_asin(b)
         if asin:
             amazon = f"https://www.amazon.co.jp/dp/{asin}"
             if tag:
