@@ -362,6 +362,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .book__data_term{font-weight:700;color:#5A5148}
 .book__data_desc{margin:0}
 .book__data_desc--en{font-family:'Yusei Magic',sans-serif;font-weight:400;letter-spacing:0.1em}
+.book__caption{margin:0;font-size:14px;line-height:1.9;white-space:pre-line}
 .series_head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
 .slider{display:flex;align-items:center;gap:10px}
 .slider__button{flex:0 0 44px;height:44px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-size:18px;font-weight:900;font-family:inherit;cursor:pointer}
@@ -580,6 +581,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .fav_button{align-self:flex-start;box-sizing:content-box;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
 .fav_button[aria-pressed="true"]{background:#FFD15C}
 .fav_button__icon{font-size:15px;line-height:1}
+.book__fav--cover{box-sizing:border-box;width:100%;margin-top:18px;justify-content:center}
+.book__fav--info{display:none}
 .series__actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .calendar_add{display:flex;flex-direction:column;gap:8px}
 .calendar_add__title{font-size:13px;font-weight:900}
@@ -621,6 +624,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .bookrow__stores{flex:1 1 100%;grid-template-columns:repeat(3,minmax(0,1fr))}
 .bookrow__store{letter-spacing:0.15em}
 .book__cover{flex:1 1 100%;max-width:200px;margin:0 auto}
+.book__fav--cover{display:none}
+.book__fav--info{display:inline-flex}
 .book__facts{flex-wrap:nowrap;gap:8px}
 .book__fact{flex:2 1 0;min-width:0;padding:10px 12px}
 .book__fact--date{flex:3 1 0}

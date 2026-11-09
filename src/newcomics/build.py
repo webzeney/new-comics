@@ -77,7 +77,7 @@ UTC_TZ = timezone.utc
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at", "caption",
     )
 
     def __init__(self, row, tags):
@@ -100,6 +100,7 @@ class Book:
         self.amazon_isbn_ok = row["amazon_isbn_ok"] if "amazon_isbn_ok" in row.keys() else None
         self.amazon_image = row["amazon_image_url"] if "amazon_image_url" in row.keys() else None
         self.amazon_image_at = row["amazon_image_at"] if "amazon_image_at" in row.keys() else None
+        self.caption = row["rakuten_caption"] if "rakuten_caption" in row.keys() else None
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
         image = row["image_url"] if "image_url" in row.keys() else None
@@ -934,6 +935,8 @@ def build_books(site, w):
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
                 "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "ebook_stores": site.ebook_stores(b), "isbn": b.isbn13,
                 "image": cover[0], "cover_url": cover[1], "alt": site.alt(b),
+                # 楽天ブックスの紹介文（楽天へのリンクはすぐ下の「楽天ブックス」のボタン。2026-11-09 運営者の判断）
+                "caption": b.caption,
                 "gcal": gcal_url(b), "ics_date": b.release.strftime("%Y%m%d") if b.release else None,
                 "ics_end": (b.release + timedelta(days=1)).strftime("%Y%m%d") if b.release else None, "ics_name": f"『{b.title}』発売日",
                 "fav": {"id": b.series_id, "name": site.series[b.series_id]["name"], "url": f"/series/{b.series_id}/"} if b.series_id in site.series else None,
