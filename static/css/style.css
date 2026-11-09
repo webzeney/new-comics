@@ -144,7 +144,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .bookrow__info{flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:4px}
 .bookrow__title{font-size:15px;font-weight:900;text-decoration:none;line-height:1.45}
 .bookrow__meta{font-size:12px;color:#5A5148}
-.bookrow__stores{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,64px);gap:6px}
+.bookrow__stores{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,76px);gap:6px}
 .group{margin-top:20px}
 .group__title{display:flex;align-items:center;gap:10px;margin:0;padding:8px 14px;border-radius:10px;background:#FFF6EC;font-size:16px;font-weight:900}
 .group__date{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:20px;letter-spacing:0.1em}
