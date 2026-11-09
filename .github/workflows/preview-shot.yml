@@ -53,5 +53,9 @@ jobs:
           for f in sorted(glob.glob("shots/*.png")):
               buf = io.BytesIO()
               Image.open(f).convert("RGB").save(buf, "JPEG", quality=85)
-              print("SHOT", f.split("/")[-1].replace(".png", ".jpg"), base64.b64encode(buf.getvalue()).decode())
+              data = base64.b64encode(buf.getvalue()).decode()
+              name = f.split("/")[-1].replace(".png", ".jpg")
+              print("FILES", f, len(data))
+              for i in range(0, len(data), 3000):
+                  print("SHOT", name, i // 3000, data[i:i + 3000])
           PY
