@@ -1,3 +1,4 @@
+import hashlib
 import re
 import shutil
 from pathlib import Path
@@ -23,6 +24,15 @@ FOOTER = [
     ("disclaimer", "免責事項", "disclaimer/"),
     ("contact", "お問い合わせ（掲載内容の修正・削除のご依頼）", "contact/"),
 ]
+
+
+def asset_versions():
+    """CSS・JS の中身から作る短い印。読み込むアドレスに付け、転送のあとに古いファイルがブラウザに残らないようにする。"""
+    out = {}
+    for f in sorted(STATIC.rglob("*")):
+        if f.suffix in (".css", ".js"):
+            out[f.name] = hashlib.sha256(f.read_bytes()).hexdigest()[:8]
+    return out
 
 
 def environment():
@@ -69,6 +79,7 @@ class Writer:
     def __init__(self, out_dir, tags, year, ga4_id=None, site_url=None, rakuten_credit=False, adsense_client=None):
         self.out = Path(out_dir)
         self.env = environment()
+        self.env.globals["ver"] = asset_versions()
         self.tags = tags
         self.year = year
         self.ga4_id = ga4_id

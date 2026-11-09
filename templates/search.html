@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, bookrow %}
+{% from "_parts.html" import ad, breadcrumb %}
 {% block content %}
 <section aria-labelledby="search-title" class="panel panel--head" data-search data-index="{{ root }}search/index.json">
 {{ breadcrumb(crumbs) }}
@@ -29,11 +29,8 @@
 </div>
 <label class="search_form__check"><input type="checkbox" name="ebook" value="1" class="search_form__checkbox"{% if search.ebook %} checked{% endif %}>電子書籍版ありのみ</label>
 </form>
-<div class="conditions" data-conditions{% if not search.conditions %} hidden{% endif %}>
+<div class="conditions" data-conditions hidden>
 <span class="conditions__label">検索条件</span>
-{% for c in search.conditions %}
-<span class="conditions__item">{{ c.label }}<button type="button" aria-label="{{ c.name }}の条件を外す" class="conditions__remove" data-remove="{{ c.key }}">×</button></span>
-{% endfor %}
 </div>
 </section>
 <section aria-labelledby="result-title" class="panel">
@@ -46,14 +43,8 @@
 </div>
 <p class="empty" data-search-empty hidden>条件に合う新刊は見つかりませんでした</p>
 <ul class="booklist" data-search-results>
-{% for b in search.results %}
-{{ bookrow(b, b.pub, b.meta, date_badge=True) }}
-{% endfor %}
 </ul>
 <nav aria-label="ページ送り" class="pager" data-search-pager>
-{% for p in search.pages %}
-<button type="button" class="pager__item{% if p.current %} pager__item--current{% endif %}"{% if p.current %} aria-current="page"{% endif %} data-page="{{ p.page }}">{{ p.label }}</button>
-{% endfor %}
 </nav>
 </section>
 {{ ad() -}}
@@ -81,5 +72,5 @@
 </template>
 {% endblock %}
 {% block scripts %}
-{% if search_js %}<script src="{{ root }}assets/js/search.js" defer></script>{% endif %}
+{% if search_js %}<script src="{{ root }}assets/js/search.js?v={{ ver['search.js'] }}" defer></script>{% endif %}
 {% endblock %}

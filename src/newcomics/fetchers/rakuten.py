@@ -30,7 +30,7 @@ MAX_PAGE = 100
 INTERVAL = 1.2
 TIMEOUT = 30
 ORIGIN = "https://new-comics.jp"
-COMIC_SIZES = {9, "9", "コミック"}
+COMIC_SIZES = sel.COMIC_SIZES
 
 DATE_FULL = re.compile(r"(\d{4})年(\d{1,2})月(\d{1,2})日")
 DATE_MONTH = re.compile(r"(\d{4})年(\d{1,2})月")
@@ -271,12 +271,6 @@ def select(conn, rows, start_month, today):
         for row in conn.execute("SELECT id, series_id FROM books WHERE isbn13 = ? AND origin = 'rakuten'", (i,)).fetchall():
             db.delete_book(conn, row["id"])
             stats["deleted"] += 1
-            if row["series_id"]:
-                conn.execute(
-                    "UPDATE series SET latest_volume = (SELECT MAX(volume) FROM books WHERE series_id = ?), "
-                    "latest_release_date = (SELECT MAX(release_date) FROM books WHERE series_id = ?) WHERE id = ?",
-                    (row["series_id"], row["series_id"], row["series_id"]),
-                )
     sel.save(path, review, start_month)
     return chosen, stats
 

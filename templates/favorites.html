@@ -49,5 +49,5 @@
 {{ cart_bar(cart) }}
 {% endblock %}
 {% block scripts %}
-{% if favorites_js %}<script src="{{ root }}assets/js/favorites.js" defer></script>{% endif %}
+{% if favorites_js %}<script src="{{ root }}assets/js/favorites.js?v={{ ver['favorites.js'] }}" defer></script>{% endif %}
 {% endblock %}

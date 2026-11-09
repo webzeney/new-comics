@@ -22,7 +22,7 @@ from xml.sax.saxutils import escape as xml_escape
 import holidays as holidays_lib
 
 from . import db, yomi
-from .normalize import isbn13_to_10
+from .normalize import isbn13_to_10, series_name
 from .render import Writer, page_defaults
 
 DOWS = ["月", "火", "水", "木", "金", "土", "日"]
@@ -33,7 +33,6 @@ UPDATE_KINDS = [
     ("change", "日付変更", "発売日の変更", "発売日が変更された本は、今のところありません。"),
     ("fixed", "日付決定", "発売日の決定", "発売日が決定した本は、今のところありません。"),
 ]
-KIND_LABELS = {"日付変更": "発売日の変更", "日付決定": "発売日の決定"}
 TOP_BOOKS = 20  # PC は幅に合わせて「1段の数×2」だけ表示する（JavaScript で調整）
 TOP_BOOKS_BASE = 8  # スマホと JavaScript が動かないときに表示する数
 TAG_INFO = {
@@ -104,7 +103,7 @@ class Book:
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
         image = row["image_url"] if "image_url" in row.keys() else None
-        # 楽天の書影は、リンク先を必ず楽天の商品ページにする（出版社サイトの本は楽天へのリンクがあるときだけ書影を出す）
+        # 楽天の書影は、楽天の商品ページへのリンクがあるときだけ使う（書籍詳細ページのメインの書影のリンク先になる。出版社サイトの本は楽天へのリンクがあるときだけ書影を出す）
         if self.origin == "rakuten":
             self.image, self.cover_url = image, (self.rakuten_url if image else None)
         elif image and self.rakuten_url:
@@ -149,7 +148,6 @@ class Site:
                 b.rakuten_url = rakuten_link(b.rakuten_url, link_id)
                 b.cover_url = rakuten_link(b.cover_url, link_id)
                 b.kobo_url = rakuten_link(b.kobo_url, link_id)
-        self.by_key = {b.key: b for b in self.books}
         self.by_id = {b.id: b for b in self.books}
         self.series = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM series")}
         self.dated = sorted([b for b in self.books if b.release], key=lambda b: (b.release, b.publisher, b.title))
@@ -180,50 +178,51 @@ class Site:
             return b.asin or None
         return isbn13_to_10(b.isbn13) or b.asin or None
 
+    def amazon_url(self, asin=None, search=None, index="stripbooks"):
+        """Amazon の商品ページ（asin）か検索結果のページ（search）のアドレス。アソシエイトのタグを付ける。"""
+        tag = self.env.get("AMAZON_TAG")
+        if asin:
+            return f"https://www.amazon.co.jp/dp/{asin}" + (f"?tag={quote(tag)}" if tag else "")
+        return f"https://www.amazon.co.jp/s?k={quote(search)}&i={index}" + (f"&tag={quote(tag)}" if tag else "")
+
+    def rakuten_search_url(self, query, extra=""):
+        """楽天ブックスの検索結果のページ。取り込んだ本の楽天アフィリエイトの ID が分かれば、アフィリエイトのリンクにする。"""
+        url = f"https://books.rakuten.co.jp/search?sitem={quote(query)}{extra}"
+        if not self.rakuten_hgc:
+            return url
+        return rakuten_link(f"https://hb.afl.rakuten.co.jp/hgc/{self.rakuten_hgc}/?pc={quote(url, safe='')}", self.env.get("RAKUTEN_LINK_ID"))
+
     def main_cover(self, b):
         """書籍詳細ページのメインの書影とリンク先。Amazon の書影（取得から24時間以内）があれば Amazon の商品ページへ、
         なければ楽天の書影と楽天の商品ページ。Amazon の書影はここでだけ使う（一覧などは楽天の書影のまま）。"""
         asin = self.amazon_asin(b)
-        if (AMAZON_MAIN_COVER or self.env.get("AMAZON_MAIN_COVER") == "1") and b.amazon_image and asin and b.amazon_image_at:
+        if b.amazon_image and asin and b.amazon_image_at:
             try:
                 fresh = datetime.now(db.JST) - datetime.fromisoformat(b.amazon_image_at) < timedelta(hours=AMAZON_IMAGE_HOURS)
             except ValueError:
                 fresh = False
             if fresh:
-                tag = self.env.get("AMAZON_TAG")
-                return b.amazon_image, f"https://www.amazon.co.jp/dp/{asin}" + (f"?tag={quote(tag)}" if tag else "")
+                return b.amazon_image, self.amazon_url(asin)
         return b.image, b.cover_url
-
-    def cart_asin(self, b):
-        """Amazon のカートにまとめて入れるときに使う紙の本の ASIN。分からなければ None。"""
-        return self.amazon_asin(b)
 
     def cart(self):
         """「まとめてAmazonのカートへ」のバーに渡す値。"""
         return {"tag": self.env.get("AMAZON_TAG") or ""}
 
     def stores(self, b):
-        tag = self.env.get("AMAZON_TAG")
         q = b.isbn13 or b.title
         # ISBN が分かる本は Amazon・セブンネットとも商品ページへ（Amazon に ISBN-10 のページがない本は、ISBN-13 で見つけた ASIN。
         # それもなければ ISBN の検索ページ）。ISBN が分からない本は、Amazon の照らし合わせで見つかった ASIN、
         # それもなければ書名の検索ページにする（ISBN をあとから取り込んだときは、照らし合わせの結果より ISBN を優先する）
         asin = self.amazon_asin(b)
-        if asin:
-            amazon = f"https://www.amazon.co.jp/dp/{asin}"
-            if tag:
-                amazon += f"?tag={quote(tag)}"
-        else:
-            amazon = f"https://www.amazon.co.jp/s?k={quote(q)}&i=stripbooks"
-            if tag:
-                amazon += f"&tag={quote(tag)}"
-        rakuten = b.rakuten_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}"
+        amazon = self.amazon_url(asin) if asin else self.amazon_url(search=q)
+        rakuten = b.rakuten_url or self.rakuten_search_url(q)
         seven = f"https://7net.omni7.jp/detail_isbn/{b.isbn13}" if b.isbn13 else f"https://7net.omni7.jp/search/?keyword={quote(q)}"
         out = [
             {"name": "Amazon", "short": "Amazon", "kind": "amazon", "button": "Amazon", "url": amazon},
             {"name": "楽天ブックス", "short": "楽天", "kind": "rakuten", "button": "楽天ブックス", "url": rakuten},
         ]
-        # セブンネットで取り扱いがないと確認できた本は、セブンネットのボタンを出さない
+        # 以前の確認（2026-11 まで毎晩行っていた）でセブンネットに取り扱いがないと分かった本は、セブンネットのボタンを出さない
         if b.seven_ok != 0:
             out.append({"name": "セブンネットショッピング", "short": "セブン\nネット", "kind": "seven", "button": "セブンネット", "url": seven})
         return out
@@ -239,14 +238,8 @@ class Site:
         if b.has_ebook is None and not (b.kindle_asin or b.kobo_url):
             return []
         q = unicodedata.normalize("NFKC", b.title)
-        tag = self.env.get("AMAZON_TAG")
-        if b.kindle_asin:
-            kindle = f"https://www.amazon.co.jp/dp/{b.kindle_asin}" + (f"?tag={quote(tag)}" if tag else "")
-        else:
-            kindle = f"https://www.amazon.co.jp/s?k={quote(q)}&i=digital-text" + (f"&tag={quote(tag)}" if tag else "")
-        kobo = b.kobo_url or f"https://books.rakuten.co.jp/search?sitem={quote(q)}&g=101"
-        if not b.kobo_url and self.rakuten_hgc:
-            kobo = f"https://hb.afl.rakuten.co.jp/hgc/{self.rakuten_hgc}/{self.env.get('RAKUTEN_LINK_ID') or ''}?pc={quote(kobo, safe='')}"
+        kindle = self.amazon_url(b.kindle_asin) if b.kindle_asin else self.amazon_url(search=q, index="digital-text")
+        kobo = b.kobo_url or self.rakuten_search_url(q, "&g=101")
         out = []
         if b.has_ebook or b.kindle_asin:
             out.append({"name": "Kindle", "url": kindle})
@@ -271,14 +264,14 @@ class Site:
 
     @staticmethod
     def alt(b):
-        main, vol, _ = title_parts(b)
+        main, vol = title_parts(b)
         return f"{main} {vol}巻" if vol else b.title
 
     def row(self, root, b, keys=("author", "label", "price")):
         return {
             "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook,
-            "first": b.is_first, "meta": self.meta(b, keys), "stores": self.stores(b), "image": b.image, "cover_url": b.cover_url, "alt": self.alt(b),
-            "asin": self.cart_asin(b),
+            "first": b.is_first, "meta": self.meta(b, keys), "stores": self.stores(b), "image": b.image, "alt": self.alt(b),
+            "asin": self.amazon_asin(b),
         }
 
     def holiday(self, d):
@@ -296,7 +289,8 @@ class Site:
         return months
 
     def tags_for_menu(self):
-        tags = [{"key": f"tag:{slug}", "label": TAG_INFO[slug][0], "path": f"tag/{slug}/"} for slug in TAG_INFO if any(slug in b.tags for b in self.books)]
+        # タグのページは発売日の分かる本で作るので、メニューも同じ本で決める（ページのないタグへリンクしない）
+        tags = [{"key": f"tag:{slug}", "label": TAG_INFO[slug][0], "path": f"tag/{slug}/"} for slug in TAG_INFO if any(slug in b.tags for b in self.dated)]
         for p in self.publishers[:2]:
             tags.append({"key": f"pub:{p['slug']}", "label": p["name"], "path": f"publisher/{p['slug']}/"})
         return tags
@@ -572,7 +566,7 @@ def build_top(site, w):
             cards.append({
                 "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "ebook": b.has_ebook,
                 "author": site.author_text(b), "label_price": label_price, "bubble": bubble, "bubble_kind": kind, "stores": site.stores(b),
-                "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b),
+                "image": b.image, "alt": site.alt(b),
             })
         more = f"date/{d.isoformat()}/" if books else None
         empty = "本日発売の新刊はありません" if word == "今日" else f"{word}発売の新刊はありません"
@@ -758,7 +752,8 @@ def build_dates(site, w):
 
 # ---- 書籍 ----
 AMAZON_IMAGE_HOURS = 24  # Amazon の書影のアドレスを使ってよい時間（ライセンス契約 利用要件(n)）
-AMAZON_MAIN_COVER = os.environ.get("AMAZON_MAIN_COVER") == "1"  # 運営者の確認が済むまでは確認用の生成でだけ使う
+
+
 def bubble_for(site, d):
     if d is None:
         return "発売日未定", False
@@ -771,11 +766,10 @@ def bubble_for(site, d):
 
 
 def title_parts(b):
-    import re
+    """書名を（作品名, 巻数）に分ける。巻数のない本は（書名, None）。"""
     if b.volume is None:
-        return b.title, None, ""
-    from .normalize import series_name
-    return series_name(b.title) or b.title, b.volume, ""
+        return b.title, None
+    return series_name(b.title) or b.title, b.volume
 
 
 def author_key(name):
@@ -875,7 +869,7 @@ def author_works(site, root, b):
             for k in {author_key(a["name"]) for a in x.authors}:
                 site.by_author[k].append(x)
     works = {}
-    for x in {x.id: x for k in keys for x in site.by_author.get(k, [])}.values():
+    for x in {x.id: x for k in sorted(keys) for x in site.by_author.get(k, [])}.values():
         if x.id == b.id or (b.series_id and x.series_id == b.series_id):
             continue
         k = ("s", x.series_id) if x.series_id else ("b", x.id)
@@ -883,16 +877,17 @@ def author_works(site, root, b):
             works[k] = x
     if not works:
         return None
-    items = sorted(works.values(), key=lambda x: x.release, reverse=True)
+    # 同じ発売日の作品は id の順にして、生成のたびに並びが変わらないようにする（変わると毎回転送し直しになる）
+    items = sorted(works.values(), key=lambda x: (x.release, -x.id), reverse=True)
     names = [a["name"] for a in b.authors]
     one = len(names) == 1 and author_key(names[0]) in AUTHOR_KEYS
     out = []
     for x in items[:WORKS_COUNT]:
-        m, v, _ = title_parts(x)
-        out.append({"title": m, "sub": (f"{v}巻・" if v else "") + f"{md(x.release)}発売", "url": site.book_url(root, x), "image": x.image, "cover_url": x.cover_url, "alt": site.alt(x)})
+        m, v = title_parts(x)
+        out.append({"title": m, "sub": (f"{v}巻・" if v else "") + f"{md(x.release)}発売", "url": site.book_url(root, x), "image": x.image, "alt": site.alt(x)})
     return {
         "title": f"{names[0]}さんのほかの作品" if len(names) == 1 else "この本の作者のほかの作品",
-        "count": len(items), "books": out,
+        "books": out,
         "url": f"{root}author/{author_key(names[0])}/" if one else None,
     }
 
@@ -900,7 +895,7 @@ def author_works(site, root, b):
 def build_books(site, w):
     root = "../../"
     for b in site.books:
-        main, vol, rest = title_parts(b)
+        main, vol = title_parts(b)
         bubble, on_sale = bubble_for(site, b.release)
         series = None
         volumes = sorted([x for x in site.series_books.get(b.series_id, []) if x.volume], key=lambda x: x.volume)
@@ -935,7 +930,7 @@ def build_books(site, w):
             "book": {
                 "bubble": bubble, "on_sale": on_sale, "release_iso": b.release.isoformat() if b.release else None, "pub": b.publisher, "pub_url": f"{root}publisher/{b.publisher_slug}/",
                 "label": b.label, "label_url": f"{root}label/{b.label_id}/" if b.label_id else "", "ebook": b.has_ebook,
-                "title_main": main, "volume": vol, "title_rest": rest, "authors": authors_ctx(root, b),
+                "title_main": main, "volume": vol, "authors": authors_ctx(root, b),
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
                 "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "ebook_stores": site.ebook_stores(b), "isbn": b.isbn13,
                 "image": cover[0], "cover_url": cover[1], "alt": site.alt(b),
@@ -967,7 +962,7 @@ def build_books(site, w):
 # ---- 作品 ----
 def calendar_links(site, sid):
     """作品のカレンダーを購読するリンク。iPhone・Mac は webcal、Google カレンダーは購読の画面へ送る。"""
-    base = (site.env.get("SITE_URL") or "https://new-comics.jp").rstrip("/")
+    base = site_base(site)
     webcal = "webcal://" + base.split("://", 1)[-1] + f"/series/{sid}/calendar.ics"
     return {"webcal": webcal, "google": "https://calendar.google.com/calendar/r?cid=" + quote(webcal, safe=""),
             "endpoint": "webcal://" + base.split("://", 1)[-1] + f"/series/calendar.php?s={sid}"}
@@ -982,7 +977,7 @@ def build_series(site, w):
         info = site.series[sid]
         latest = vols[-1]
         bubble, on_sale = bubble_for(site, latest.release)
-        main, vol, _ = title_parts(latest)
+        main, vol = title_parts(latest)
         prices = [b.price for b in vols if b.price]
         lt_meta = "".join(f"・{x}" for x in (site.price_text(latest), "電子版あり" if latest.has_ebook else "") if x)
         status = "完結" if any(b.is_final for b in vols) else "刊行中"
@@ -999,13 +994,13 @@ def build_series(site, w):
                 "md": md(latest.release) if latest.release else "未定", "dow": dow(latest.release) if latest.release else "", "url": site.book_url(root, latest),
                 "bubble": bubble, "on_sale": on_sale, "release_iso": latest.release.isoformat() if latest.release else None, "title_main": main, "volume": vol,
                 "date": f"{latest.release.year}.{latest.release.month}.{latest.release.day}" if latest.release else "未定",
-                "meta": lt_meta, "stores": site.stores(latest), "image": latest.image, "cover_url": latest.cover_url, "alt": site.alt(latest),
+                "meta": lt_meta, "stores": site.stores(latest), "image": latest.image, "alt": site.alt(latest),
             },
             "fav": {"id": sid, "name": info["name"], "url": f"/series/{sid}/"},
             "feed_url": f"{root}series/{sid}/feed.xml",
             "ical": calendar_links(site, sid),
             "forecast": fc if status != "完結" else None,
-            "volumes": [{"no": b.volume, "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else "未定", "latest": b.id == latest.id, "url": site.book_url(root, b), "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b), "asin": site.cart_asin(b)} for b in reversed(vols)],
+            "volumes": [{"no": b.volume, "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else "未定", "latest": b.id == latest.id, "url": site.book_url(root, b), "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b), "asin": site.amazon_asin(b)} for b in reversed(vols)],
             "cart": site.cart(),
         }
         page = page_defaults(
@@ -1021,20 +1016,34 @@ def build_series(site, w):
 
 
 # ---- 出版社別・レーベル別・タグ別 ----
-def listing_months(site, root, books, keys, kind):
+def date_groups(site, root, books, keys):
+    """本を発売日ごとにまとめる（books の並び順のまま）。"""
+    dates = OrderedDict()
+    for b in books:
+        dates.setdefault(b.release, []).append(b)
+    return [{"md": md(d), "dow": dow(d), "on_sale": d <= site.today, "books": [site.row(root, b, keys) for b in v]} for d, v in dates.items()]
+
+
+def listing_months(site, root, books, keys):
     out = []
-    months = chunk_months(site.today)
-    for i, (y, m) in enumerate(months):
-        dates = OrderedDict()
-        for b in books:
-            if b.release and b.release.year == y and b.release.month == m:
-                dates.setdefault(b.release, []).append(b)
-        groups = [{"md": md(d), "dow": dow(d), "on_sale": d <= site.today, "books": [site.row(root, b, keys) for b in v]} for d, v in sorted(dates.items())]
+    for i, (y, m) in enumerate(chunk_months(site.today)):
+        month = sorted((b for b in books if b.release and b.release.year == y and b.release.month == m), key=lambda b: b.release)
+        groups = date_groups(site, root, month, keys)
         out.append({"no": m, "count": sum(len(g["books"]) for g in groups), "current": i == 0, "dates": groups})
     return out
 
 
-def listing_common(site, root, books):
+def listing_ctx(site, root, books, keys, crumb, listing, label_links=(), others=None):
+    """出版社・レーベル・タグ・著者のページ（listing.html）に渡す値。"""
+    return {
+        "crumbs": crumb, "listing": listing, "label_links": list(label_links), "others": others,
+        "months": listing_months(site, root, books, keys),
+        "past": listing_past(site, root, books, keys),
+        **listing_common(site, books),
+    }
+
+
+def listing_common(site, books):
     upcoming = [b for b in books if b.release and b.release >= site.today]
     months = chunk_months(site.today)
     until_y, until_m = months[-1]
@@ -1053,11 +1062,7 @@ def listing_past(site, root, books, keys):
     """今月より前に発売された本を新しい順に並べる（発売日が過ぎてもページが空にならないようにする）。"""
     start = date(site.today.year, site.today.month, 1)
     past = sorted([b for b in books if b.release and b.release < start], key=lambda b: (b.release, b.publisher, b.title), reverse=True)
-    dates = OrderedDict()
-    for b in past[:PAST_COUNT]:
-        dates.setdefault(b.release, []).append(b)
-    groups = [{"md": md(d), "dow": dow(d), "on_sale": True, "books": [site.row(root, b, keys) for b in v]} for d, v in dates.items()]
-    return {"count": len(past), "limited": len(past) > PAST_COUNT, "limit": PAST_COUNT, "dates": groups}
+    return {"count": len(past), "limited": len(past) > PAST_COUNT, "limit": PAST_COUNT, "dates": date_groups(site, root, past[:PAST_COUNT], keys)}
 
 
 def lastmod(site, books):
@@ -1083,15 +1088,13 @@ def build_listings(site, w):
         for b in books:
             if b.label_id and b.label not in labels:
                 labels[b.label] = b.label_id
-        ctx = {
-            "crumbs": crumbs(root, ("出版社から探す", f"{root}publisher/"), (p["name"], None)),
-            "listing": {"en": "PUBLISHER", "title": f"{p['name']}の新刊発売予定", "lead": None, "kind": "publisher", "final_badge": False},
-            "label_links": [{"name": n, "url": f"{root}label/{i}/"} for n, i in labels.items()],
-            "months": listing_months(site, root, books, ("author", "price"), "publisher"),
-            "past": listing_past(site, root, books, ("author", "price")),
-            "others": {"title": "ほかの出版社の新刊", "links": [{"name": o["name"], "url": f"{root}publisher/{o['slug']}/"} for o in site.publishers if o["name"] != p["name"]]},
-            **listing_common(site, root, books),
-        }
+        ctx = listing_ctx(
+            site, root, books, ("author", "price"),
+            crumbs(root, ("出版社から探す", f"{root}publisher/"), (p["name"], None)),
+            {"en": "PUBLISHER", "title": f"{p['name']}の新刊発売予定", "lead": None, "kind": "publisher", "final_badge": False},
+            label_links=[{"name": n, "url": f"{root}label/{i}/"} for n, i in labels.items()],
+            others={"title": "ほかの出版社の新刊", "links": [{"name": o["name"], "url": f"{root}publisher/{o['slug']}/"} for o in site.publishers if o["name"] != p["name"]]},
+        )
         page = page_defaults(title=f"{p['name']}の漫画新刊発売予定｜{SITE_NAME}", description=f"{p['name']}から発売される漫画（コミック）の新刊を、発売日順に紹介しています。", menu="publisher", lastmod=lastmod(site, books))
         w.write(f"publisher/{p['slug']}/index.html", "listing.html", page, **ctx)
     # レーベル
@@ -1100,15 +1103,11 @@ def build_listings(site, w):
         books = [b for b in site.dated if b.label_id == l["id"]]
         if not books:
             continue
-        ctx = {
-            "crumbs": crumbs(root, ("レーベルから探す", f"{root}label/"), (l["pub"], f"{root}publisher/{l['slug']}/"), (l["name"], None)),
-            "listing": {"en": "LABEL", "title": f"{l['name']}の新刊発売予定", "lead": None, "kind": "label", "final_badge": False},
-            "label_links": [],
-            "months": listing_months(site, root, books, ("author", "price"), "label"),
-            "past": listing_past(site, root, books, ("author", "price")),
-            "others": None,
-            **listing_common(site, root, books),
-        }
+        ctx = listing_ctx(
+            site, root, books, ("author", "price"),
+            crumbs(root, ("レーベルから探す", f"{root}label/"), (l["pub"], f"{root}publisher/{l['slug']}/"), (l["name"], None)),
+            {"en": "LABEL", "title": f"{l['name']}の新刊発売予定", "lead": None, "kind": "label", "final_badge": False},
+        )
         page = page_defaults(title=f"{l['name']}（{l['pub']}）の漫画新刊発売予定｜{SITE_NAME}", description=f"{l['pub']}のレーベル「{l['name']}」から発売される漫画の新刊の発売予定と、これまでに発売された本をまとめています。", menu="label", lastmod=lastmod(site, books))
         w.write(f"label/{l['id']}/index.html", "listing.html", page, **ctx)
     # タグ
@@ -1116,15 +1115,11 @@ def build_listings(site, w):
         books = [b for b in site.dated if slug in b.tags]
         if not books:
             continue
-        ctx = {
-            "crumbs": crumbs(root, ("タグ", f"{root}tag/"), (f"#{name}", None)),
-            "listing": {"en": "TAG", "title": f"#{name}の新刊発売予定", "lead": lead, "kind": "tag", "final_badge": slug == "final"},
-            "label_links": [],
-            "months": listing_months(site, root, books, ("author", "label", "price"), "tag"),
-            "past": listing_past(site, root, books, ("author", "label", "price")),
-            "others": None,
-            **listing_common(site, root, books),
-        }
+        ctx = listing_ctx(
+            site, root, books, ("author", "label", "price"),
+            crumbs(root, ("タグ", f"{root}tag/"), (f"#{name}", None)),
+            {"en": "TAG", "title": f"#{name}の新刊発売予定", "lead": lead, "kind": "tag", "final_badge": slug == "final"},
+        )
         page = page_defaults(title=f"#{name}の漫画新刊発売予定｜{SITE_NAME}", description=lead, tag=f"tag:{slug}", lastmod=lastmod(site, books))
         w.write(f"tag/{slug}/index.html", "listing.html", page, **ctx)
     # 一覧ページ
@@ -1167,15 +1162,11 @@ def build_authors(site, w):
             names.setdefault(k, a["name"])
     for k, books in by_key.items():
         name = names[k]
-        ctx = {
-            "crumbs": crumbs(root, (f"{name}", None)),
-            "listing": {"en": "AUTHOR", "title": f"{name}の新刊発売予定", "lead": f"{name}さんが関わる漫画の新刊の発売予定と、これまでに発売された本をまとめています。", "kind": "author", "final_badge": False},
-            "label_links": [],
-            "months": listing_months(site, root, books, ("label", "price"), "author"),
-            "past": listing_past(site, root, books, ("label", "price")),
-            "others": None,
-            **listing_common(site, root, books),
-        }
+        ctx = listing_ctx(
+            site, root, books, ("label", "price"),
+            crumbs(root, (f"{name}", None)),
+            {"en": "AUTHOR", "title": f"{name}の新刊発売予定", "lead": f"{name}さんが関わる漫画の新刊の発売予定と、これまでに発売された本をまとめています。", "kind": "author", "final_badge": False},
+        )
         page = page_defaults(title=f"{name}の漫画新刊発売予定｜{SITE_NAME}", description=f"{name}さんの漫画（コミック）の新刊の発売予定と、これまでに発売された本をまとめています。", lastmod=lastmod(site, books))
         w.write(f"author/{k}/index.html", "listing.html", page, **ctx)
 
@@ -1387,8 +1378,8 @@ def build_search(site, w):
     ctx = {
         "crumbs": crumbs(root, ("検索結果", None)),
         "options": search_options(site),
-        "search": {"heading": "検索結果", "total": len(items), "q": "", "pub": "", "label": "", "month": "", "ebook": False, "conditions": [],
-                   "range": "", "sort": "date", "results": [], "pages": []},
+        "search": {"heading": "検索結果", "total": len(items), "q": "", "pub": "", "label": "", "month": "", "ebook": False,
+                   "range": "", "sort": "date"},
         "search_js": True,
     }
     page = page_defaults(title=f"検索結果｜{SITE_NAME}", description="漫画の新刊を作品名・出版社・レーベル・発売月で検索できます。")
@@ -1528,7 +1519,6 @@ def main(argv=None):
     today = date.fromisoformat(args.today) if args.today else jst_today()
     out = Path(args.out)
     if out.exists():
-        import shutil
         shutil.rmtree(out)
     count = build(conn, out, today, dict(os.environ))
     print(f"{count} ページを生成しました（基準日 {today.isoformat()}）")

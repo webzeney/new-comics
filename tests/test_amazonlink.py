@@ -38,7 +38,7 @@ class PickTest(unittest.TestCase):
 
 class Isbn10Test(unittest.TestCase):
     def test_isbn10_to_13(self):
-        from newcomics.rakutencover import isbn10_to_13
+        from newcomics.normalize import isbn10_to_13
         self.assertEqual(isbn10_to_13("4301008675"), "9784301008675")
         self.assertEqual(isbn10_to_13("409855011X"[:9] + "3"), "9784098550111")
         self.assertIsNone(isbn10_to_13("B0ABCDEFGH"))

@@ -166,13 +166,6 @@ def ensure_tag(conn, name, slug):
     return conn.execute("SELECT id FROM tags WHERE name = ?", (name,)).fetchone()["id"]
 
 
-def find_book(conn, source_key, isbn13):
-    row = conn.execute("SELECT * FROM books WHERE source_key = ?", (source_key,)).fetchone()
-    if row is None and isbn13:
-        row = conn.execute("SELECT * FROM books WHERE isbn13 = ?", (isbn13,)).fetchone()
-    return row
-
-
 def find_same_volume(conn, publisher_id, series_id, volume, edition, isbn13, origin=None, exclude_id=None):
     """ISBN で結び付けられないとき、同じ出版社・シリーズ・巻・版の本を探す（片方に ISBN がない場合だけ）。"""
     if volume is None or series_id is None:

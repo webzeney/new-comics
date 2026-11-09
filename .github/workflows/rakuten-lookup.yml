@@ -1,40 +1,44 @@
-name: 楽天の書影を調べる（特集記事用）
+name: 楽天で本を調べる（特集記事用・手動）
 
 on:
   workflow_dispatch:
     inputs:
-      isbns:
-        description: "ISBN をカンマ区切りで"
+      query:
+        description: "ISBN（カンマ区切り）か書名（| 区切り）"
         required: true
+      kobo:
+        description: "楽天Kobo（電子書籍）で調べる"
+        type: boolean
+        default: false
+      sort:
+        description: "並び順（-releaseDate は新しい順、+releaseDate は古い順）"
+        required: false
+        default: "-releaseDate"
 
 permissions:
   contents: read
 
+concurrency:
+  group: rakuten-lookup
+  cancel-in-progress: false
+
 jobs:
   lookup:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: 書影のURLを出す
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: 調べる
         env:
+          PYTHONPATH: src
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
           RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
-          ISBNS: ${{ inputs.isbns }}
-        run: |
-          python3 - <<'PY'
-          import json, os, re, time, urllib.parse, urllib.request
-          base = "https://openapi.rakuten.co.jp/services/api/BooksBook/Search/20170404"
-          for isbn in re.findall(r"97[89]\d{10}", os.environ["ISBNS"]):
-              q = urllib.parse.urlencode({"applicationId": os.environ["RAKUTEN_APP_ID"], "accessKey": os.environ["RAKUTEN_ACCESS_KEY"], "format": "json", "formatVersion": 2, "isbn": isbn})
-              req = urllib.request.Request(f"{base}?{q}", headers={"Origin": "https://new-comics.jp", "Referer": "https://new-comics.jp/"})
-              try:
-                  with urllib.request.urlopen(req, timeout=30) as r:
-                      items = json.loads(r.read()).get("Items") or []
-              except Exception as e:
-                  print(isbn, "エラー", type(e).__name__)
-                  items = []
-              for it in items[:1]:
-                  print(isbn, it.get("largeImageUrl"), it.get("itemPrice"))
-              if not items:
-                  print(isbn, "見つかりません")
-              time.sleep(1.2)
-          PY
+          QUERY: ${{ inputs.query }}
+          KOBO: ${{ inputs.kobo }}
+          SORT: ${{ inputs.sort }}
+        run: python -m newcomics.rakutenlookup "$QUERY" --sort "$SORT" $( [ "$KOBO" = "true" ] && echo --kobo )

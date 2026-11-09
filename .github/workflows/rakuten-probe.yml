@@ -19,9 +19,8 @@ on:
 permissions:
   contents: read
 
-# 楽天へのリクエストが毎日の取得と重ならないよう、同じ順番待ちに入れる
 concurrency:
-  group: data-update
+  group: rakuten-probe
   cancel-in-progress: false
 
 jobs:

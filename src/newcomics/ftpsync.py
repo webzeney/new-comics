@@ -1,7 +1,8 @@
 """FTPS で公開フォルダへ転送する（差分のみ・並列・途中から再開できる）。
 
 サーバーの転送先フォルダに記録ファイル（STATE_NAME）を置き、前回送ったファイルの
-ハッシュと比べて、変わったファイルだけを送る。一定数を送るごとに記録を書き込むので、
+ハッシュと比べて、変わったファイルだけを送る。記録ファイルは名前を「.ht」で始め、
+ブラウザから読めないようにする（Apache は .ht で始まるファイルを公開しない）。一定数を送るごとに記録を書き込むので、
 途中で接続が切れても、次の実行では残りだけを送る。
 
 公開リポジトリの Actions ログは誰でも見られるため、ファイル名やフォルダ名は出力しない。
@@ -20,7 +21,8 @@ import threading
 import time
 from pathlib import Path
 
-STATE_NAME = ".nc-sync-state.json"
+STATE_NAME = ".htncsync.json"
+OLD_STATE_NAME = ".nc-sync-state.json"  # 以前の記録ファイル（ブラウザから読めたため、中身を空にして使わない）
 SAVE_EVERY = 150
 RETRIES = 6
 TIMEOUT = 60
@@ -40,7 +42,7 @@ def local_files(root, excludes, key=b""):
         if not p.is_file():
             continue
         rel = p.relative_to(root).as_posix()
-        if rel == STATE_NAME or any(fnmatch.fnmatch(rel, pat) for pat in excludes):
+        if rel in (STATE_NAME, OLD_STATE_NAME) or any(fnmatch.fnmatch(rel, pat) for pat in excludes):
             continue
         out[rel] = sha256(p, key)
     return out
@@ -68,14 +70,9 @@ class Conn:
 
     def open(self):
         self.close()
-        if self.env.get("FTPSYNC_PLAIN") == "1":
-            ftp = ftplib.FTP(timeout=TIMEOUT)
-            ftp.connect(self.env["FTP_SERVER"], int(self.env.get("FTPSYNC_PORT", "21")))
-            ftp.login(self.env["FTP_USERNAME"], self.env["FTP_PASSWORD"])
-        else:
-            ftp = ftplib.FTP_TLS(self.env["FTP_SERVER"], timeout=TIMEOUT)
-            ftp.login(self.env["FTP_USERNAME"], self.env["FTP_PASSWORD"])
-            ftp.prot_p()
+        ftp = ftplib.FTP_TLS(self.env["FTP_SERVER"], timeout=TIMEOUT)
+        ftp.login(self.env["FTP_USERNAME"], self.env["FTP_PASSWORD"])
+        ftp.prot_p()
         ftp.set_pasv(True)
         self.ftp = ftp
 
@@ -127,23 +124,22 @@ class Conn:
                 f.seek(0)
                 self.ftp.storbinary(f"STOR {self.base}{rel}", f)
 
-    def delete(self, rel):
-        try:
-            self.ftp.delete(self.base + rel)
-        except ftplib.error_perm:
-            pass
-
-    def read_state(self):
+    def read_file(self, name):
         buf = io.BytesIO()
         try:
-            self.ftp.retrbinary(f"RETR {self.base}{STATE_NAME}", buf.write)
+            self.ftp.retrbinary(f"RETR {self.base}{name}", buf.write)
         except ftplib.error_perm:
-            return {}
+            return None
         try:
-            data = json.loads(buf.getvalue().decode("utf-8"))
-            return dict(data.get("files", {}))
+            return dict(json.loads(buf.getvalue().decode("utf-8")).get("files", {}))
         except (ValueError, AttributeError):
             return {}
+
+    def read_state(self):
+        """記録を読む。新しい記録ファイルがまだなければ、以前の記録ファイルを読む（1回目だけ）。"""
+        state = self.read_file(STATE_NAME)
+        old = self.read_file(OLD_STATE_NAME)
+        return (state if state is not None else (old or {})), bool(old)
 
 
 def with_retry(conn, fn, *args):
@@ -168,7 +164,6 @@ def main(argv=None):
     ap.add_argument("--exclude", action="append", default=[])
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--make-base", action="store_true", help="転送先フォルダがなければ作る")
-    ap.add_argument("--delete", action="store_true", help="前回送ったが今回ないファイルを消す")
     args = ap.parse_args(argv)
     env = dict(os.environ)
 
@@ -177,10 +172,9 @@ def main(argv=None):
     main_conn = Conn(env, args.remote)
     if args.make_base:
         with_retry(main_conn, main_conn.ensure_base)
-    old = with_retry(main_conn, main_conn.read_state)
+    old, old_file_left = with_retry(main_conn, main_conn.read_state)
     todo = sorted((r for r, h in files.items() if old.get(r) != h), key=order_key)
-    gone = sorted(r for r in old if r not in files) if args.delete else []
-    print(f"ファイル数 {len(files)}／送るもの {len(todo)}／消すもの {len(gone)}", flush=True)
+    print(f"ファイル数 {len(files)}／送るもの {len(todo)}", flush=True)
 
     state = dict(old)
     lock = threading.Lock()
@@ -241,13 +235,11 @@ def main(argv=None):
         run_batch(first, args.workers)
     if not errors:
         run_batch(last, 1)
-    for rel in gone:
-        try:
-            with_retry(main_conn, main_conn.delete, rel)
-            state.pop(rel, None)
-        except Exception as exc:
-            errors.append(type(exc).__name__)
     save_state(final=True)
+    if old_file_left:
+        # 以前の記録ファイルはブラウザから読めたので、中身を空にしておく
+        with_retry(main_conn, main_conn.put_bytes, OLD_STATE_NAME, b"{}")
+        print("以前の記録ファイルを空にしました", flush=True)
     main_conn.close()
     minutes = (time.time() - start) / 60
     print(f"送信 {done_count[0]} 件・{minutes:.1f} 分", flush=True)

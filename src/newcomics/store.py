@@ -180,12 +180,6 @@ def save(conn, publisher_id, rec, run_at):
         if rule(rec):
             tag_id = db.ensure_tag(conn, name, slug)
             conn.execute("INSERT OR IGNORE INTO book_tags (book_id, tag_id) VALUES (?, ?)", (book_id, tag_id))
-    if series_id and rec.release_date:
-        conn.execute(
-            "UPDATE series SET latest_volume = (SELECT MAX(volume) FROM books WHERE series_id = ?), "
-            "latest_release_date = (SELECT MAX(release_date) FROM books WHERE series_id = ?) WHERE id = ?",
-            (series_id, series_id, series_id),
-        )
     return status
 
 
@@ -253,17 +247,20 @@ def isbnless_title_duplicates(conn, publisher_id=None):
 
 def merge_isbnless_by_title(conn, publisher_id=None):
     """isbnless_title_duplicates の組をまとめる（著者・完結・タグを ISBN のある本に移し、ISBN のない本は消す）。まとめた件数を返す。"""
-    merged = 0
-    for main, r in isbnless_title_duplicates(conn, publisher_id):
-        authors = main["authors"]
-        if not json.loads(authors or "[]") and json.loads(r["authors"] or "[]"):
-            authors = r["authors"]
-        is_final = int(bool(main["is_final"]) or bool(r["is_final"]))
-        conn.execute("UPDATE books SET authors = ?, is_final = ? WHERE id = ?", (authors, is_final, main["id"]))
+    return sum(absorb(conn, main, [r]) for main, r in isbnless_title_duplicates(conn, publisher_id))
+
+
+def absorb(conn, main, drop):
+    """ISBN のない本（drop）を ISBN のある本（main）にまとめる。main にない著者・完結・タグを移し、drop は消す。消した件数を返す。"""
+    authors = main["authors"]
+    if not json.loads(authors or "[]"):
+        authors = next((r["authors"] for r in drop if json.loads(r["authors"] or "[]")), authors)
+    is_final = int(bool(main["is_final"]) or any(r["is_final"] for r in drop))
+    conn.execute("UPDATE books SET authors = ?, is_final = ? WHERE id = ?", (authors, is_final, main["id"]))
+    for r in drop:
         conn.execute("INSERT OR IGNORE INTO book_tags (book_id, tag_id) SELECT ?, tag_id FROM book_tags WHERE book_id = ?", (main["id"], r["id"]))
         db.delete_book(conn, r["id"])
-        merged += 1
-    return merged
+    return len(drop)
 
 
 def merge_isbnless_duplicates(conn, publisher_id):
@@ -286,14 +283,5 @@ def merge_isbnless_duplicates(conn, publisher_id):
         drop = [r for r in rows if not r["isbn13"]]
         if len(keep) != 1 or not drop:
             continue
-        main = keep[0]
-        authors = main["authors"]
-        if not json.loads(authors or "[]"):
-            authors = next((r["authors"] for r in drop if json.loads(r["authors"] or "[]")), authors)
-        is_final = int(bool(main["is_final"]) or any(r["is_final"] for r in drop))
-        conn.execute("UPDATE books SET authors = ?, is_final = ? WHERE id = ?", (authors, is_final, main["id"]))
-        for r in drop:
-            conn.execute("INSERT OR IGNORE INTO book_tags (book_id, tag_id) SELECT ?, tag_id FROM book_tags WHERE book_id = ?", (main["id"], r["id"]))
-            db.delete_book(conn, r["id"])
-            merged += 1
+        merged += absorb(conn, keep[0], drop)
     return merged

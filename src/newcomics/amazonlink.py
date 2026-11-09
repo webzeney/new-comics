@@ -155,22 +155,20 @@ def isbn_targets(conn, now, limit, recheck=False):
 def check_isbn(conn, api, rows, deadline):
     """ISBN-10 の商品ページがあるかを10冊ずつ確かめ、ない本は ISBN-13 で紙の本を探す。"""
     counts = {"ok": 0, "asin": 0, "missing": 0, "error": 0}
-    batch = []
-    for r in rows:
-        isbn10 = isbn13_to_10(r["isbn13"])
-        if isbn10:
-            batch.append((r["id"], r["isbn13"], isbn10))
+    # 979 で始まる ISBN には ISBN-10 がないので、商品ページの確認をせずに ISBN-13 で探す
+    batch = [(r["id"], r["isbn13"], isbn13_to_10(r["isbn13"])) for r in rows]
     for i in range(0, len(batch), 10):
         if time.monotonic() > deadline:
             break
         chunk = batch[i:i + 10]
+        asins = [c[2] for c in chunk if c[2]]
         try:
-            found = {it.get("asin") for it in api.get([c[2] for c in chunk])}
+            found = {it.get("asin") for it in api.get(asins)} if asins else set()
         except (requests.RequestException, AmazonError, ValueError):
             counts["error"] += len(chunk)
             continue
         for book_id, isbn13, isbn10 in chunk:
-            if isbn10 in found:
+            if isbn10 and isbn10 in found:
                 counts["ok"] += 1
                 conn.execute("UPDATE books SET amazon_isbn_ok = 1, isbn_checked_at = ? WHERE id = ?", (db.now_iso(), book_id))
                 continue
@@ -178,7 +176,7 @@ def check_isbn(conn, api, rows, deadline):
                 break
             # ISBN-13 で探すと Kindle版しか出ないことがあるため、ISBN-10 → ISBN-13 の順に探す
             hit, failed = None, False
-            for words in (isbn10, isbn13):
+            for words in (w for w in (isbn10, isbn13) if w):
                 try:
                     items = api.search(words, index="Books", availability="IncludeOutOfStock",
                                        resources=["itemInfo.title", "itemInfo.classifications", "itemInfo.productInfo", "itemInfo.externalIds"])
@@ -199,7 +197,7 @@ def check_isbn(conn, api, rows, deadline):
 
 
 def paper_asin(r):
-    """書籍ページの Amazon ボタンと同じ、紙の本の ASIN（ISBN-10 のページがあると確かめた本は ISBN-10）。"""
+    """書影を取る紙の本の ASIN。ISBN の分かる本は、商品ページを確かめ終えた本だけ（ISBN-10 のページがあれば ISBN-10、なければ見つけた ASIN）。"""
     if r["isbn13"]:
         if r["amazon_isbn_ok"] == 1:
             return isbn13_to_10(r["isbn13"])
@@ -274,7 +272,10 @@ def main(argv=None):
     print(f"Amazon の照らし合わせ：ISBN の分からない本 見つかった {paper['found']}／見つからない {paper['missing']}／エラー {paper['error']}、"
           f"Kindle版 見つかった {kindle['found']}／見つからない {kindle['missing']}／エラー {kindle['error']}"
           f"（API {api.calls} 回、Kindle版をまだ探していない本 残り {left} 冊）")
-    return 0
+    # すべてエラーだったとき（認証情報が切れたときなど）は、実行を失敗にして気づけるようにする
+    done = isbn["ok"] + isbn["asin"] + isbn["missing"] + img["image"] + img["none"] + sum(c["found"] + c["missing"] for c in (paper, kindle))
+    errors = isbn["error"] + img["error"] + paper["error"] + kindle["error"]
+    return 1 if errors and not done else 0
 
 
 if __name__ == "__main__":
