@@ -8,8 +8,9 @@ with sync_playwright() as p:
     for key in sys.argv[1:]:
         for name, w, h in (("pc", 1280, 900), ("sp", 390, 844)):
             page = b.new_page(viewport={"width": w, "height": h}, device_scale_factor=2)
-            page.goto(f"http://127.0.0.1:8099/book/{key}/", wait_until="networkidle")
+            path = key if "/" in key else f"book/{key}/"
+            page.goto(f"http://127.0.0.1:8099/{path}", wait_until="networkidle")
             page.wait_for_timeout(800)
-            page.screenshot(path=f"shots/{key}_{name}.png")
+            page.screenshot(path=f"shots/{key.strip('/').replace('/', '_')}_{name}.png", full_page="/" in key)
             page.close()
     b.close()

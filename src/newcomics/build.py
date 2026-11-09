@@ -74,10 +74,18 @@ def rakuten_link(url, link_id):
 UTC_TZ = timezone.utc
 
 
+# その日の新刊を並べるときの出版社の順（漫画の売上の多い順。紙の単行本と電子コミックを合わせた規模の目安。
+# 2026-11-09 運営者の判断）。ここにない出版社は、この後ろに出版社名の読みの順で並べる
+PUBLISHER_ORDER = {name: i for i, name in enumerate([
+    "集英社", "講談社", "小学館", "KADOKAWA", "スクウェア・エニックス", "秋田書店",
+    "白泉社", "新潮社", "双葉社", "芳文社", "竹書房", "ぶんか社",
+])}
+
+
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at", "caption",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at", "caption", "amazon_rank",
     )
 
     def __init__(self, row, tags):
@@ -101,6 +109,7 @@ class Book:
         self.amazon_image = row["amazon_image_url"] if "amazon_image_url" in row.keys() else None
         self.amazon_image_at = row["amazon_image_at"] if "amazon_image_at" in row.keys() else None
         self.caption = row["rakuten_caption"] if "rakuten_caption" in row.keys() else None
+        self.amazon_rank = row["amazon_rank"] if "amazon_rank" in row.keys() else None
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
         image = row["image_url"] if "image_url" in row.keys() else None
@@ -151,7 +160,12 @@ class Site:
                 b.kobo_url = rakuten_link(b.kobo_url, link_id)
         self.by_id = {b.id: b for b in self.books}
         self.series = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM series")}
-        self.dated = sorted([b for b in self.books if b.release], key=lambda b: (b.release, b.publisher, b.title))
+        try:
+            self.views = {r["book_key"]: r["views"] for r in conn.execute("SELECT book_key, views FROM page_views")}
+        except sqlite3.OperationalError:
+            self.views = {}
+        # 同じ日の本は、出版社の順（PUBLISHER_ORDER）→ 出版社の中は売れている順（new_release_key）に並べる
+        self.dated = sorted([b for b in self.books if b.release], key=lambda b: (b.release,) + self.new_release_key(b))
         self.by_date = OrderedDict()
         for b in self.dated:
             self.by_date.setdefault(b.release, []).append(b)
@@ -160,6 +174,13 @@ class Site:
         for b in self.dated:
             if b.series_id:
                 self.series_books[b.series_id].append(b)
+
+    def new_release_key(self, b):
+        """その日の新刊の並び順。出版社の順 → Amazon の売れ筋順位（紙の本）→ このサイトでよく見られている順
+        → 新シリーズの1巻 → 巻数の多い作品（2026-11-09 運営者の判断）。"""
+        rank = PUBLISHER_ORDER.get(b.publisher)
+        pub = (0, rank, "") if rank is not None else (1, 0, yomi.sort_key(b.publisher))
+        return pub + (b.amazon_rank is None, b.amazon_rank or 0, -self.views.get(b.key, 0), not b.is_first, -(b.volume or 0), b.title, b.id)
 
     def _publishers(self):
         counts = defaultdict(int)
@@ -726,10 +747,8 @@ def build_dates(site, w):
     for i, d in enumerate(dates):
         books = site.by_date[d]
         groups = OrderedDict()
-        for p in site.publishers:
-            g = [b for b in books if b.publisher == p["name"]]
-            if g:
-                groups[p["name"]] = g
+        for b in books:
+            groups.setdefault(b.publisher, []).append(b)
         prev_d = dates[i - 1] if i > 0 else None
         next_d = dates[i + 1] if i + 1 < len(dates) else None
         ctx = {
@@ -758,21 +777,10 @@ WEEK_DAY_BOOKS = 8   # 「今週発売」で1日に並べる冊数（残りは�
 TODAY_NEXT_BOOKS = 6  # 「今日発売」の下に並べる、次の発売日の冊数
 
 
-def popular_first(site, books):
-    """よく見られている本 → 新シリーズ1巻 → もとの順。"""
-    try:
-        views = {r["book_key"]: r["views"] for r in site.conn.execute("SELECT book_key, views FROM page_views")}
-    except sqlite3.OperationalError:
-        views = {}
-    return sorted(books, key=lambda b: (-views.get(b.key, 0), not b.is_first))
-
-
 def pub_groups(site, root, books):
     groups = OrderedDict()
-    for p in site.publishers:
-        g = [b for b in books if b.publisher == p["name"]]
-        if g:
-            groups[p["name"]] = g
+    for b in books:
+        groups.setdefault(b.publisher, []).append(b)
     return [{"name": n, "books": [dict(site.row(root, b, ("author", "price")), label=b.label or n) for b in g]} for n, g in groups.items()]
 
 
@@ -788,7 +796,7 @@ def build_today(site, w):
     books = site.by_date.get(d, [])
     groups = pub_groups(site, root, books)
     nxt = min((x for x in site.by_date if x > d), default=None)
-    next_books = popular_first(site, site.by_date.get(nxt, []))[:TODAY_NEXT_BOOKS] if nxt else []
+    next_books = site.by_date.get(nxt, [])[:TODAY_NEXT_BOOKS] if nxt else []
     ctx = {
         "crumbs": crumbs(root, ("今日発売の漫画新刊", None)),
         "day": {"md": md(d), "dow": dow(d), "long": f"{d.year}年{d.month}月{d.day}日（{dow(d)}）"},
@@ -820,7 +828,7 @@ def build_week(site, w):
         books = site.by_date.get(d, [])
         total += len(books)
         first += sum(1 for b in books if b.is_first)
-        picks = popular_first(site, books)[:WEEK_DAY_BOOKS]
+        picks = books[:WEEK_DAY_BOOKS]
         days.append({
             "id": f"d{d.isoformat()}", "md": md(d), "day": d.day, "dow": dow(d), "color": site.day_color(d), "count": len(books),
             "state": "today" if d == site.today else ("past" if d < site.today else "future"),
@@ -849,6 +857,7 @@ def build_week(site, w):
 
 
 # ---- 書籍 ----
+SAMEDAY_MAX = 12  # 書籍詳細ページの「同じ日発売のほかの新刊」に入れる数（PC は横1列に入る分だけ、スマホは6冊を表示する）
 AMAZON_IMAGE_HOURS = 24  # Amazon の書影のアドレスを使ってよい時間（ライセンス契約 利用要件(n)）
 
 
@@ -1015,7 +1024,7 @@ def build_books(site, w):
             others = [x for x in site.by_date.get(b.release, []) if x.id != b.id]
             if others:
                 sameday = {"md": md(b.release), "dow": dow(b.release), "url": f"{root}date/{b.release.isoformat()}/", "count": len(others) + 1,
-                           "books": [{"title": x.title, "pub": x.publisher, "url": site.book_url(root, x), "image": x.image, "cover_url": x.cover_url, "alt": site.alt(x)} for x in others[:6]]}
+                           "books": [{"title": x.title, "pub": x.publisher, "url": site.book_url(root, x), "image": x.image, "cover_url": x.cover_url, "alt": site.alt(x)} for x in others[:SAMEDAY_MAX]]}
         crumb = [(b.publisher, f"{root}publisher/{b.publisher_slug}/")]
         if b.series_id and vol:
             crumb.append((main, f"{root}series/{b.series_id}/"))

@@ -5,7 +5,8 @@
 3. ISBN の分かる本：ISBN-10 の商品ページ（/dp/ISBN-10）が Amazon にあるかを確かめる（books.amazon_isbn_ok）。
    ない本（Amazon が ISBN-10 ではない ASIN で登録している本）は、ISBN-13 で探して EAN が同じ紙の本を同じ本とみなす（books.asin）。
    商品ページがあった本は確かめ直さない。見つからなかった本は ISBN_RECHECK_DAYS 日たったら確かめ直す。
-4. 書影：紙の本の ASIN が分かる本は、Amazon の書影のアドレスを毎晩取り直す（books.amazon_image_url）。
+4. 書影と売れ筋順位：紙の本の ASIN が分かる本は、Amazon の書影のアドレスと「コミック」の売れ筋順位を毎晩取り直す
+   （books.amazon_image_url・books.amazon_rank。売れ筋順位は、その日の新刊の並び順にだけ使い、画面には出さない。2026-11-09 運営者の判断）。
    書籍詳細ページのメインの書影にだけ使い、Amazon の商品ページにリンクする。画像は保存せず、アドレスも24時間以内のものだけを使う
    （Amazon.co.jp Product Advertising API ライセンス契約 利用要件(d)(n)）。
 Kindle版は、ISBN の分かる本は ISBN で探し、見つからなければ作品名で探す。
@@ -205,6 +206,16 @@ def paper_asin(r):
     return r["asin"]
 
 
+COMIC_NODE = "2278488051"  # Amazon の「コミック」の分類
+
+
+def sales_rank(item):
+    """「コミック」の売れ筋順位。なければ、ほかの分類の順位のうち一番よいもの。分からなければ None。"""
+    nodes = (item.get("browseNodeInfo") or {}).get("browseNodes") or []
+    ranks = {n.get("id"): n.get("salesRank") for n in nodes if n.get("salesRank")}
+    return ranks.get(COMIC_NODE) or (min(ranks.values()) if ranks else None)
+
+
 def image_url(item):
     p = ((item.get("images") or {}).get("primary") or {})
     return ((p.get("large") or p.get("medium") or {}).get("url")) or None
@@ -215,25 +226,28 @@ def refresh_images(conn, api, deadline):
     rows = conn.execute("""SELECT id, isbn13, asin, amazon_isbn_ok FROM books
         ORDER BY release_date IS NULL, release_date DESC, id""").fetchall()
     todo = [(r["id"], a) for r in rows if (a := paper_asin(r))]
-    counts = {"image": 0, "none": 0, "error": 0, "left": 0}
+    counts = {"image": 0, "none": 0, "rank": 0, "error": 0, "left": 0}
     for i in range(0, len(todo), 10):
         chunk = todo[i:i + 10]
         if time.monotonic() > deadline:
             counts["left"] += len(todo) - i
             break
         try:
-            items = {it.get("asin"): it for it in api.get([a for _, a in chunk], resources=["images.primary.large"])}
+            items = {it.get("asin"): it for it in api.get([a for _, a in chunk], resources=["images.primary.large", "browseNodeInfo.browseNodes.salesRank"])}
         except (requests.RequestException, AmazonError, ValueError):
             counts["error"] += len(chunk)
             continue
         now = db.now_iso()
         for book_id, asin in chunk:
             url = image_url(items[asin]) if asin in items else None
+            rank = sales_rank(items[asin]) if asin in items else None
             counts["image" if url else "none"] += 1
-            conn.execute("UPDATE books SET amazon_image_url = ?, amazon_image_at = ? WHERE id = ?", (url, now if url else None, book_id))
+            counts["rank"] += 1 if rank else 0
+            conn.execute("UPDATE books SET amazon_image_url = ?, amazon_rank = ?, amazon_image_at = ? WHERE id = ?",
+                         (url, rank, now if (url or rank) else None, book_id))
         conn.commit()
     # ASIN の分からなくなった本や、今回取り直せなかった本は、24時間を待たずに使わない
-    conn.execute("UPDATE books SET amazon_image_url = NULL, amazon_image_at = NULL WHERE amazon_image_at IS NOT NULL AND amazon_image_at < ?",
+    conn.execute("UPDATE books SET amazon_image_url = NULL, amazon_rank = NULL, amazon_image_at = NULL WHERE amazon_image_at IS NOT NULL AND amazon_image_at < ?",
                  ((datetime.now(db.JST) - timedelta(hours=23)).isoformat(timespec="seconds"),))
     conn.commit()
     return counts
@@ -265,7 +279,7 @@ def main(argv=None):
         print(f"（API {api.calls} 回）")
         return 0
     img = refresh_images(conn, api, min(start + limit, time.monotonic() + IMAGE_TIME))
-    print(f"Amazon の書影：あり {img['image']}／なし {img['none']}／エラー {img['error']}／時間切れで取り直せなかった {img['left']}")
+    print(f"Amazon の書影：あり {img['image']}／なし {img['none']}（売れ筋順位あり {img['rank']}）／エラー {img['error']}／時間切れで取り直せなかった {img['left']}")
     if args.isbn_only:
         print(f"（API {api.calls} 回）")
         return 0

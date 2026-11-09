@@ -40,6 +40,24 @@ window.addEventListener('resize', function () { clearTimeout(timer); timer = set
 fitReleaseRows();
 }
 
+/* 本のページ「同じ日発売のほかの新刊」：PC は横1列に入る分だけ、スマホは 6 冊まで出す */
+function fitOneRow() {
+$$('[data-fit-row]').forEach(function (grid) {
+var limit = 6;
+if (window.matchMedia('(min-width: 721px)').matches) {
+var cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+if (cols > 0) limit = cols;
+}
+Array.prototype.forEach.call(grid.children, function (item, i) { item.classList.toggle('sameday__item--off', i >= limit); });
+});
+}
+function initOneRow() {
+if (!$('[data-fit-row]')) return;
+var timer = null;
+window.addEventListener('resize', function () { clearTimeout(timer); timer = setTimeout(fitOneRow, 100); });
+fitOneRow();
+}
+
 /* トップ：今日・明日のタブ */
 function initReleaseTabs() {
 var tabs = $$('.release__tab');
@@ -491,6 +509,7 @@ initCart();
 initTicker();
 initFilterMore();
 initFavButtons();
+initOneRow();
 initIcs();
 initReleaseTabs();
 initReleaseRows();

@@ -144,7 +144,7 @@
 </div>
 <a href="{{ sameday.url }}" class="section_head__link">この日の新刊をすべて見る（<span class="en">{{ sameday.count }}</span>点）</a>
 </div>
-<div class="sameday">
+<div class="sameday" data-fit-row>
 {% for b in sameday.books %}
 {% if b.cover_url %}
 <div class="sameday__item">

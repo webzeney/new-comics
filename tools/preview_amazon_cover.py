@@ -6,7 +6,7 @@ from newcomics.amazon import Api
 
 conn = db.connect()
 api = Api()
-for key in sys.argv[1:]:
+for key in [k for k in sys.argv[1:] if "/" not in k]:
     r = conn.execute("SELECT id, isbn13, asin, amazon_isbn_ok FROM books WHERE isbn13 = ?", (key,)).fetchone()
     if not r:
         print(key, "見つかりません")

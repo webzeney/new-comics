@@ -114,6 +114,7 @@ MIGRATIONS = [
     ("books", "amazon_image_at", "TEXT"),
     ("books", "rakuten_caption", "TEXT"),
     ("books", "caption_checked_at", "TEXT"),
+    ("books", "amazon_rank", "INTEGER"),
 ]
 
 

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       books:
-        description: 書籍ページの ISBN（空白区切り）
+        description: 書籍ページの ISBN、または date/2026-11-10/ のようなページ（空白区切り）
         required: true
 
 permissions:
@@ -45,7 +45,6 @@ jobs:
           php -S 127.0.0.1:8099 -t dist tools/preview_router.php > /dev/null 2>&1 &
           sleep 2
           python tools/preview_shot.py $BOOKS
-          for k in $BOOKS; do grep -o 'class="book__image"[^>]*\|<img src="[^"]*" alt="[^"]*" class="cover_photo" loading="lazy">' dist/book/$k/index.html | head -2; done
       - name: 画面写真を書き出す（ログで受け取る）
         run: |
           python - <<'PY'
