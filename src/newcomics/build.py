@@ -224,7 +224,7 @@ class Site:
         ]
         # 以前の確認（2026-11 まで毎晩行っていた）でセブンネットに取り扱いがないと分かった本は、セブンネットのボタンを出さない
         if b.seven_ok != 0:
-            out.append({"name": "セブンネットショッピング", "short": "セブン\nネット", "kind": "seven", "button": "セブンネット", "url": seven})
+            out.append({"name": "セブンネットショッピング", "short": "セブンネット", "words": ["セブン", "ネット"], "kind": "seven", "button": "セブンネット", "url": seven})
         return out
 
     def ebook_stores(self, b):

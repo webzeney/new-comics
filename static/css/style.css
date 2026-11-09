@@ -123,9 +123,10 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 /* ==========================================================================
 購入ボタン
 ========================================================================== */
-.store_tile{min-height:44px;box-sizing:border-box;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre-line;font-size:10px;font-weight:700;line-height:1.15;text-decoration:none;background:#FFFFFF;color:#222222;border:1px solid #D9CFC6}
+.store_tile{min-height:44px;box-sizing:border-box;padding:0 4px;border-radius:10px;display:flex;flex-wrap:wrap;align-items:center;align-content:center;justify-content:center;text-align:center;font-size:10px;font-weight:700;line-height:1.15;text-decoration:none;background:#FFFFFF;color:#222222;border:1px solid #D9CFC6}
 .store_tile--rakuten{color:#BF0000}
 .store_tile--seven{color:#00704A}
+.store_tile__word{display:inline-block}
 .store_button{min-height:52px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:900;line-height:1.3;text-decoration:none;background:#FFFFFF;color:#222222;border:2px solid #222222;box-shadow:3px 3px 0 #222222;letter-spacing:0.08em}
 .store_button--rakuten{color:#BF0000}
 .store_button--seven{color:#00704A}
