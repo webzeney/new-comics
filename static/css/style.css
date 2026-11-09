@@ -581,7 +581,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .fav_button{align-self:flex-start;box-sizing:content-box;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
 .fav_button[aria-pressed="true"]{background:#FFD15C}
 .fav_button__icon{font-size:15px;line-height:1}
-.book__fav--cover{margin-top:18px}
+.book__fav--cover{box-sizing:border-box;width:100%;margin-top:18px;justify-content:center}
 .book__fav--info{display:none}
 .series__actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .calendar_add{display:flex;flex-direction:column;gap:8px}
