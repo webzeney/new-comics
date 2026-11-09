@@ -29,7 +29,7 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
 | カレンダー | `/calendar/`、`/calendar/YYYY/MM/` | 月ごとの発売日カレンダー。今月のページの正規 URL は `/calendar/` |
 | 日ごと | `/date/YYYY-MM-DD/` | その日発売の新刊（出版社別） |
 | 今日発売 | `/today/` | 今日発売の新刊（出版社別）と、次の発売日の新刊。タイトル・説明文に日付と点数は入れない |
-| 今週発売 | `/week/` | 今週（日曜〜土曜）の発売日ごとの新刊（よく見られている本から8点ずつ） |
+| 今週発売 | `/week/` | 今週（日曜〜土曜）の発売日ごとの新刊（並び順の上から8点ずつ） |
 | 書籍 | `/book/{ISBN か b+番号}/` | 本の詳細・楽天の紹介文・購入ボタン・電子書籍・既刊・同じ作者の作品。PC ではお気に入りのボタンを書影の下に置く |
 | 作品 | `/series/{番号}/` | 既刊一覧。巻が1冊だけの作品は noindex |
 | 出版社・レーベル・タグ・著者 | `/publisher/…`、`/label/…`、`/tag/…`、`/author/…` | 3か月分の発売予定と、それより前の本（最大30冊） |
@@ -49,6 +49,11 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
 - 電子書籍のボタン（Kindle・楽天Kobo）：電子版ありの本に出す。電子版の有無が分からない本は、見つかったストアだけ出す
 - 「まとめてAmazonのカートへ」：Amazon のボタンと同じ ASIN を使う
 
+## その日の新刊の並び順
+
+出版社の順（漫画の売上の規模の目安。`build.PUBLISHER_ORDER`）→ 出版社の中は Amazon の売れ筋順位 → よく見られている順 → 新シリーズの1巻 → 巻数の多い作品。
+トップ・日ごと・今日発売・今週発売・カレンダー・書籍詳細ページの同じ日の新刊・X の投稿で同じ順を使う。
+
 ## データベースのおもな項目（books）
 
 | 項目 | 内容 | 付ける処理 |
@@ -57,7 +62,7 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
 | `image_url`・`rakuten_url`・`title_kana` | 楽天の書影・商品ページ・読み仮名（読み仮名は検索だけに使う） | fetch・rakutencover |
 | `rakuten_caption` | 楽天の紹介文（書籍詳細ページに出す） | fetch・rakutencover |
 | `asin`・`amazon_isbn_ok` | Amazon の紙の本の ASIN と、ISBN-10 の商品ページがあるか | amazonlink |
-| `amazon_image_url`・`amazon_image_at` | Amazon の書影のアドレスと取得日時（24時間を過ぎたものは消す） | amazonlink |
+| `amazon_image_url`・`amazon_rank`・`amazon_image_at` | Amazon の書影のアドレス・売れ筋順位と取得日時（24時間を過ぎたものは消す） | amazonlink |
 | `kindle_asin`・`kobo_url` | Kindle版・楽天Kobo版 | amazonlink・kobo |
 
 使っていない列（`seven_checked_at`・`rakuten_code`・`series.latest_volume` など）は、データベースの作り直しを避けるため残している。
