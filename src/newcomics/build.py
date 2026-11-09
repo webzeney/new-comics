@@ -776,7 +776,8 @@ def pub_groups(site, root, books):
 
 
 def week_range(today):
-    start = today - timedelta(days=today.weekday())
+    """今日を含む1週間（日曜〜土曜。サイトのカレンダーと同じ区切り）。"""
+    start = today - timedelta(days=(today.weekday() + 1) % 7)
     return start, start + timedelta(days=6)
 
 
