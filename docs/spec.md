@@ -9,7 +9,7 @@
    1. 単体テスト
    2. 出版社サイトと楽天ブックスからの取得（`newcomics.fetch`）。ISBN のない重複の整理（`store.merge_isbnless_duplicates`・`store.merge_isbnless_by_title`）もここで行う
    3. Amazon の照らし合わせ（`newcomics.amazonlink`）：ISBN-10 の商品ページの確認 → 書影のアドレスの取り直し → ISBN のない本の紙の本 → Kindle版
-   4. 楽天の書影の補完（`newcomics.rakutencover`）
+   4. 楽天の書影・紹介文の補完（`newcomics.rakutencover`）
    5. 楽天Kobo の照らし合わせ（`newcomics.kobo`）
    6. アナリティクスの読み込み（`newcomics.ga`、よく見られている本）
    7. 件数の集計 → データベースの保存 → ページ生成の確認
@@ -28,7 +28,9 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
 | トップ | `/` | 今日・明日発売の新刊、発売日の変更、特集 |
 | カレンダー | `/calendar/`、`/calendar/YYYY/MM/` | 月ごとの発売日カレンダー。今月のページの正規 URL は `/calendar/` |
 | 日ごと | `/date/YYYY-MM-DD/` | その日発売の新刊（出版社別） |
-| 書籍 | `/book/{ISBN か b+番号}/` | 本の詳細・購入ボタン・電子書籍・既刊・同じ作者の作品 |
+| 今日発売 | `/today/` | 今日発売の新刊（出版社別）と、次の発売日の新刊。タイトル・説明文に日付と点数は入れない |
+| 今週発売 | `/week/` | 今週（日曜〜土曜）の発売日ごとの新刊（よく見られている本から8点ずつ） |
+| 書籍 | `/book/{ISBN か b+番号}/` | 本の詳細・楽天の紹介文・購入ボタン・電子書籍・既刊・同じ作者の作品。PC ではお気に入りのボタンを書影の下に置く |
 | 作品 | `/series/{番号}/` | 既刊一覧。巻が1冊だけの作品は noindex |
 | 出版社・レーベル・タグ・著者 | `/publisher/…`、`/label/…`、`/tag/…`、`/author/…` | 3か月分の発売予定と、それより前の本（最大30冊） |
 | お気に入り・検索 | `/favorites/`、`/search/` | ブラウザの中で表示する（検索は `search/index.json` を使う） |
@@ -53,6 +55,7 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
 |---|---|---|
 | `isbn13`・書名・巻数・著者・発売日・価格・電子版の有無 | 出版社サイト（または楽天）の事実情報 | fetch |
 | `image_url`・`rakuten_url`・`title_kana` | 楽天の書影・商品ページ・読み仮名（読み仮名は検索だけに使う） | fetch・rakutencover |
+| `rakuten_caption` | 楽天の紹介文（書籍詳細ページに出す） | fetch・rakutencover |
 | `asin`・`amazon_isbn_ok` | Amazon の紙の本の ASIN と、ISBN-10 の商品ページがあるか | amazonlink |
 | `amazon_image_url`・`amazon_image_at` | Amazon の書影のアドレスと取得日時（24時間を過ぎたものは消す） | amazonlink |
 | `kindle_asin`・`kobo_url` | Kindle版・楽天Kobo版 | amazonlink・kobo |
@@ -66,6 +69,7 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
 | サイトの転送（deploy.yml、mode=check/deploy） | 手動の転送 |
 | Amazon の商品ページの確認（amazon-isbn.yml） | ISBN の分かる本の商品ページの確認を全件で行う |
 | Amazon Creators API の確認（amazon-probe.yml） | ASIN・ISBN・書名で Amazon を調べる |
+| 楽天の書影・紹介文の補完（rakuten-caption.yml） | 紹介文のない本を全件で問い合わせる |
 | 楽天で本を調べる（rakuten-lookup.yml） | 特集記事用に、楽天ブックス・Kobo を ISBN か書名で調べる |
 | 楽天ブックスの登録状況の調査（rakuten-probe.yml） | 出版社ごとの判型・ジャンルの調査（結果は成果物） |
 | 書籍データの確認（inspect-book.yml） | データベースの本を書名で見る。`--dups` で重複を数える |
@@ -77,4 +81,4 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
 
 - 出版社サイト：同じホストへ3秒以上あける（robots.txt に従う）
 - 楽天・Amazon：1秒に1回以下
-- 夜間の Amazon の照らし合わせは30分まで（商品ページの確認6分・書影15分を含む）、楽天の書影の補完15分、楽天Kobo 12分
+- 夜間の Amazon の照らし合わせは30分まで（商品ページの確認6分・書影15分を含む）、楽天の書影・紹介文の補完25分、楽天Kobo 12分
