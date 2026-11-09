@@ -37,8 +37,11 @@ def main(argv=None):
         data = search(token, q, args.ec)
         items = data.get("items") or []
         print("=====", q, "→", data.get("resultCount", len(items)), "件")
-        for it in items[:10]:
+        for j, it in enumerate(items[:10]):
             print(" ", it.get("merchantName"), "|", it.get("ecCode"), "|", it.get("title"), "|", it.get("janCode"), "|", it.get("guid"))
+            if j == 0:
+                # どの項目に何が入っているかを見る（リンクの中の ID は公開されるリンクと同じもの）
+                print("    項目:", ", ".join(f"{k}={str(v)[:60]}" for k, v in sorted(it.items()) if k not in ("link", "description")))
         if not items:
             print("  （応答の項目）", sorted(data.keys()))
     return 0
