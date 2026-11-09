@@ -12,7 +12,7 @@ class FakeBook:
 
 class CalendarTest(unittest.TestCase):
     def test_escape_and_fold(self):
-        self.assertEqual(ics_text("a,b;c\nd"), "a\\,b\;c\\nd")
+        self.assertEqual(ics_text("a,b;c\nd"), "a\\,b\\;c\\nd")
         folded = ics_fold("SUMMARY:" + "あ" * 40)
         self.assertTrue(all(len(part.encode("utf-8")) <= 75 for part in folded.split("\r\n")))
         self.assertEqual(folded.replace("\r\n ", ""), "SUMMARY:" + "あ" * 40)

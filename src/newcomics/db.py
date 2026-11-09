@@ -108,6 +108,10 @@ MIGRATIONS = [
     ("books", "kindle_asin", "TEXT"),
     ("books", "kindle_checked_at", "TEXT"),
     ("books", "amazon_checked_at", "TEXT"),
+    ("books", "amazon_isbn_ok", "INTEGER"),
+    ("books", "isbn_checked_at", "TEXT"),
+    ("books", "amazon_image_url", "TEXT"),
+    ("books", "amazon_image_at", "TEXT"),
 ]
 
 
@@ -160,13 +164,6 @@ def ensure_series(conn, publisher_id, name, normalized_name):
 def ensure_tag(conn, name, slug):
     conn.execute("INSERT OR IGNORE INTO tags (name, slug) VALUES (?, ?)", (name, slug))
     return conn.execute("SELECT id FROM tags WHERE name = ?", (name,)).fetchone()["id"]
-
-
-def find_book(conn, source_key, isbn13):
-    row = conn.execute("SELECT * FROM books WHERE source_key = ?", (source_key,)).fetchone()
-    if row is None and isbn13:
-        row = conn.execute("SELECT * FROM books WHERE isbn13 = ?", (isbn13,)).fetchone()
-    return row
 
 
 def find_same_volume(conn, publisher_id, series_id, volume, edition, isbn13, origin=None, exclude_id=None):

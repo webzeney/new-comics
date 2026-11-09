@@ -38,7 +38,7 @@ class PickTest(unittest.TestCase):
 
 class Isbn10Test(unittest.TestCase):
     def test_isbn10_to_13(self):
-        from newcomics.rakutencover import isbn10_to_13
+        from newcomics.normalize import isbn10_to_13
         self.assertEqual(isbn10_to_13("4301008675"), "9784301008675")
         self.assertEqual(isbn10_to_13("409855011X"[:9] + "3"), "9784098550111")
         self.assertIsNone(isbn10_to_13("B0ABCDEFGH"))
@@ -46,3 +46,41 @@ class Isbn10Test(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FakeApi:
+    def __init__(self, pages, search):
+        self.pages, self.results = pages, search
+
+    def get(self, asins):
+        return [{"asin": a} for a in asins if a in self.pages]
+
+    def search(self, words, **kw):
+        return self.results.get(words, [])
+
+
+class IsbnCheckTest(unittest.TestCase):
+    def setUp(self):
+        from newcomics import db
+        self.conn = db.connect(":memory:")
+
+    def test_isbn_page_or_other_asin(self):
+        import time
+        from datetime import datetime
+        from newcomics import db
+        c = self.conn
+        pid = db.ensure_publisher(c, "pub", "出版社", None, "test")
+        for i, isbn in enumerate(("9784040766379", "9784088845678", "9784091234567"), start=1):
+            c.execute("INSERT INTO books (id, source_key, isbn13, title, title_raw, publisher_id, release_date, first_seen_at, last_seen_at, updated_at, authors) "
+                      "VALUES (?, ?, ?, ?, ?, ?, '2026-11-09', 'x', 'x', 'x', '[]')", (i, f"k{i}", isbn, f"本 {i}", f"本 {i}", pid))
+        other = item("B0H4SJNFN9", "本 1", "2026-11-09", binding="コミック")
+        other["itemInfo"]["externalIds"] = {"eans": {"displayValues": ["9784040766379"]}}
+        kindle = item("B0HP8QXSB2", "本 1", "2026-11-09")
+        kindle["itemInfo"]["externalIds"] = {"eans": {"displayValues": ["9784040766379"]}}
+        api = FakeApi({"4088845676"}, {"9784040766379": [kindle], "4040766377": [other]})
+        rows = amazonlink.isbn_targets(c, datetime.now(db.JST), 100)
+        counts = amazonlink.check_isbn(c, api, rows, time.monotonic() + 60)
+        self.assertEqual(counts, {"ok": 1, "asin": 1, "missing": 1, "error": 0})
+        got = {r[0]: (r[1], r[2]) for r in c.execute("SELECT id, amazon_isbn_ok, asin FROM books")}
+        self.assertEqual(got, {1: (0, "B0H4SJNFN9"), 2: (1, None), 3: (0, None)})
+        self.assertEqual(len(amazonlink.isbn_targets(c, datetime.now(db.JST), 100)), 0)

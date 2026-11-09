@@ -1,0 +1,62 @@
+name: 表示の確認用の画面写真（手動）
+
+on:
+  workflow_dispatch:
+    inputs:
+      books:
+        description: 書籍ページの ISBN（空白区切り）
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  shot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEWCOMICS_DB: ${{ github.workspace }}/data/newcomics.sqlite
+      DATA_REPO: ${{ github.repository_owner }}/new-comics-data
+      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+      PYTHONPATH: src
+      BOOKS: ${{ inputs.books }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: データベースの取り出し（非公開リポジトリ）
+        run: git clone --quiet --depth 1 "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt playwright pillow && python -m playwright install --with-deps chromium
+      - name: Amazon の書影を取り直す（確認する本だけ）
+        env:
+          AMAZON_CREATORS_ID: ${{ secrets.AMAZON_CREATORS_ID }}
+          AMAZON_CREATORS_SECRET: ${{ secrets.AMAZON_CREATORS_SECRET }}
+          AMAZON_TAG: ${{ vars.AMAZON_TAG }}
+        run: python tools/preview_amazon_cover.py $BOOKS
+      - name: ページ生成
+        env:
+          AMAZON_TAG: ${{ vars.AMAZON_TAG }}
+          AMAZON_MAIN_COVER: "1"
+        run: python -m newcomics.build --out dist > /dev/null
+      - name: 画面写真
+        run: |
+          mkdir -p shots
+          php -S 127.0.0.1:8099 -t dist tools/preview_router.php > /dev/null 2>&1 &
+          sleep 2
+          python tools/preview_shot.py $BOOKS
+          for k in $BOOKS; do grep -o 'class="book__image"[^>]*\|<img src="[^"]*" alt="[^"]*" class="cover_photo" loading="lazy">' dist/book/$k/index.html | head -2; done
+      - name: 画面写真を書き出す（ログで受け取る）
+        run: |
+          python - <<'PY'
+          import base64, glob, io
+          from PIL import Image
+          for f in sorted(glob.glob("shots/*.png")):
+              buf = io.BytesIO()
+              Image.open(f).convert("RGB").save(buf, "JPEG", quality=85)
+              data = base64.b64encode(buf.getvalue()).decode()
+              name = f.split("/")[-1].replace(".png", ".jpg")
+              print("FILES", f, len(data))
+              for i in range(0, len(data), 3000):
+                  print("SHOT", name, i // 3000, data[i:i + 3000])
+          PY

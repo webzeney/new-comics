@@ -1,4 +1,3 @@
-import sqlite3
 import unittest
 
 from newcomics import db, store

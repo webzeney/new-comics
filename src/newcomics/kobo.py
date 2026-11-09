@@ -108,7 +108,8 @@ def main(argv=None):
     left = conn.execute("SELECT COUNT(*) FROM books WHERE has_ebook = 1 AND kobo_url IS NULL AND kobo_checked_at IS NULL").fetchone()[0]
     print(f"楽天Kobo の照らし合わせ：見つかった {counts['found']}／見つからない {counts['missing']}／エラー {counts['error']}"
           f"（API {api.request_count} 回、まだ探していない本 残り {left} 冊）")
-    return 0
+    # すべてエラーだったとき（認証情報が切れたときなど）は、実行を失敗にして気づけるようにする
+    return 1 if counts["error"] and not (counts["found"] or counts["missing"]) else 0
 
 
 if __name__ == "__main__":

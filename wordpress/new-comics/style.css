@@ -61,7 +61,9 @@ Text Domain: new-comics
 .article__body .article__books li{margin:0}
 .article__body .bookrow__title{color:#222222}
 .article__body .bookrow__meta{line-height:1.6}
-.article__body .store_tile{color:inherit;font-weight:700}
+.article__body .store_tile{color:#222222}
+.article__body .store_tile--rakuten{color:#BF0000}
+.article__body .store_tile--seven{color:#00704A}
 .article__note{margin:0;padding:14px 18px;border-radius:12px;background:#FFF6EC;font-size:13px;line-height:1.8;color:#5A5148}
 .article__back{display:inline-flex;align-items:center;justify-content:center;align-self:center;min-width:220px;min-height:52px;padding:0 28px;border-radius:999px;background:#222222;color:#FFFFFF;font-weight:700;text-decoration:none}
 @media (max-width: 720px) {

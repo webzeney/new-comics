@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, stat, store_tiles, bookrow, cart_intro, cart_bar %}
+{% from "_parts.html" import ad, breadcrumb, stat, bookrow, cart_intro, cart_bar %}
 {% block content %}
 <section aria-labelledby="cal-title" class="panel panel--head calendar" data-calendar data-selected="{{ selected.day }}">
 {{ breadcrumb(crumbs, 'breadcrumb--pc') }}
@@ -135,8 +135,7 @@
 <div class="bookrow__stores">
 <a href="#" class="store_tile bookrow__store" aria-label="Amazonで購入" title="Amazon" rel="sponsored noopener" target="_blank" data-store="amazon">Amazon</a>
 <a href="#" class="store_tile store_tile--rakuten bookrow__store" aria-label="楽天ブックスで購入" title="楽天ブックス" rel="sponsored noopener" target="_blank" data-store="rakuten">楽天</a>
-<a href="#" class="store_tile store_tile--seven bookrow__store" aria-label="セブンネットショッピングで購入" title="セブンネットショッピング" rel="sponsored noopener" target="_blank" data-store="seven">セブン
-ネット</a>
+<a href="#" class="store_tile store_tile--seven bookrow__store" aria-label="セブンネットショッピングで購入" title="セブンネットショッピング" rel="sponsored noopener" target="_blank" data-store="seven"><span class="store_tile__word">セブン</span><span class="store_tile__word">ネット</span></a>
 </div>
 </li>
 </template>

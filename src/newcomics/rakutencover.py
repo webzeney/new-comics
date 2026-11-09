@@ -10,7 +10,6 @@ ISBN が分からない本でも、Amazon の照らし合わせで紙の本の A
 """
 import argparse
 import os
-import re
 import sys
 import time
 from datetime import datetime, timedelta
@@ -19,22 +18,12 @@ import requests
 
 from . import db
 from .fetchers import rakuten
+from .normalize import isbn10_to_13
 
 MAX_CHECKS = 600
 TIME_LIMIT = 15 * 60
 RECHECK_DAYS = 30
-
-
-ISBN10 = re.compile(r"^\d{9}[\dX]$")
-
-
-def isbn10_to_13(isbn10):
-    """10桁の ISBN（紙の本の ASIN）を13桁に直す。ISBN でなければ None。"""
-    if not isbn10 or not ISBN10.match(isbn10):
-        return None
-    core = "978" + isbn10[:9]
-    total = sum(int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(core))
-    return core + str((10 - total % 10) % 10)
+PAPER_ASIN = "[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9X]"  # ISBN-10 の形の ASIN（B0… の ASIN は楽天に問い合わせられない）
 
 
 def targets(conn, now, limit):
@@ -42,10 +31,10 @@ def targets(conn, now, limit):
     since = (now - timedelta(days=RECHECK_DAYS)).isoformat(timespec="seconds")
     rows = conn.execute(
         """SELECT id, isbn13, asin FROM books
-        WHERE (isbn13 IS NOT NULL OR asin IS NOT NULL) AND image_url IS NULL AND (rakuten_checked_at IS NULL OR rakuten_checked_at < ?)
+        WHERE (isbn13 IS NOT NULL OR asin GLOB ?) AND image_url IS NULL AND (rakuten_checked_at IS NULL OR rakuten_checked_at < ?)
         ORDER BY (rakuten_checked_at IS NOT NULL), release_date DESC, id
         LIMIT ?""",
-        (since, limit),
+        (PAPER_ASIN, since, limit),
     ).fetchall()
     out = []
     for r in rows:
@@ -110,7 +99,8 @@ def main(argv=None):
     left = conn.execute("SELECT COUNT(*) FROM books WHERE isbn13 IS NOT NULL AND image_url IS NULL AND rakuten_checked_at IS NULL").fetchone()[0]
     print(f"楽天の書影の補完：見つかった {counts['found']}（書影あり {counts['image']}）／見つからない {counts['missing']}／"
           f"エラー {counts['error']}（API {api.request_count} 回、まだ問い合わせていない本 残り {left} 冊）")
-    return 0
+    # すべてエラーだったとき（認証情報が切れたときなど）は、実行を失敗にして気づけるようにする
+    return 1 if counts["error"] and not (counts["found"] or counts["missing"]) else 0
 
 
 if __name__ == "__main__":

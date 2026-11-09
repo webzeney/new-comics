@@ -7,6 +7,9 @@ on:
         description: 書名の一部（重複を数えるときは「--dups」）
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   inspect:
     runs-on: ubuntu-latest

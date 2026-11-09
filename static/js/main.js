@@ -18,7 +18,6 @@ label.textContent = open ? button.dataset.openLabel : button.dataset.closedLabel
 });
 }
 
-/* トップ：今日・明日のタブ */
 /* 「今日・明日発売の新刊」：PC は1段に並ぶ数×2段ぶんだけ表示し、段の途中で欠けないようにする */
 function fitReleaseRows() {
 var grids = $$('.release__grid');
@@ -41,6 +40,7 @@ window.addEventListener('resize', function () { clearTimeout(timer); timer = set
 fitReleaseRows();
 }
 
+/* トップ：今日・明日のタブ */
 function initReleaseTabs() {
 var tabs = $$('.release__tab');
 if (!tabs.length) return;
@@ -244,7 +244,7 @@ $('[data-month-count]', heading).textContent = tab.dataset.count + '点';
 });
 }
 
-/* 既刊スライダー（最新刊を除く・ループ・自動送り） */
+/* 本のページ：今日発売の本の発売日の表示 */
 function initReleaseToday() {
 var box = $('.book__fact--date[data-release]');
 if (!box || !$('.book__bubble--today')) return;
@@ -252,6 +252,7 @@ box.classList.add('book__fact--today');
 $('.book__fact_label', box).insertAdjacentHTML('beforeend', '<span class="book__fact_today">本日発売</span>');
 }
 
+/* 本のページ：新刊のお知らせをカレンダーで受け取る案内 */
 function initCalendarDialog() {
 var dialog = $('.alarm_dialog');
 if (!dialog) return;
@@ -300,6 +301,7 @@ else location.href = href;
 });
 }
 
+/* 既刊スライダー（最新刊を除く・ループ・自動送り） */
 function initSlider() {
 var slider = $('.slider');
 if (!slider) return;
@@ -397,7 +399,7 @@ function loadFavs() {
 try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]') || []; } catch (e) { return []; }
 }
 function saveFavs(list) {
-try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
+try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); } catch (e) {}
 }
 function initFavButtons() {
 $$('[data-fav-id]').forEach(function (b) {

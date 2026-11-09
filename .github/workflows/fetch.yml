@@ -13,7 +13,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: data-update
@@ -30,15 +30,10 @@ jobs:
       DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: データベースの取り出し（非公開リポジトリ）
         run: |
           git clone --quiet "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
-          if [ ! -f data/newcomics.sqlite ]; then
-            git show 91b7c47:db/newcomics.sqlite > data/newcomics.sqlite
-            echo "データベースを初期化しました"
-          fi
+          test -f data/newcomics.sqlite
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -63,8 +58,10 @@ jobs:
           else
             python -m newcomics.fetch
           fi
-      - name: Amazon の照らし合わせ（Kindle版・ISBN の分からない本。楽天の書影を探す前に行う）
+      - name: Amazon の照らし合わせ（商品ページの確認・書影・Kindle版・ISBN の分からない本。楽天の書影を探す前に行う）
+        id: amazon
         continue-on-error: true
+        timeout-minutes: 35
         env:
           PYTHONPATH: src
           AMAZON_CREATORS_ID: ${{ secrets.AMAZON_CREATORS_ID }}
@@ -72,7 +69,9 @@ jobs:
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
         run: python -m newcomics.amazonlink
       - name: 楽天の書影の補完（書影のない本）
+        id: rakutencover
         continue-on-error: true
+        timeout-minutes: 20
         env:
           PYTHONPATH: src
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
@@ -80,7 +79,9 @@ jobs:
           RAKUTEN_AFFILIATE_ID: ${{ vars.RAKUTEN_AFFILIATE_ID }}
         run: python -m newcomics.rakutencover
       - name: 楽天Kobo の照らし合わせ（電子版ありの本）
+        id: kobo
         continue-on-error: true
+        timeout-minutes: 15
         env:
           PYTHONPATH: src
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
@@ -88,7 +89,9 @@ jobs:
           RAKUTEN_AFFILIATE_ID: ${{ vars.RAKUTEN_AFFILIATE_ID }}
         run: python -m newcomics.kobo
       - name: アナリティクスの読み込み（よく見られている新刊）
+        id: ga
         continue-on-error: true
+        timeout-minutes: 5
         env:
           PYTHONPATH: src
           GA_SERVICE_ACCOUNT_JSON: ${{ secrets.GA_SERVICE_ACCOUNT_JSON }}
@@ -101,10 +104,6 @@ jobs:
           FROM=$(TZ=Asia/Tokyo date +%Y-%m-01)
           TO=$(TZ=Asia/Tokyo date -d "$FROM +2 month -1 day" +%Y-%m-%d)
           python -m newcomics.stats --from "$FROM" --to "$TO"
-      - name: ページ生成の確認
-        env:
-          PYTHONPATH: src
-        run: python -m newcomics.build --out dist
       - name: データベースを保存（非公開リポジトリ）
         working-directory: data
         run: |
@@ -130,6 +129,13 @@ jobs:
             git rebase -q origin/main
             git push -q -u origin main
           fi
+      - name: ページ生成の確認
+        env:
+          PYTHONPATH: src
+        run: python -m newcomics.build --out dist
+      - name: 補完の失敗を知らせる
+        if: steps.amazon.outcome == 'failure' || steps.rakutencover.outcome == 'failure' || steps.kobo.outcome == 'failure' || steps.ga.outcome == 'failure'
+        run: echo "::warning::Amazon・楽天・Kobo・アナリティクスのどれかが失敗しました（Amazon=${{ steps.amazon.outcome }} 楽天=${{ steps.rakutencover.outcome }} Kobo=${{ steps.kobo.outcome }} アナリティクス=${{ steps.ga.outcome }}）"
       - name: 取得の失敗を通知
         if: steps.fetch.outcome == 'failure'
         run: |

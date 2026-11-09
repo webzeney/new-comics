@@ -12,10 +12,36 @@ def show(items, n=5):
         print(" ", it.get("asin"), release_of(it), (c.get("binding") or {}).get("displayValue"), title_of(it)[:60])
 
 
+def lookup(api, query):
+    """ASIN（ISBN-10）と書名・ISBN で、商品ページがあるかを確かめる。"""
+    for q in query.split(","):
+        q = q.strip()
+        if len(q) == 10:
+            try:
+                items = api.get([q], resources=["itemInfo.title", "images.primary.large"])
+                print("getItems", q, "→", len(items), "件"); show(items)
+                for it in items:
+                    print("    images:", json.dumps(it.get("images"), ensure_ascii=False)[:400])
+            except AmazonError as e:
+                print("getItems", q, "→ エラー", e)
+        for index in ("Books", "KindleStore"):
+            try:
+                items = api.search(q, index=index, resources=["itemInfo.title", "itemInfo.contentInfo", "itemInfo.productInfo", "itemInfo.classifications", "itemInfo.externalIds"])
+            except AmazonError as e:
+                print("search", index, q, "→ エラー", e); continue
+            print("search", index, q, "→", len(items), "件"); show(items)
+            for it in items[:3]:
+                print("   ", json.dumps((it.get("itemInfo") or {}).get("externalIds"), ensure_ascii=False)[:300])
+
+
 def main():
     api = Api()
     if not api.ready():
         raise SystemExit("認証情報が登録されていません")
+    if len(sys.argv) > 1 and sys.argv[1]:
+        lookup(api, sys.argv[1])
+        print("呼び出し回数：", api.calls)
+        return
     print("== Kindle版を探す ==")
     items = api.search("史上最強の弟子ケンイチ 愛蔵版", index="KindleStore")
     print("件数", len(items)); show(items)

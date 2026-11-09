@@ -123,9 +123,10 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 /* ==========================================================================
 購入ボタン
 ========================================================================== */
-.store_tile{min-height:44px;box-sizing:border-box;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre-line;font-size:10px;font-weight:700;line-height:1.15;text-decoration:none;background:#FFFFFF;color:#222222;border:1px solid #D9CFC6}
+.store_tile{min-height:44px;box-sizing:border-box;padding:0 4px;border-radius:10px;display:flex;flex-wrap:wrap;align-items:center;align-content:center;justify-content:center;text-align:center;font-size:10px;font-weight:700;line-height:1.15;text-decoration:none;background:#FFFFFF;color:#222222;border:1px solid #D9CFC6}
 .store_tile--rakuten{color:#BF0000}
 .store_tile--seven{color:#00704A}
+.store_tile__word{display:inline-block}
 .store_button{min-height:52px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:900;line-height:1.3;text-decoration:none;background:#FFFFFF;color:#222222;border:2px solid #222222;box-shadow:3px 3px 0 #222222;letter-spacing:0.08em}
 .store_button--rakuten{color:#BF0000}
 .store_button--seven{color:#00704A}
@@ -143,7 +144,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .bookrow__info{flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:4px}
 .bookrow__title{font-size:15px;font-weight:900;text-decoration:none;line-height:1.45}
 .bookrow__meta{font-size:12px;color:#5A5148}
-.bookrow__stores{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,64px);gap:6px}
+.bookrow__stores{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,76px);gap:6px}
 .group{margin-top:20px}
 .group__title{display:flex;align-items:center;gap:10px;margin:0;padding:8px 14px;border-radius:10px;background:#FFF6EC;font-size:16px;font-weight:900}
 .group__date{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:20px;letter-spacing:0.1em}
@@ -154,7 +155,6 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 書影
 ========================================================================== */
 .cover{aspect-ratio:2 / 3;display:flex;align-items:center;justify-content:center;background:#F3EEE8;border:2px solid #222222;border-radius:4px;box-shadow:3px 3px 0 #222222;color:#5A5148;font-size:11px}
-.cover--current{border:3px solid #D9483B;box-shadow:3px 3px 0 #D9483B}
 .cover_link{display:block;text-decoration:none}
 /* ==========================================================================
 書影の画像
@@ -388,7 +388,6 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .slider__item{flex:0 0 calc((100% - 70px) / 6)}
 .slider__link{display:flex;flex-direction:column;gap:6px;text-decoration:none}
 .slider__label{text-align:center;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:13px;color:#222222;text-decoration:none;letter-spacing:0.1em}
-.slider__label--current{color:#B5302A}
 .forecast{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:8px;padding:14px 18px;border-radius:14px;background:#FFF6EC}
 .forecast__badge{font-size:12px;font-weight:900;padding:2px 10px;border:2px solid #222222;border-radius:999px;background:#FFFFFF}
 .forecast__text{font-size:16px;font-weight:900}
@@ -608,6 +607,9 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .fav_chip__link{padding:0 6px 0 14px;font-size:12px;font-weight:700;text-decoration:none}
 .fav_chip__remove{min-width:32px;min-height:32px;border:0;background:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:#5A5148}
 
+/* ==========================================================================
+スマホ（幅720px以下）
+========================================================================== */
 @media (max-width: 720px){
 .weekstrip{gap:4px}
 .weekstrip__day{padding:8px 2px;border-radius:10px}
@@ -646,7 +648,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .book__fact{flex:2 1 0;min-width:0;padding:10px 12px}
 .book__fact--date{flex:3 1 0}
 .book__fact_label{font-size:11px}
-.book__fact_num{font-size:16px;letter-spacing:0.1em;white-space:nowrap}
+.book__fact_num{font-size:16px;white-space:nowrap}
 .book__title{font-family:'Noto Sans JP',system-ui,sans-serif;font-size:26px;font-weight:900;letter-spacing:normal}
 .follow__buttons{grid-template-columns:1fr}
 .cart_bar{left:12px;right:12px;bottom:12px;width:auto;max-width:none;gap:10px;padding:8px 8px 8px 16px;transform:none}

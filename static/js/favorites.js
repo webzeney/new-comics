@@ -14,11 +14,14 @@ function todayJst() {
 var t = new Date(Date.now() + 9 * 3600 * 1000);
 return t.toISOString().slice(0, 10);
 }
+var DOWS = ['日', '月', '火', '水', '木', '金', '土'];
 function dateLabel(d, today) {
 if (!d) return '発売日未定';
 if (d <= today) return '発売中';
-var p = d.split('-');
-return Number(p[1]) + '/' + Number(p[2]) + ' 発売';
+var y = Number(d.slice(0, 4));
+var m = Number(d.slice(5, 7));
+var day = Number(d.slice(8, 10));
+return m + '/' + day + '（' + DOWS[new Date(Date.UTC(y, m - 1, day)).getUTCDay()] + '）発売';
 }
 
 document.addEventListener('DOMContentLoaded', function () {

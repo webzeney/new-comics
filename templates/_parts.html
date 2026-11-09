@@ -17,7 +17,7 @@
 
 {% macro store_tiles(stores, cls) -%}
 {% for s in stores %}
-<a href="{{ s.url }}" class="store_tile{% if s.kind != 'amazon' %} store_tile--{{ s.kind }}{% endif %}{% if cls %} {{ cls }}{% endif %}" aria-label="{{ s.name }}で購入" title="{{ s.name }}" rel="sponsored noopener" target="_blank">{{ s.short }}</a>
+<a href="{{ s.url }}" class="store_tile{% if s.kind != 'amazon' %} store_tile--{{ s.kind }}{% endif %}{% if cls %} {{ cls }}{% endif %}" aria-label="{{ s.name }}で購入" title="{{ s.name }}" rel="sponsored noopener" target="_blank">{% if s.get('words') %}{% for w in s.words %}<span class="store_tile__word">{{ w }}</span>{% endfor %}{% else %}{{ s.short }}{% endif %}</a>
 {% endfor %}
 {%- endmacro %}
 
@@ -29,7 +29,7 @@
 </div>
 {%- endmacro %}
 
-{% macro bookrow(b, chip, meta, top=False, final_badge=False, date_badge=False, pick=False) -%}
+{% macro bookrow(b, chip, meta, top=False, final_badge=False, pick=False) -%}
 <li class="bookrow{% if top %} bookrow--top{% endif %}" data-pub="{{ b.pub }}">
 {% if pick and b.asin %}{{ cart_pick(b.asin, b.alt) }}
 {% endif %}<a href="{{ b.url }}" class="bookrow__cover{% if final_badge %} bookrow__cover--badge{% endif %}">
@@ -37,11 +37,10 @@
 {% if final_badge %}<span class="bookrow__final">完結</span>{% endif %}
 </a>
 <div class="bookrow__info">
-<div class="badges{% if date_badge %} badges--center{% endif %}">
-{% if date_badge %}<span class="badge {{ 'badge--onsale' if b.on_sale else 'badge--date' }}">{{ b.date_badge }}</span>{% endif %}
+<div class="badges">
 <span class="badge">{{ chip }}</span>
 {% if b.ebook %}<span class="badge badge--ebook">電子版あり</span>{% endif %}
-{% if b.first and not final_badge and not date_badge %}<span class="badge badge--first">新シリーズ</span>{% endif %}
+{% if b.first and not final_badge %}<span class="badge badge--first">新シリーズ</span>{% endif %}
 </div>
 <a href="{{ b.url }}" class="bookrow__title">{{ b.title }}</a>
 <span class="bookrow__meta">{{ meta }}</span>

@@ -21,6 +21,9 @@ concurrency:
   group: x-post
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   post:
     runs-on: ubuntu-latest

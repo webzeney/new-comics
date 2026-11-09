@@ -45,7 +45,7 @@ def weight(text):
 
 def short(b):
     """投稿用の短い書名。~副題~ や 〜副題〜 は省く。"""
-    main, vol, _ = title_parts(b)
+    main, vol = title_parts(b)
     name = main if vol else b.title
     name = re.sub(r"\s*[~〜～][^~〜～]+[~〜～]\s*", " ", name).strip() or name
     if len(name) > NAME_MAX:
