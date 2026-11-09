@@ -41,4 +41,4 @@ jobs:
           QUERY: ${{ inputs.query }}
           KOBO: ${{ inputs.kobo }}
           SORT: ${{ inputs.sort }}
-        run: python -m newcomics.rakutenlookup "$QUERY" --sort "$SORT" $( [ "$KOBO" = "true" ] && echo --kobo )
+        run: python -m newcomics.rakutenlookup "$QUERY" --sort="${SORT:--releaseDate}" $( [ "$KOBO" = "true" ] && echo --kobo )
