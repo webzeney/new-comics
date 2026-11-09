@@ -15,6 +15,8 @@ def show(items, limit):
     for it in items[:limit]:
         print(" ", it.get("isbn") or it.get("itemNumber"), "|", it.get("title"), "|", it.get("publisherName"), "|", it.get("seriesName"), "|",
               it.get("salesDate"), "|", it.get("itemPrice"), "|", it.get("largeImageUrl"), "|", it.get("itemUrl"))
+        if it.get("itemCaption"):
+            print("    紹介文:", it.get("itemCaption")[:300])
 
 
 def main(argv=None):
