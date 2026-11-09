@@ -127,8 +127,8 @@ def eans(item):
     return set((ids.get("eans") or {}).get("displayValues") or [])
 
 
-def isbn_targets(conn, now, limit):
-    since = (now - timedelta(days=ISBN_RECHECK_DAYS)).isoformat(timespec="seconds")
+def isbn_targets(conn, now, limit, recheck=False):
+    since = (now if recheck else now - timedelta(days=ISBN_RECHECK_DAYS)).isoformat(timespec="seconds")
     return conn.execute(
         """SELECT id, isbn13 FROM books WHERE COALESCE(isbn13, '') <> ''
         AND (amazon_isbn_ok IS NULL OR (amazon_isbn_ok = 0 AND COALESCE(asin, '') = '' AND (isbn_checked_at IS NULL OR isbn_checked_at < ?)))
@@ -161,13 +161,21 @@ def check_isbn(conn, api, rows, deadline):
                 continue
             if time.monotonic() > deadline:
                 break
-            try:
-                items = api.search(isbn13, index="Books", availability="IncludeOutOfStock",
-                                   resources=["itemInfo.title", "itemInfo.classifications", "itemInfo.productInfo", "itemInfo.externalIds"])
-            except (requests.RequestException, AmazonError, ValueError):
+            # ISBN-13 で探すと Kindle版しか出ないことがあるため、ISBN-10 → ISBN-13 の順に探す
+            hit, failed = None, False
+            for words in (isbn10, isbn13):
+                try:
+                    items = api.search(words, index="Books", availability="IncludeOutOfStock",
+                                       resources=["itemInfo.title", "itemInfo.classifications", "itemInfo.productInfo", "itemInfo.externalIds"])
+                except (requests.RequestException, AmazonError, ValueError):
+                    failed = True
+                    continue
+                hit = next((it for it in items if isbn13 in eans(it) and binding(it) != "Kindle版" and not adult(it)), None)
+                if hit:
+                    break
+            if failed and not hit:
                 counts["error"] += 1
                 continue
-            hit = next((it for it in items if isbn13 in eans(it) and binding(it) != "Kindle版" and not adult(it)), None)
             counts["asin" if hit else "missing"] += 1
             conn.execute("UPDATE books SET amazon_isbn_ok = 0, asin = ?, isbn_checked_at = ? WHERE id = ?",
                          (hit.get("asin") if hit else None, db.now_iso(), book_id))
@@ -182,6 +190,7 @@ def main(argv=None):
     ap.add_argument("--max-isbn", type=int, default=MAX_ISBN)
     ap.add_argument("--isbn-only", action="store_true", help="ISBN-10 の商品ページの確認だけを行う（全件の確認用）")
     ap.add_argument("--minutes", type=int, help="使う時間の上限（分）")
+    ap.add_argument("--recheck", action="store_true", help="見つからなかった本を、日数にかかわらず探し直す")
     args = ap.parse_args(argv)
     api = Api()
     if not api.ready():
@@ -191,7 +200,7 @@ def main(argv=None):
     now = datetime.now(db.JST)
     limit = args.minutes * 60 if args.minutes else TIME_LIMIT
     start = time.monotonic()
-    isbn = check_isbn(conn, api, isbn_targets(conn, now, args.max_isbn), start + (limit if args.isbn_only else ISBN_TIME))
+    isbn = check_isbn(conn, api, isbn_targets(conn, now, args.max_isbn, args.recheck), start + (limit if args.isbn_only else ISBN_TIME))
     rest = conn.execute("SELECT COUNT(*) FROM books WHERE COALESCE(isbn13, '') <> '' AND amazon_isbn_ok IS NULL").fetchone()[0]
     print(f"Amazon の商品ページの確認：ISBN-10 のページあり {isbn['ok']}／別の ASIN で見つかった {isbn['asin']}／見つからない {isbn['missing']}／エラー {isbn['error']}"
           f"（まだ確かめていない本 残り {rest} 冊）")

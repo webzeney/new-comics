@@ -77,7 +77,7 @@ class IsbnCheckTest(unittest.TestCase):
         other["itemInfo"]["externalIds"] = {"eans": {"displayValues": ["9784040766379"]}}
         kindle = item("B0HP8QXSB2", "本 1", "2026-11-09")
         kindle["itemInfo"]["externalIds"] = {"eans": {"displayValues": ["9784040766379"]}}
-        api = FakeApi({"4088845676"}, {"9784040766379": [kindle, other]})
+        api = FakeApi({"4088845676"}, {"9784040766379": [kindle], "4040766377": [other]})
         rows = amazonlink.isbn_targets(c, datetime.now(db.JST), 100)
         counts = amazonlink.check_isbn(c, api, rows, time.monotonic() + 60)
         self.assertEqual(counts, {"ok": 1, "asin": 1, "missing": 1, "error": 0})
