@@ -800,9 +800,9 @@ def build_today(site, w):
         "cart": site.cart(),
     }
     page = page_defaults(
-        title=f"今日発売の漫画・コミック新刊{len(books)}点（{d.month}月{d.day}日・{dow(d)}）｜{SITE_NAME}" if books else f"今日発売の漫画・コミック新刊（{d.month}月{d.day}日・{dow(d)}）｜{SITE_NAME}",
-        description=(f"今日{d.month}月{d.day}日（{dow(d)}）に発売される漫画・コミックの新刊{len(books)}点を出版社別に紹介しています。毎日自動で更新しています。" if books
-                     else f"今日{d.month}月{d.day}日（{dow(d)}）に発売される漫画・コミックの新刊はありません。次の発売日の新刊を紹介しています。"),
+        # 中身が毎日変わるページなので、タイトルと説明文には日付・点数を入れない（検索結果に古い日付が残らないように）
+        title=f"今日発売の漫画・コミック新刊｜{SITE_NAME}",
+        description="今日発売される漫画・コミックの新刊を、出版社別に紹介しています。明日発売の新刊や今週の発売予定も見られます。毎朝自動で更新しています。",
         jsonld=jsonld(date_ld(site, d, books), breadcrumb_ld(site_base(site), [("トップ", "/"), ("今日発売の漫画新刊", "/today/")])) if books else None,
         menu="today", lastmod=d.isoformat(),
     )
@@ -839,8 +839,8 @@ def build_week(site, w):
         "cart": site.cart(),
     }
     page = page_defaults(
-        title=f"今週発売の漫画・コミック新刊{total}点（{start.month}月{start.day}日〜{end.month}月{end.day}日）｜{SITE_NAME}",
-        description=f"今週（{start.month}月{start.day}日〜{end.month}月{end.day}日）に発売される漫画・コミックの新刊{total}点を、発売日ごとに紹介しています。毎日自動で更新しています。",
+        title=f"今週発売の漫画・コミック新刊｜{SITE_NAME}",
+        description="今週（日曜〜土曜）に発売される漫画・コミックの新刊を、発売日ごとに紹介しています。毎朝自動で更新しています。",
         jsonld=jsonld(breadcrumb_ld(site_base(site), [("トップ", "/"), ("今週発売の漫画新刊", "/week/")])),
         menu="week", lastmod=site.today.isoformat(),
     )
