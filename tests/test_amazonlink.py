@@ -84,3 +84,13 @@ class IsbnCheckTest(unittest.TestCase):
         got = {r[0]: (r[1], r[2]) for r in c.execute("SELECT id, amazon_isbn_ok, asin FROM books")}
         self.assertEqual(got, {1: (0, "B0H4SJNFN9"), 2: (1, None), 3: (0, None)})
         self.assertEqual(len(amazonlink.isbn_targets(c, datetime.now(db.JST), 100)), 0)
+
+
+class SalesRankTest(unittest.TestCase):
+    def test_comic_node_first(self):
+        item = {"browseNodeInfo": {"browseNodes": [{"id": "2430812051", "salesRank": 298}, {"id": amazonlink.COMIC_NODE, "salesRank": 1110}]}}
+        self.assertEqual(amazonlink.sales_rank(item), 1110)
+
+    def test_other_node_or_none(self):
+        self.assertEqual(amazonlink.sales_rank({"browseNodeInfo": {"browseNodes": [{"id": "1", "salesRank": 50}, {"id": "2", "salesRank": 20}]}}), 20)
+        self.assertIsNone(amazonlink.sales_rank({}))

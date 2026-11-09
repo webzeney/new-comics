@@ -1,7 +1,7 @@
 """X（旧Twitter）に、その日発売の漫画新刊を投稿する。
 
 毎朝 GitHub Actions から動かす。発売のない日は投稿しない。
-書名は、よく見られている本（page_views）→ 新シリーズ1巻 → 出版社・書名の順に、文字数の上限まで並べる。
+書名は、サイトの一覧と同じ順（出版社の順 → 売れている順）に、文字数の上限まで並べる。
 リンクはサイトの日ごとの新刊ページ。書影は付けない（楽天の書影はサイトの中だけで使う）。
 認証情報は環境変数 X_API_KEY・X_API_SECRET・X_ACCESS_TOKEN・X_ACCESS_SECRET（GitHub の Secrets）から読む。
 """
@@ -12,7 +12,6 @@ import hmac
 import os
 import re
 import secrets
-import sqlite3
 import sys
 import time
 from datetime import date, datetime
@@ -53,14 +52,6 @@ def short(b):
     return f"{name} {vol}巻" if vol else name
 
 
-def order(site, books):
-    try:
-        views = {r["book_key"]: r["views"] for r in site.conn.execute("SELECT book_key, views FROM page_views")}
-    except sqlite3.OperationalError:
-        views = {}
-    return sorted(books, key=lambda b: (-views.get(b.key, 0), not (b.volume == 1), b.publisher, b.title))
-
-
 def compose(site, day, base):
     books = site.by_date.get(day) or []
     if not books:
@@ -69,7 +60,7 @@ def compose(site, day, base):
     url = f"{base}/date/{day.isoformat()}/"
     lines = []
     seen = set()
-    for b in order(site, books):
+    for b in books:  # サイトと同じ並び（出版社の順 → 売れている順）
         name = short(b)
         if name in seen:
             continue
