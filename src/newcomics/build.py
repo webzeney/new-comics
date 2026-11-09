@@ -78,7 +78,7 @@ UTC_TZ = timezone.utc
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at",
     )
 
     def __init__(self, row, tags):
@@ -99,6 +99,8 @@ class Book:
         self.is_final = bool(row["is_final"])
         self.asin = row["asin"]
         self.amazon_isbn_ok = row["amazon_isbn_ok"] if "amazon_isbn_ok" in row.keys() else None
+        self.amazon_image = row["amazon_image_url"] if "amazon_image_url" in row.keys() else None
+        self.amazon_image_at = row["amazon_image_at"] if "amazon_image_at" in row.keys() else None
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
         image = row["image_url"] if "image_url" in row.keys() else None
@@ -177,6 +179,20 @@ class Site:
         if b.isbn13 and b.amazon_isbn_ok == 0:
             return b.asin or None
         return isbn13_to_10(b.isbn13) or b.asin or None
+
+    def main_cover(self, b):
+        """書籍詳細ページのメインの書影とリンク先。Amazon の書影（取得から24時間以内）があれば Amazon の商品ページへ、
+        なければ楽天の書影と楽天の商品ページ。Amazon の書影はここでだけ使う（一覧などは楽天の書影のまま）。"""
+        asin = self.amazon_asin(b)
+        if b.amazon_image and asin and b.amazon_image_at:
+            try:
+                fresh = datetime.now(db.JST) - datetime.fromisoformat(b.amazon_image_at) < timedelta(hours=AMAZON_IMAGE_HOURS)
+            except ValueError:
+                fresh = False
+            if fresh:
+                tag = self.env.get("AMAZON_TAG")
+                return b.amazon_image, f"https://www.amazon.co.jp/dp/{asin}" + (f"?tag={quote(tag)}" if tag else "")
+        return b.image, b.cover_url
 
     def cart_asin(self, b):
         """Amazon のカートにまとめて入れるときに使う紙の本の ASIN。分からなければ None。"""
@@ -741,6 +757,7 @@ def build_dates(site, w):
 
 
 # ---- 書籍 ----
+AMAZON_IMAGE_HOURS = 24  # Amazon の書影のアドレスを使ってよい時間（ライセンス契約 利用要件(n)）
 def bubble_for(site, d):
     if d is None:
         return "発売日未定", False
@@ -911,6 +928,7 @@ def build_books(site, w):
             crumb.append((f"{vol}巻", None))
         else:
             crumb.append((b.title, None))
+        cover = site.main_cover(b)
         ctx = {
             "crumbs": crumbs(root, *crumb),
             "book": {
@@ -919,7 +937,7 @@ def build_books(site, w):
                 "title_main": main, "volume": vol, "title_rest": rest, "authors": authors_ctx(root, b),
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
                 "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "ebook_stores": site.ebook_stores(b), "isbn": b.isbn13,
-                "image": b.image, "cover_url": b.cover_url, "alt": site.alt(b),
+                "image": cover[0], "cover_url": cover[1], "alt": site.alt(b),
                 "gcal": gcal_url(b), "ics_date": b.release.strftime("%Y%m%d") if b.release else None,
                 "ics_end": (b.release + timedelta(days=1)).strftime("%Y%m%d") if b.release else None, "ics_name": f"『{b.title}』発売日",
                 "fav": {"id": b.series_id, "name": site.series[b.series_id]["name"], "url": f"/series/{b.series_id}/"} if b.series_id in site.series else None,

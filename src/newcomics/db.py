@@ -110,6 +110,8 @@ MIGRATIONS = [
     ("books", "amazon_checked_at", "TEXT"),
     ("books", "amazon_isbn_ok", "INTEGER"),
     ("books", "isbn_checked_at", "TEXT"),
+    ("books", "amazon_image_url", "TEXT"),
+    ("books", "amazon_image_at", "TEXT"),
 ]
 
 

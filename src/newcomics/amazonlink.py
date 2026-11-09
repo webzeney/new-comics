@@ -5,9 +5,13 @@
 3. ISBN の分かる本：ISBN-10 の商品ページ（/dp/ISBN-10）が Amazon にあるかを確かめる（books.amazon_isbn_ok）。
    ない本（Amazon が ISBN-10 ではない ASIN で登録している本）は、ISBN-13 で探して EAN が同じ紙の本を同じ本とみなす（books.asin）。
    商品ページがあった本は確かめ直さない。見つからなかった本は ISBN_RECHECK_DAYS 日たったら確かめ直す。
+4. 書影：紙の本の ASIN が分かる本は、Amazon の書影のアドレスを毎晩取り直す（books.amazon_image_url）。
+   書籍詳細ページのメインの書影にだけ使い、Amazon の商品ページにリンクする。画像は保存せず、アドレスも24時間以内のものだけを使う
+   （Amazon.co.jp Product Advertising API ライセンス契約 利用要件(d)(n)）。
+Kindle版は、ISBN の分かる本は ISBN で探し、見つからなければ作品名で探す。
 付けるのは Amazon の商品ページへのリンク（ASIN）だけで、書名や価格などは変えない。
 単話・分冊・カラー版などは、こちらの書名に同じ言葉がないかぎり選ばない。成人向けの商品は選ばない。
-見つからなかった本は RECHECK_DAYS 日たったら探し直す。
+見つからなかった本は RECHECK_DAYS 日たったら（毎晩）探し直す。
 """
 import argparse
 import re
@@ -25,11 +29,12 @@ from .normalize import isbn13_to_10
 
 MAX_KINDLE = 400
 MAX_PAPER = 150
-TIME_LIMIT = 14 * 60
-RECHECK_DAYS = 7
+TIME_LIMIT = 30 * 60
+RECHECK_DAYS = 1
 MAX_ISBN = 3000   # 1晩に確かめる ISBN の数（10冊ずつまとめて問い合わせる）
 ISBN_RECHECK_DAYS = 1
 ISBN_TIME = 6 * 60  # ISBN の確認に使う時間の上限（Kindle版などの照らし合わせの時間を残す）
+IMAGE_TIME = 15 * 60  # 書影の取り直しに使う時間の上限
 PAPER_DAYS = 14   # 紙の本：発売日の差がこの日数以内なら同じ本とみなす
 KINDLE_EARLY = 14  # Kindle版：紙の本の発売日よりこの日数より前に出ているものは、昔の版とみなして選ばない
 
@@ -94,7 +99,7 @@ def targets(conn, now, kind, limit):
         where = "COALESCE(b.isbn13, '') = '' AND COALESCE(b.asin, '') = '' AND b.release_date IS NOT NULL AND (b.amazon_checked_at IS NULL OR b.amazon_checked_at < ?)"
         order = "b.amazon_checked_at IS NOT NULL"
     return conn.execute(
-        f"""SELECT b.id, b.title, b.volume, b.release_date, s.name AS series FROM books b LEFT JOIN series s ON s.id = b.series_id
+        f"""SELECT b.id, b.title, b.volume, b.release_date, b.isbn13, s.name AS series FROM books b LEFT JOIN series s ON s.id = b.series_id
         WHERE {where} ORDER BY ({order}), b.release_date DESC, b.id LIMIT ?""",
         (since, limit),
     ).fetchall()
@@ -107,13 +112,23 @@ def run(conn, api, kind, rows, deadline):
         if time.monotonic() > deadline:
             break
         name = series_name(r)
-        words = name if kind == "kindle" else (f"{name} {r['volume']}" if r["volume"] is not None else r["title"])
-        try:
-            items = api.search(words, index="KindleStore" if kind == "kindle" else "Books", availability="IncludeOutOfStock")
-        except (requests.RequestException, AmazonError, ValueError):
+        if kind == "kindle":
+            queries = ([r["isbn13"]] if r["isbn13"] else []) + [name]
+        else:
+            queries = [f"{name} {r['volume']}" if r["volume"] is not None else r["title"]]
+        hit, failed = None, False
+        for words in queries:
+            try:
+                items = api.search(words, index="KindleStore" if kind == "kindle" else "Books", availability="IncludeOutOfStock")
+            except (requests.RequestException, AmazonError, ValueError):
+                failed = True
+                continue
+            hit = pick(items, name, r["title"], r["volume"], to_date(r["release_date"]), kind == "kindle")
+            if hit:
+                break
+        if failed and not hit:
             counts["error"] += 1
             continue
-        hit = pick(items, name, r["title"], r["volume"], to_date(r["release_date"]), kind == "kindle")
         counts["found" if hit else "missing"] += 1
         conn.execute(f"UPDATE books SET {col} = ?, {checked} = ? WHERE id = ?", (hit.get("asin") if hit else None, db.now_iso(), r["id"]))
         if i % 50 == 0:
@@ -183,6 +198,49 @@ def check_isbn(conn, api, rows, deadline):
     return counts
 
 
+def paper_asin(r):
+    """書籍ページの Amazon ボタンと同じ、紙の本の ASIN（ISBN-10 のページがあると確かめた本は ISBN-10）。"""
+    if r["isbn13"]:
+        if r["amazon_isbn_ok"] == 1:
+            return isbn13_to_10(r["isbn13"])
+        return r["asin"] if r["amazon_isbn_ok"] == 0 else None
+    return r["asin"]
+
+
+def image_url(item):
+    p = ((item.get("images") or {}).get("primary") or {})
+    return ((p.get("large") or p.get("medium") or {}).get("url")) or None
+
+
+def refresh_images(conn, api, deadline):
+    """書影のアドレスを取り直す。取り直せなかった本のアドレスは消す（古いアドレスを使わないように）。"""
+    rows = conn.execute("""SELECT id, isbn13, asin, amazon_isbn_ok FROM books
+        ORDER BY release_date IS NULL, release_date DESC, id""").fetchall()
+    todo = [(r["id"], a) for r in rows if (a := paper_asin(r))]
+    counts = {"image": 0, "none": 0, "error": 0, "left": 0}
+    for i in range(0, len(todo), 10):
+        chunk = todo[i:i + 10]
+        if time.monotonic() > deadline:
+            counts["left"] += len(todo) - i
+            break
+        try:
+            items = {it.get("asin"): it for it in api.get([a for _, a in chunk], resources=["images.primary.large"])}
+        except (requests.RequestException, AmazonError, ValueError):
+            counts["error"] += len(chunk)
+            continue
+        now = db.now_iso()
+        for book_id, asin in chunk:
+            url = image_url(items[asin]) if asin in items else None
+            counts["image" if url else "none"] += 1
+            conn.execute("UPDATE books SET amazon_image_url = ?, amazon_image_at = ? WHERE id = ?", (url, now if url else None, book_id))
+        conn.commit()
+    # ASIN の分からなくなった本や、今回取り直せなかった本は、24時間を待たずに使わない
+    conn.execute("UPDATE books SET amazon_image_url = NULL, amazon_image_at = NULL WHERE amazon_image_at IS NOT NULL AND amazon_image_at < ?",
+                 ((datetime.now(db.JST) - timedelta(hours=23)).isoformat(timespec="seconds"),))
+    conn.commit()
+    return counts
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--max-kindle", type=int, default=MAX_KINDLE)
@@ -207,6 +265,8 @@ def main(argv=None):
     if args.isbn_only:
         print(f"（API {api.calls} 回）")
         return 0
+    img = refresh_images(conn, api, min(start + limit, time.monotonic() + IMAGE_TIME))
+    print(f"Amazon の書影：あり {img['image']}／なし {img['none']}／エラー {img['error']}／時間切れで取り直せなかった {img['left']}")
     deadline = start + limit
     paper = run(conn, api, "paper", targets(conn, now, "paper", args.max_paper), deadline)
     kindle = run(conn, api, "kindle", targets(conn, now, "kindle", args.max_kindle), deadline)

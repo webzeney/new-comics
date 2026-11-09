@@ -18,8 +18,10 @@ def lookup(api, query):
         q = q.strip()
         if len(q) == 10:
             try:
-                items = api.get([q])
+                items = api.get([q], resources=["itemInfo.title", "images.primary.large"])
                 print("getItems", q, "→", len(items), "件"); show(items)
+                for it in items:
+                    print("    images:", json.dumps(it.get("images"), ensure_ascii=False)[:400])
             except AmazonError as e:
                 print("getItems", q, "→ エラー", e)
         for index in ("Books", "KindleStore"):
