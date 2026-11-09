@@ -1,0 +1,33 @@
+name: バリューコマースの商品API の確認（手動）
+
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: "キーワード（ISBN や書名。カンマ区切り）"
+        required: true
+      ec:
+        description: "広告主の ecCode（空ならすべての提携先）"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: 調べる
+        env:
+          PYTHONPATH: src
+          VC_TOKEN: ${{ secrets.VC_TOKEN }}
+          QUERY: ${{ inputs.query }}
+          EC: ${{ inputs.ec }}
+        run: python -m newcomics.vcprobe "$QUERY" $( [ -n "$EC" ] && echo --ec "$EC" )
