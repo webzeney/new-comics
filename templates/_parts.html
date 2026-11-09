@@ -17,7 +17,7 @@
 
 {% macro store_tiles(stores, cls) -%}
 {% for s in stores %}
-<a href="{{ s.url }}" class="store_tile{% if s.kind != 'amazon' %} store_tile--{{ s.kind }}{% endif %}{% if cls %} {{ cls }}{% endif %}" aria-label="{{ s.name }}で購入" title="{{ s.name }}" rel="sponsored noopener" target="_blank">{{ s.short }}</a>
+<a href="{{ s.url }}" class="store_tile{% if s.kind != 'amazon' %} store_tile--{{ s.kind }}{% endif %}{% if cls %} {{ cls }}{% endif %}" aria-label="{{ s.name }}で購入" title="{{ s.name }}" rel="sponsored noopener" target="_blank">{% if s.get('words') %}{% for w in s.words %}<span class="store_tile__word">{{ w }}</span>{% endfor %}{% else %}{{ s.short }}{% endif %}</a>
 {% endfor %}
 {%- endmacro %}
 
