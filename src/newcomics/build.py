@@ -849,6 +849,7 @@ def build_week(site, w):
 
 
 # ---- 書籍 ----
+SAMEDAY_MAX = 12  # 書籍詳細ページの「同じ日発売のほかの新刊」に入れる数（PC は横1列に入る分だけ、スマホは6冊を表示する）
 AMAZON_IMAGE_HOURS = 24  # Amazon の書影のアドレスを使ってよい時間（ライセンス契約 利用要件(n)）
 
 
@@ -1015,7 +1016,7 @@ def build_books(site, w):
             others = [x for x in site.by_date.get(b.release, []) if x.id != b.id]
             if others:
                 sameday = {"md": md(b.release), "dow": dow(b.release), "url": f"{root}date/{b.release.isoformat()}/", "count": len(others) + 1,
-                           "books": [{"title": x.title, "pub": x.publisher, "url": site.book_url(root, x), "image": x.image, "cover_url": x.cover_url, "alt": site.alt(x)} for x in others[:6]]}
+                           "books": [{"title": x.title, "pub": x.publisher, "url": site.book_url(root, x), "image": x.image, "cover_url": x.cover_url, "alt": site.alt(x)} for x in others[:SAMEDAY_MAX]]}
         crumb = [(b.publisher, f"{root}publisher/{b.publisher_slug}/")]
         if b.series_id and vol:
             crumb.append((main, f"{root}series/{b.series_id}/"))
