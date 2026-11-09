@@ -68,10 +68,10 @@ jobs:
           AMAZON_CREATORS_SECRET: ${{ secrets.AMAZON_CREATORS_SECRET }}
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
         run: python -m newcomics.amazonlink
-      - name: 楽天の書影の補完（書影のない本）
+      - name: 楽天の書影・紹介文の補完（書影・紹介文のない本）
         id: rakutencover
         continue-on-error: true
-        timeout-minutes: 20
+        timeout-minutes: 30
         env:
           PYTHONPATH: src
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}

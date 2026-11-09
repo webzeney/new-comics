@@ -49,7 +49,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
-          ok='["取得","取得の失敗を通知","Amazon の照らし合わせ（商品ページの確認・書影・Kindle版・ISBN の分からない本。楽天の書影を探す前に行う）","楽天の書影の補完（書影のない本）","楽天Kobo の照らし合わせ（電子版ありの本）","アナリティクスの読み込み（よく見られている新刊）"]'
+          ok='["取得","取得の失敗を通知","Amazon の照らし合わせ（商品ページの確認・書影・Kindle版・ISBN の分からない本。楽天の書影を探す前に行う）","楽天の書影・紹介文の補完（書影・紹介文のない本）","楽天Kobo の照らし合わせ（電子版ありの本）","アナリティクスの読み込み（よく見られている新刊）"]'
           other=$(gh api "repos/${{ github.repository }}/actions/runs/$RUN_ID/jobs" --jq "[.jobs[].steps[] | select(.conclusion == \"failure\") | .name] - $ok | join(\",\")")
           if [ -n "$other" ]; then
             echo "出版社の取得以外の手順が失敗したため転送しません：$other"

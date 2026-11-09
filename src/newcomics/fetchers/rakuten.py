@@ -100,6 +100,7 @@ def to_record(item, affiliate):
     rec.image_url = re.sub(r"\?_ex=\d+x\d+$", "", item.get("largeImageUrl") or "") or None
     rec.publisher_name = item.get("publisherName")
     rec.title_kana = nfkc(item.get("titleKana")).strip() or None
+    rec.caption = (item.get("itemCaption") or "").strip() or None
     return rec
 
 
