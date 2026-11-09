@@ -21,7 +21,7 @@ jobs:
           getent hosts www.new-comics.jp || echo "www は解決できません"
       - name: 表示の確認
         run: |
-          for u in https://new-comics.jp/ https://new-comics.jp/calendar/ https://new-comics.jp/robots.txt https://new-comics.jp/feature/ http://new-comics.jp/; do
+          for u in https://new-comics.jp/ https://new-comics.jp/calendar/ https://new-comics.jp/robots.txt https://new-comics.jp/feature/ http://new-comics.jp/ https://new-comics.jp/.nc-sync-state.json https://new-comics.jp/feature/wp-content/themes/new-comics/.nc-sync-state.json https://new-comics.jp/contact/_data/ https://new-comics.jp/contact/config.php; do
             echo "== $u"
             curl -sS -o /dev/null -m 20 -w "HTTP %{http_code}  %{time_total}秒  接続先 %{remote_ip}\n" "$u" || echo "接続できません"
           done
