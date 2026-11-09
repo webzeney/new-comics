@@ -18,13 +18,11 @@ def lookup(api, query):
         q = q.strip()
         if len(q) == 10:
             try:
-                items = api.get([q], resources=["itemInfo.title", "images.primary.large", "itemInfo.features", "itemInfo.contentInfo"])
+                items = api.get([q], resources=["itemInfo.title", "images.primary.large", "browseNodeInfo.websiteSalesRank", "browseNodeInfo.browseNodes.salesRank"])
                 print("getItems", q, "→", len(items), "件"); show(items)
                 for it in items:
                     print("    images:", json.dumps(it.get("images"), ensure_ascii=False)[:400])
-                    info = it.get("itemInfo") or {}
-                    print("    features:", json.dumps(info.get("features"), ensure_ascii=False)[:1500])
-                    print("    contentInfo:", json.dumps(info.get("contentInfo"), ensure_ascii=False)[:600])
+                    print("    browseNodeInfo:", json.dumps(it.get("browseNodeInfo"), ensure_ascii=False)[:1500])
             except AmazonError as e:
                 print("getItems", q, "→ エラー", e)
         for index in ("Books", "KindleStore"):
