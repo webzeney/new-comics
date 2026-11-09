@@ -13,6 +13,7 @@
 {% if book.isbn %}<dt class="book__data_term">ISBN</dt><dd class="book__data_desc book__data_desc--en">{{ book.isbn }}</dd>{% endif %}
 {% if book.ebook is not none %}<dt class="book__data_term">電子書籍</dt><dd class="book__data_desc">{{ 'あり' if book.ebook else 'なし' }}</dd>{% endif %}
 </dl>
+{% if book.fav %}<button type="button" aria-pressed="false" class="fav_button book__fav book__fav--cover" data-fav-id="{{ book.fav.id }}" data-fav-name="{{ book.fav.name }}" data-fav-url="{{ book.fav.url }}"><span aria-hidden="true" class="fav_button__icon">☆</span><span class="fav_button__label">この作品をお気に入りに追加</span></button>{% endif %}
 </div>
 <div class="book__info">
 <div class="book__tags">
@@ -24,7 +25,8 @@
 <h1 id="book-title" class="book__title">{{ book.title_main }}{% if book.volume %} <span class="en">{{ book.volume }}</span>巻{% endif %}</h1>
 {% if book.authors %}<span class="book__authors">{% for a in book.authors %}{% if not loop.first %}／{% endif %}{% if a.role %}{{ a.role }}：{% endif %}<a href="{{ a.url }}" class="book__author">{{ a.name }}</a>{% endfor %}</span>{% endif %}
 </div>
-{% if book.fav %}<button type="button" aria-pressed="false" class="fav_button" data-fav-id="{{ book.fav.id }}" data-fav-name="{{ book.fav.name }}" data-fav-url="{{ book.fav.url }}"><span aria-hidden="true" class="fav_button__icon">☆</span><span class="fav_button__label">この作品をお気に入りに追加</span></button>{% endif %}
+{% if book.fav %}<button type="button" aria-pressed="false" class="fav_button book__fav book__fav--info" data-fav-id="{{ book.fav.id }}" data-fav-name="{{ book.fav.name }}" data-fav-url="{{ book.fav.url }}"><span aria-hidden="true" class="fav_button__icon">☆</span><span class="fav_button__label">この作品をお気に入りに追加</span></button>{% endif %}
+{% if book.caption %}<p class="book__caption">{{ book.caption }}</p>{% endif %}
 <div class="book__facts">
 <div class="book__fact book__fact--date"{% if book.release_iso %} data-release="{{ book.release_iso }}"{% endif %}>
 <span class="book__fact_label">発売日</span>

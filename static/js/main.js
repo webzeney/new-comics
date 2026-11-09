@@ -417,8 +417,9 @@ var list = loadFavs();
 var exists = list.some(function (f) { return String(f.id) === id; });
 list = exists ? list.filter(function (f) { return String(f.id) !== id; }) : list.concat([{ id: id, name: b.dataset.favName, url: b.dataset.favUrl }]);
 saveFavs(list);
-paint();
+document.dispatchEvent(new CustomEvent('fav:change'));
 });
+document.addEventListener('fav:change', paint);
 paint();
 });
 }
