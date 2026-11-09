@@ -247,6 +247,7 @@ def main(argv=None):
     ap.add_argument("--isbn-only", action="store_true", help="ISBN-10 の商品ページの確認だけを行う（全件の確認用）")
     ap.add_argument("--minutes", type=int, help="使う時間の上限（分）")
     ap.add_argument("--recheck", action="store_true", help="見つからなかった本を、日数にかかわらず探し直す")
+    ap.add_argument("--images", action="store_true", help="--isbn-only のあと、書影のアドレスも取り直す")
     args = ap.parse_args(argv)
     api = Api()
     if not api.ready():
@@ -260,11 +261,14 @@ def main(argv=None):
     rest = conn.execute("SELECT COUNT(*) FROM books WHERE COALESCE(isbn13, '') <> '' AND amazon_isbn_ok IS NULL").fetchone()[0]
     print(f"Amazon の商品ページの確認：ISBN-10 のページあり {isbn['ok']}／別の ASIN で見つかった {isbn['asin']}／見つからない {isbn['missing']}／エラー {isbn['error']}"
           f"（まだ確かめていない本 残り {rest} 冊）")
-    if args.isbn_only:
+    if args.isbn_only and not args.images:
         print(f"（API {api.calls} 回）")
         return 0
     img = refresh_images(conn, api, min(start + limit, time.monotonic() + IMAGE_TIME))
     print(f"Amazon の書影：あり {img['image']}／なし {img['none']}／エラー {img['error']}／時間切れで取り直せなかった {img['left']}")
+    if args.isbn_only:
+        print(f"（API {api.calls} 回）")
+        return 0
     deadline = start + limit
     paper = run(conn, api, "paper", targets(conn, now, "paper", args.max_paper), deadline)
     kindle = run(conn, api, "kindle", targets(conn, now, "kindle", args.max_kindle), deadline)

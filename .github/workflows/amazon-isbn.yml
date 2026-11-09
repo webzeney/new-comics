@@ -11,6 +11,10 @@ on:
         description: 見つからなかった本を、日数にかかわらず探し直す
         type: boolean
         default: false
+      images:
+        description: 書影のアドレスも取り直す
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -44,7 +48,8 @@ jobs:
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
           MINUTES: ${{ inputs.minutes }}
           RECHECK: ${{ inputs.recheck }}
-        run: python -m newcomics.amazonlink --isbn-only --max-isbn 100000 --minutes "$MINUTES" $( [ "$RECHECK" = "true" ] && echo --recheck )
+          IMAGES: ${{ inputs.images }}
+        run: python -m newcomics.amazonlink --isbn-only --max-isbn 100000 --minutes "$MINUTES" $( [ "$RECHECK" = "true" ] && echo --recheck ) $( [ "$IMAGES" = "true" ] && echo --images )
       - name: データベースを保存（非公開リポジトリ）
         working-directory: data
         run: |
