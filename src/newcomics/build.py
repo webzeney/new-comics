@@ -318,6 +318,8 @@ def build(conn, out_dir, today, env):
     build_top(site, w)
     build_calendars(site, w)
     build_dates(site, w)
+    build_today(site, w)
+    build_week(site, w)
     build_books(site, w)
     build_series(site, w)
     build_listings(site, w)
@@ -749,6 +751,101 @@ def build_dates(site, w):
             lastmod=lastmod(site, books),
         )
         w.write(f"date/{d.isoformat()}/index.html", "date.html", page, **ctx)
+
+
+# ---- 今日発売・今週発売 ----
+WEEK_DAY_BOOKS = 8   # 「今週発売」で1日に並べる冊数（残りはその日のページで見る）
+TODAY_NEXT_BOOKS = 6  # 「今日発売」の下に並べる、次の発売日の冊数
+
+
+def popular_first(site, books):
+    """よく見られている本 → 新シリーズ1巻 → もとの順。"""
+    try:
+        views = {r["book_key"]: r["views"] for r in site.conn.execute("SELECT book_key, views FROM page_views")}
+    except sqlite3.OperationalError:
+        views = {}
+    return sorted(books, key=lambda b: (-views.get(b.key, 0), not b.is_first))
+
+
+def pub_groups(site, root, books):
+    groups = OrderedDict()
+    for p in site.publishers:
+        g = [b for b in books if b.publisher == p["name"]]
+        if g:
+            groups[p["name"]] = g
+    return [{"name": n, "books": [dict(site.row(root, b, ("author", "price")), label=b.label or n) for b in g]} for n, g in groups.items()]
+
+
+def week_range(today):
+    """今日を含む1週間（日曜〜土曜。サイトのカレンダーと同じ区切り）。"""
+    start = today - timedelta(days=(today.weekday() + 1) % 7)
+    return start, start + timedelta(days=6)
+
+
+def build_today(site, w):
+    root = "../"
+    d = site.today
+    books = site.by_date.get(d, [])
+    groups = pub_groups(site, root, books)
+    nxt = min((x for x in site.by_date if x > d), default=None)
+    next_books = popular_first(site, site.by_date.get(nxt, []))[:TODAY_NEXT_BOOKS] if nxt else []
+    ctx = {
+        "crumbs": crumbs(root, ("今日発売の漫画新刊", None)),
+        "day": {"md": md(d), "dow": dow(d), "long": f"{d.year}年{d.month}月{d.day}日（{dow(d)}）"},
+        "stats": {"total": len(books), "first": sum(1 for b in books if b.is_first), "publishers": len(groups)},
+        "groups": groups,
+        "next": {"md": md(nxt), "dow": dow(nxt), "word": "明日" if nxt == d + timedelta(days=1) else None, "url": f"{root}date/{nxt.isoformat()}/", "total": len(site.by_date[nxt]),
+                 "books": [site.row(root, b, ("author", "price")) for b in next_books]} if nxt else None,
+        "date_url": f"{root}date/{d.isoformat()}/" if books else None,
+        "week_url": f"{root}week/",
+        "cart": site.cart(),
+    }
+    page = page_defaults(
+        # 中身が毎日変わるページなので、タイトルと説明文には日付・点数を入れない（検索結果に古い日付が残らないように）
+        title=f"今日発売の漫画・コミック新刊｜{SITE_NAME}",
+        description="今日発売される漫画・コミックの新刊を、出版社別に紹介しています。明日発売の新刊や今週の発売予定も見られます。毎朝自動で更新しています。",
+        jsonld=jsonld(date_ld(site, d, books), breadcrumb_ld(site_base(site), [("トップ", "/"), ("今日発売の漫画新刊", "/today/")])) if books else None,
+        menu="today", lastmod=d.isoformat(),
+    )
+    w.write("today/index.html", "today.html", page, **ctx)
+
+
+def build_week(site, w):
+    root = "../"
+    start, end = week_range(site.today)
+    days = []
+    total = first = 0
+    for i in range(7):
+        d = start + timedelta(days=i)
+        books = site.by_date.get(d, [])
+        total += len(books)
+        first += sum(1 for b in books if b.is_first)
+        picks = popular_first(site, books)[:WEEK_DAY_BOOKS]
+        days.append({
+            "id": f"d{d.isoformat()}", "md": md(d), "day": d.day, "dow": dow(d), "color": site.day_color(d), "count": len(books),
+            "state": "today" if d == site.today else ("past" if d < site.today else "future"),
+            "url": f"{root}date/{d.isoformat()}/" if books else None,
+            "books": [site.row(root, b, ("author", "label", "price")) for b in picks],
+            "rest": len(books) - len(picks),
+        })
+    peak = max(days, key=lambda x: x["count"])
+    ctx = {
+        "crumbs": crumbs(root, ("今週発売の漫画新刊", None)),
+        "week": {"range": f"{md(start)}（{dow(start)}）〜{md(end)}（{dow(end)}）", "long": f"{start.month}月{start.day}日〜{end.month}月{end.day}日"},
+        "stats": {"total": total, "first": first, "peak": peak["md"] if peak["count"] else "－", "peak_dow": f"（{peak['dow']}）" if peak["count"] else ""},
+        "days": days,
+        "per_day": WEEK_DAY_BOOKS,
+        "today_url": f"{root}today/",
+        "calendar_url": f"{root}calendar/{site.today.year}/{site.today.month:02d}/",
+        "cart": site.cart(),
+    }
+    page = page_defaults(
+        title=f"今週発売の漫画・コミック新刊｜{SITE_NAME}",
+        description="今週（日曜〜土曜）に発売される漫画・コミックの新刊を、発売日ごとに紹介しています。毎朝自動で更新しています。",
+        jsonld=jsonld(breadcrumb_ld(site_base(site), [("トップ", "/"), ("今週発売の漫画新刊", "/week/")])),
+        menu="week", lastmod=site.today.isoformat(),
+    )
+    w.write("week/index.html", "week.html", page, **ctx)
 
 
 # ---- 書籍 ----

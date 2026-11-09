@@ -330,6 +330,24 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .daypage__stat{display:flex}
 .daypage__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:28px}
 /* ==========================================================================
+今週発売
+========================================================================== */
+.weekstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:20px}
+.weekstrip__day{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border:2px solid #222222;border-radius:14px;background:#FFFFFF;color:#222222;text-decoration:none}
+.weekstrip__day--past{opacity:0.55}
+.weekstrip__day--today{background:#222222;color:#FFFFFF}
+.weekstrip__day--empty{border-color:#E2DCD3;color:#9A938A}
+.weekstrip__dow{font-size:12px;font-weight:700}
+.weekstrip__dow--red{color:#B5302A}
+.weekstrip__dow--blue{color:#2F5C9E}
+.weekstrip__day--today .weekstrip__dow{color:#FFD15C}
+.weekstrip__num{font-family:'Yusei Magic',sans-serif;font-weight:400;letter-spacing:0.1em;font-size:24px;line-height:1.1}
+.weekstrip__count{font-family:'Yusei Magic',sans-serif;font-weight:400;letter-spacing:0.1em;font-size:12px}
+.weekday{scroll-margin-top:16px}
+.weekday__now{display:inline-flex;padding:2px 10px;border-radius:999px;background:#222222;color:#FFD15C;font-size:12px}
+.weekday__past{display:inline-flex;padding:2px 10px;border-radius:999px;background:#E2DCD3;color:#5A544C;font-size:12px}
+.weekday__more{margin-top:14px}
+/* ==========================================================================
 書籍（各巻）
 ========================================================================== */
 .book{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
@@ -596,6 +614,11 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 スマホ（幅720px以下）
 ========================================================================== */
 @media (max-width: 720px){
+.weekstrip{gap:4px}
+.weekstrip__day{padding:8px 2px;border-radius:10px}
+.weekstrip__num{font-size:20px}
+.weekstrip__count{font-size:11px}
+.weekday__more{width:100%;padding:0 16px;box-sizing:border-box;font-size:13px}
 .series__actions{display:grid;grid-template-columns:1fr 1fr}
 .series__actions .fav_button,.series__actions .chip_link{box-sizing:border-box;justify-content:center;align-self:stretch;padding:0 8px;white-space:nowrap}
 .ticker__track--static{animation:ticker 40s linear infinite}
