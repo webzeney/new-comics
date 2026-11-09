@@ -37,6 +37,7 @@ jobs:
       - name: ページ生成
         env:
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
+          AMAZON_MAIN_COVER: "1"
         run: python -m newcomics.build --out dist > /dev/null
       - name: 画面写真
         run: |

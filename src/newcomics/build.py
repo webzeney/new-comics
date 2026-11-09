@@ -184,7 +184,7 @@ class Site:
         """書籍詳細ページのメインの書影とリンク先。Amazon の書影（取得から24時間以内）があれば Amazon の商品ページへ、
         なければ楽天の書影と楽天の商品ページ。Amazon の書影はここでだけ使う（一覧などは楽天の書影のまま）。"""
         asin = self.amazon_asin(b)
-        if b.amazon_image and asin and b.amazon_image_at:
+        if (AMAZON_MAIN_COVER or self.env.get("AMAZON_MAIN_COVER") == "1") and b.amazon_image and asin and b.amazon_image_at:
             try:
                 fresh = datetime.now(db.JST) - datetime.fromisoformat(b.amazon_image_at) < timedelta(hours=AMAZON_IMAGE_HOURS)
             except ValueError:
@@ -758,6 +758,7 @@ def build_dates(site, w):
 
 # ---- 書籍 ----
 AMAZON_IMAGE_HOURS = 24  # Amazon の書影のアドレスを使ってよい時間（ライセンス契約 利用要件(n)）
+AMAZON_MAIN_COVER = os.environ.get("AMAZON_MAIN_COVER") == "1"  # 運営者の確認が済むまでは確認用の生成でだけ使う
 def bubble_for(site, d):
     if d is None:
         return "発売日未定", False
