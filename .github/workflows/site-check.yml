@@ -1,0 +1,25 @@
+name: サイトの表示確認（手動）
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 名前の解決
+        run: |
+          getent hosts new-comics.jp || echo "名前を解決できません"
+          getent hosts www.new-comics.jp || echo "www は解決できません"
+      - name: 表示の確認
+        run: |
+          for u in https://new-comics.jp/ https://new-comics.jp/calendar/ https://new-comics.jp/robots.txt https://new-comics.jp/feature/ http://new-comics.jp/; do
+            echo "== $u"
+            curl -sS -o /dev/null -m 20 -w "HTTP %{http_code}  %{time_total}秒  接続先 %{remote_ip}\n" "$u" || echo "接続できません"
+          done
+          echo "== 証明書"
+          echo | timeout 15 openssl s_client -connect new-comics.jp:443 -servername new-comics.jp 2>/dev/null | openssl x509 -noout -subject -dates || echo "証明書を確かめられません"
