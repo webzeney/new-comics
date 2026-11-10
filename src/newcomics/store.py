@@ -11,7 +11,7 @@ TAG_RULES = [
     ("新シリーズ1巻", "new-series", lambda r: r.volume == 1),
     ("完結巻", "final", lambda r: r.is_final),
     ("特装版・限定版", "special-edition", lambda r: r.edition != "通常"),
-    ("電子同時配信", "ebook", lambda r: r.has_ebook is True),
+    ("電子同時配信", "ebook", lambda r: r.has_ebook is True and not r.ebook_only),
 ]
 
 
@@ -36,6 +36,7 @@ class BookRecord:
     publisher_name: str = None
     title_kana: str = None
     caption: str = None  # 楽天の紹介文（書籍詳細ページに出す。2026-11-09 運営者の判断）
+    ebook_only: bool = None  # 紙の本のない電子版のみの本（分からないときは None）
 
     def finalize(self):
         self.title = self.title or clean_title(self.title_raw)
@@ -154,6 +155,7 @@ def save(conn, publisher_id, rec, run_at):
         "image_url": rec.image_url,
         "title_kana": rec.title_kana,
         "rakuten_caption": rec.caption,
+        "ebook_only": 1 if rec.ebook_only else None,
         "origin": origin,
     }
     if existing is None:
@@ -167,7 +169,7 @@ def save(conn, publisher_id, rec, run_at):
         status = "new"
     else:
         book_id = existing["id"]
-        keep = ("rakuten_url", "image_url", "title_kana", "rakuten_caption") if takeover else ("isbn13", "price", "has_ebook", "label_id", "volume", "rakuten_url", "image_url", "title_kana", "rakuten_caption")
+        keep = ("rakuten_url", "image_url", "title_kana", "rakuten_caption", "ebook_only") if takeover else ("isbn13", "price", "has_ebook", "label_id", "volume", "rakuten_url", "image_url", "title_kana", "rakuten_caption", "ebook_only")
         for key in keep:
             if values[key] is None:
                 values[key] = existing[key]

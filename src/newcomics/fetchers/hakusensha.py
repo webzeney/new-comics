@@ -3,11 +3,13 @@
 新刊情報（/shinkan?shinkan_year=YYYY&shinkan_month=M）にはレーベルごとの表があり、書名・著者・発売日が取れる。
 コミックス（/comicslist/ID/）だけを使い、書籍（/booklist/）は除く。
 ISBN・定価・レーベル（シリーズ名）は書籍ページから取る。一度取った本は書籍ページを開き直さない。
+シリーズ名が「電子版のみ」の本は、紙の本のない電子版のみの本として扱う（ISBN がないので毎回書籍ページを開く）。
 """
 import re
 
 from bs4 import BeautifulSoup
 
+from ..db import EBOOK_ONLY_LABEL
 from ..normalize import clean_title, isbn13, parse_date, parse_price
 from ..store import BookRecord
 
@@ -85,6 +87,8 @@ def fetch(client, conn, publisher_id, months, log, known=None):
             if detail:
                 rec.isbn13, rec.price, rec.label = detail["isbn13"], detail["price"], detail["label"]
                 rec.release_date = detail["release_date"] or rec.release_date
+                if detail["label"] == EBOOK_ONLY_LABEL:
+                    rec.ebook_only, rec.has_ebook = True, True
         out.append(rec)
     log(f"{NAME}: 取得 {len(out)} 件")
     return out

@@ -5,6 +5,8 @@
 付けるのは楽天Kobo の商品ページへのリンクだけで、書名や価格などは変えない（CLAUDE.md の楽天ブックスAPIのルール）。
 まだ探していない本を、発売日の新しい順に 1 回あたり MAX_CHECKS 冊まで探す。
 見つからなかった本は RECHECK_DAYS 日たったら探し直す（電子版は紙より遅れて出ることがあるため）。
+電子版のみの本（books.ebook_only）は先に探し、見つかるまで毎晩探し直す。紙の本がなく楽天ブックスの書影がないので、
+楽天Kobo の書影（books.image_url）と紹介文（books.rakuten_caption）も付ける（2026-11-10 運営者の判断）。
 """
 import argparse
 import os
@@ -23,7 +25,7 @@ ENDPOINT = "https://openapi.rakuten.co.jp/services/api/Kobo/EbookSearch/20170426
 MAX_CHECKS = 400
 TIME_LIMIT = 12 * 60
 RECHECK_DAYS = 7
-SKIP_WORDS = ("単話", "分冊", "話売り", "モノクロ版", "カラー版", "フルカラー", "合本", "セット", "試し読み", "特装版", "限定版", "ノベライズ")
+SKIP_WORDS = ("単話", "分冊", "話売り", "ばら売り", "モノクロ版", "カラー版", "フルカラー", "合本", "セット", "試し読み", "特装版", "限定版", "ノベライズ")
 
 
 def key(text):
@@ -39,7 +41,7 @@ def has_volume(title, volume):
 
 
 def pick(items, series, title, volume):
-    """候補の中から同じ本を選ぶ。書名がそのまま同じものを先に選ぶ。"""
+    """候補の中から同じ本を選ぶ。書名がそのまま同じものを先に選ぶ。巻数のない本は、書名が同じものだけを選ぶ。"""
     nt = unicodedata.normalize("NFKC", title or "")
     ok = []
     for it in items:
@@ -47,7 +49,10 @@ def pick(items, series, title, volume):
         nk = unicodedata.normalize("NFKC", kt)
         if any(w in nk and w not in nt for w in SKIP_WORDS):
             continue
-        if key(series) in key(kt) and has_volume(kt, volume):
+        if volume is None:
+            if key(kt) == key(title):
+                ok.append(it)
+        elif key(series) in key(kt) and has_volume(kt, volume):
             ok.append(it)
     for it in ok:
         if key(it.get("title")) == key(title):
@@ -61,15 +66,22 @@ class KoboApi(rakuten.Api):
         self.endpoint = ENDPOINT
 
 
-def targets(conn, now, limit):
+def targets(conn, now, limit, only_ebook_only=False):
     since = (now - timedelta(days=RECHECK_DAYS)).isoformat(timespec="seconds")
+    since_only = (now - timedelta(hours=20)).isoformat(timespec="seconds")
     return conn.execute(
-        """SELECT b.id, b.title, b.volume, s.name AS series FROM books b LEFT JOIN series s ON s.id = b.series_id
-        WHERE b.has_ebook = 1 AND b.volume IS NOT NULL AND b.kobo_url IS NULL AND (b.kobo_checked_at IS NULL OR b.kobo_checked_at < ?)
-        ORDER BY (b.kobo_checked_at IS NOT NULL), b.release_date DESC, b.id
+        f"""SELECT b.id, b.title, b.volume, b.ebook_only, b.image_url, b.rakuten_caption, s.name AS series FROM books b LEFT JOIN series s ON s.id = b.series_id
+        WHERE b.has_ebook = 1 AND (b.volume IS NOT NULL OR b.ebook_only = 1) AND b.kobo_url IS NULL
+        AND (b.kobo_checked_at IS NULL OR b.kobo_checked_at < CASE WHEN b.ebook_only = 1 THEN ? ELSE ? END)
+        {"AND b.ebook_only = 1" if only_ebook_only else ""}
+        ORDER BY (b.ebook_only IS NULL), (b.kobo_checked_at IS NOT NULL), b.release_date DESC, b.id
         LIMIT ?""",
-        (since, limit),
+        (since_only, since, limit),
     ).fetchall()
+
+
+def image_of(item):
+    return re.sub(r"\?_ex=\d+x\d+$", "", item.get("largeImageUrl") or "") or None
 
 
 def series_name(row):
@@ -79,6 +91,7 @@ def series_name(row):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--max", type=int, default=MAX_CHECKS)
+    ap.add_argument("--ebook-only", action="store_true", help="電子版のみの本だけを探す（表示の確認用）")
     args = ap.parse_args(argv)
     app_id, access_key = os.environ.get("RAKUTEN_APP_ID"), os.environ.get("RAKUTEN_ACCESS_KEY")
     if not app_id or not access_key:
@@ -86,7 +99,7 @@ def main(argv=None):
         return 0
     conn = db.connect()
     api = KoboApi(app_id, access_key, os.environ.get("RAKUTEN_AFFILIATE_ID"))
-    rows = targets(conn, datetime.now(db.JST), args.max)
+    rows = targets(conn, datetime.now(db.JST), args.max, args.ebook_only)
     start = time.monotonic()
     counts = {"found": 0, "missing": 0, "error": 0}
     for i, r in enumerate(rows, start=1):
@@ -102,6 +115,10 @@ def main(argv=None):
         url = (hit.get("affiliateUrl") or hit.get("itemUrl")) if hit else None
         counts["found" if url else "missing"] += 1
         conn.execute("UPDATE books SET kobo_url = ?, kobo_checked_at = ? WHERE id = ?", (url, db.now_iso(), r["id"]))
+        if url and r["ebook_only"]:
+            caption = (hit.get("itemCaption") or "").strip() or None
+            conn.execute("UPDATE books SET image_url = COALESCE(?, image_url), rakuten_caption = COALESCE(rakuten_caption, ?) WHERE id = ?",
+                         (image_of(hit), caption, r["id"]))
         if i % 50 == 0:
             conn.commit()
     conn.commit()

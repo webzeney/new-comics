@@ -94,10 +94,12 @@ def pick(items, series, title, volume, release, kindle):
 def targets(conn, now, kind, limit):
     since = (now - timedelta(days=RECHECK_DAYS)).isoformat(timespec="seconds")
     if kind == "kindle":
+        # 電子版のみの本は Kindle版のほかにリンク先がないので先に探す
         where = "(b.has_ebook = 1 OR b.has_ebook IS NULL) AND b.kindle_asin IS NULL AND (b.kindle_checked_at IS NULL OR b.kindle_checked_at < ?)"
-        order = "b.kindle_checked_at IS NOT NULL, b.has_ebook IS NULL"
+        order = "b.ebook_only IS NULL, b.kindle_checked_at IS NOT NULL, b.has_ebook IS NULL"
     else:
-        where = "COALESCE(b.isbn13, '') = '' AND COALESCE(b.asin, '') = '' AND b.release_date IS NOT NULL AND (b.amazon_checked_at IS NULL OR b.amazon_checked_at < ?)"
+        # 電子版のみの本には紙の本がないので探さない
+        where = "COALESCE(b.isbn13, '') = '' AND COALESCE(b.asin, '') = '' AND b.ebook_only IS NULL AND b.release_date IS NOT NULL AND (b.amazon_checked_at IS NULL OR b.amazon_checked_at < ?)"
         order = "b.amazon_checked_at IS NOT NULL"
     return conn.execute(
         f"""SELECT b.id, b.title, b.volume, b.release_date, b.isbn13, s.name AS series FROM books b LEFT JOIN series s ON s.id = b.series_id
@@ -223,9 +225,10 @@ def image_url(item):
 
 def refresh_images(conn, api, deadline):
     """書影のアドレスを取り直す。取り直せなかった本のアドレスは消す（古いアドレスを使わないように）。"""
-    rows = conn.execute("""SELECT id, isbn13, asin, amazon_isbn_ok FROM books
+    rows = conn.execute("""SELECT id, isbn13, asin, amazon_isbn_ok, ebook_only, kindle_asin FROM books
         ORDER BY release_date IS NULL, release_date DESC, id""").fetchall()
-    todo = [(r["id"], a) for r in rows if (a := paper_asin(r))]
+    # 電子版のみの本は Kindle版の書影（書籍詳細ページのメインの書影にして、Kindle版の商品ページにリンクする）
+    todo = [(r["id"], a) for r in rows if (a := (r["kindle_asin"] if r["ebook_only"] else paper_asin(r)))]
     counts = {"image": 0, "none": 0, "rank": 0, "error": 0, "left": 0}
     for i in range(0, len(todo), 10):
         chunk = todo[i:i + 10]

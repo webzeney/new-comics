@@ -16,6 +16,15 @@ class PickTest(unittest.TestCase):
         items = [{"title": "作品名 カラー版 3"}]
         self.assertIsNotNone(kobo.pick(items, "作品名", "作品名 カラー版 3", 3))
 
+    def test_skip_bara(self):
+        items = [{"title": "作品名。［ばら売り］第8話［黒蜜］"}, {"title": "作品名。 1"}]
+        self.assertEqual(kobo.pick(items, "作品名。", "作品名。 1", 1)["title"], "作品名。 1")
+
+    def test_no_volume_needs_same_title(self):
+        items = [{"title": "テラリウムの恋 番外編"}, {"title": "テラリウムの恋"}]
+        self.assertEqual(kobo.pick(items, "テラリウムの恋", "テラリウムの恋", None)["title"], "テラリウムの恋")
+        self.assertIsNone(kobo.pick([{"title": "テラリウムの恋 番外編"}], "テラリウムの恋", "テラリウムの恋", None))
+
     def test_series_name_fallback(self):
         self.assertEqual(kobo.series_name({"series": None, "title": "作品名（１２）"}), "作品名")
 

@@ -115,7 +115,10 @@ MIGRATIONS = [
     ("books", "rakuten_caption", "TEXT"),
     ("books", "caption_checked_at", "TEXT"),
     ("books", "amazon_rank", "INTEGER"),
+    ("books", "ebook_only", "INTEGER"),
 ]
+
+EBOOK_ONLY_LABEL = "電子版のみ"  # 白泉社のサイトで、紙の本のない電子版のみの本に付いているシリーズ名
 
 
 def now_iso():
@@ -133,6 +136,11 @@ def connect(path=DEFAULT_PATH):
         cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
         if column not in cols:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
+            if (table, column) == ("books", "ebook_only"):
+                # 列を足したときに、これまでに取り込んだ電子版のみの本にも印を付ける
+                conn.execute("""UPDATE books SET ebook_only = 1, has_ebook = 1
+                    WHERE label_id IN (SELECT id FROM labels WHERE name = ?)""", (EBOOK_ONLY_LABEL,))
+                conn.commit()
     return conn
 
 

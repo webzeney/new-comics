@@ -85,7 +85,7 @@ PUBLISHER_ORDER = {name: i for i, name in enumerate([
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at", "caption", "amazon_rank",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at", "caption", "amazon_rank", "ebook_only",
     )
 
     def __init__(self, row, tags):
@@ -112,17 +112,21 @@ class Book:
         self.amazon_rank = row["amazon_rank"] if "amazon_rank" in row.keys() else None
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
+        self.ebook_only = bool(row["ebook_only"]) if "ebook_only" in row.keys() and row["ebook_only"] else False
+        self.kobo_url = row["kobo_url"] if "kobo_url" in row.keys() else None
         image = row["image_url"] if "image_url" in row.keys() else None
         # 楽天の書影は、楽天の商品ページへのリンクがあるときだけ使う（書籍詳細ページのメインの書影のリンク先になる。出版社サイトの本は楽天へのリンクがあるときだけ書影を出す）
         if self.origin == "rakuten":
             self.image, self.cover_url = image, (self.rakuten_url if image else None)
+        elif self.ebook_only and image and self.kobo_url:
+            # 電子版のみの本は楽天Kobo の書影と商品ページ（2026-11-10 運営者の判断）
+            self.image, self.cover_url = image, self.kobo_url
         elif image and self.rakuten_url:
             self.image, self.cover_url = image, self.rakuten_url
         else:
             self.image, self.cover_url = None, None
         self.seven_ok = row["seven_ok"] if "seven_ok" in row.keys() else None
         self.title_kana = row["title_kana"] if "title_kana" in row.keys() else None
-        self.kobo_url = row["kobo_url"] if "kobo_url" in row.keys() else None
         self.kindle_asin = row["kindle_asin"] if "kindle_asin" in row.keys() else None
         self.first_seen = row["first_seen_at"]
         self.updated = row["updated_at"] if "updated_at" in row.keys() else None
@@ -195,7 +199,10 @@ class Site:
         return f"{root}book/{b.key}/"
 
     def amazon_asin(self, b):
-        """Amazon の紙の本の ASIN。ISBN-10 の商品ページがないと分かった本は、照らし合わせで見つけた ASIN にする。"""
+        """Amazon の紙の本の ASIN。ISBN-10 の商品ページがないと分かった本は、照らし合わせで見つけた ASIN にする。
+        電子版のみの本には紙の本がないので None（まとめてカートに入れる本にもしない）。"""
+        if b.ebook_only:
+            return None
         if b.isbn13 and b.amazon_isbn_ok == 0:
             return b.asin or None
         return isbn13_to_10(b.isbn13) or b.asin or None
@@ -217,7 +224,7 @@ class Site:
     def main_cover(self, b):
         """書籍詳細ページのメインの書影とリンク先。Amazon の書影（取得から24時間以内）があれば Amazon の商品ページへ、
         なければ楽天の書影と楽天の商品ページ。Amazon の書影はここでだけ使う（一覧などは楽天の書影のまま）。"""
-        asin = self.amazon_asin(b)
+        asin = b.kindle_asin if b.ebook_only else self.amazon_asin(b)
         if b.amazon_image and asin and b.amazon_image_at:
             try:
                 fresh = datetime.now(db.JST) - datetime.fromisoformat(b.amazon_image_at) < timedelta(hours=AMAZON_IMAGE_HOURS)
@@ -232,6 +239,8 @@ class Site:
         return {"tag": self.env.get("AMAZON_TAG") or ""}
 
     def stores(self, b):
+        if b.ebook_only:
+            return self.ebook_only_stores(b)
         q = b.isbn13 or b.title
         # ISBN が分かる本は Amazon・セブンネットとも商品ページへ（Amazon に ISBN-10 のページがない本は、ISBN-13 で見つけた ASIN。
         # それもなければ ISBN の検索ページ）。ISBN が分からない本は、Amazon の照らし合わせで見つかった ASIN、
@@ -249,13 +258,24 @@ class Site:
             out.append({"name": "セブンネットショッピング", "short": "セブンネット", "words": ["セブン", "ネット"], "kind": "seven", "button": "セブンネット", "url": seven})
         return out
 
+    def ebook_only_stores(self, b):
+        """電子版のみの本のボタン（Kindle と楽天Kobo）。紙の本の書店（Amazon の紙の本・楽天ブックス・セブンネット）は出さない。
+        照らし合わせで見つかった本は商品ページ、まだ見つかっていない本は検索結果のページ。"""
+        q = unicodedata.normalize("NFKC", b.title)
+        kindle = self.amazon_url(b.kindle_asin) if b.kindle_asin else self.amazon_url(search=q, index="digital-text")
+        kobo = b.kobo_url or self.rakuten_search_url(q, "&g=101")
+        return [
+            {"name": "Kindle", "short": "Kindle", "kind": "kindle", "button": "Kindle", "url": kindle},
+            {"name": "楽天Kobo", "short": "楽天Kobo", "words": ["楽天", "Kobo"], "kind": "kobo", "button": "楽天Kobo", "url": kobo},
+        ]
+
     def ebook_stores(self, b):
         """電子版のボタン。電子版ありと分かっている本には Kindle と楽天Kobo、
         電子版の有無が分からない本には、照らし合わせで見つかったストアだけを出す（2026-11-06 運営者の判断）。
 
         Kindle・楽天Kobo とも、照らし合わせで見つかった本は商品ページ、それ以外は検索結果のページ。
         """
-        if b.has_ebook is False:
+        if b.has_ebook is False or b.ebook_only:
             return []
         if b.has_ebook is None and not (b.kindle_asin or b.kobo_url):
             return []
