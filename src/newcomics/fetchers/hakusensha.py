@@ -10,7 +10,7 @@ import re
 from bs4 import BeautifulSoup
 
 from ..db import EBOOK_ONLY_LABEL
-from ..normalize import clean_title, isbn13, parse_date, parse_price
+from ..normalize import NOT_COMIC, clean_title, isbn13, parse_date, parse_price
 from ..store import BookRecord
 
 SLUG = "hakusensha"
@@ -74,6 +74,8 @@ def fetch(client, conn, publisher_id, months, log, known=None):
         items.extend(page)
     out = []
     for item in items:
+        if NOT_COMIC.search(item["title"]):
+            continue
         key = f"{SLUG}:{item['id']}"
         prev = known.get(key)
         rec = BookRecord(

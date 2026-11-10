@@ -33,6 +33,10 @@ class EbookOnlyTest(unittest.TestCase):
         self.assertEqual(self.book.image, "https://thumbnail.image.rakuten.co.jp/a.jpg")
         self.assertEqual(self.book.cover_url, "https://books.rakuten.co.jp/rk/abc/")
 
+    def test_not_comic_hidden(self):
+        self.conn.execute("UPDATE books SET title = '【アニマルデジタルフォトブック】名前「題」'")
+        self.assertEqual(Site(self.conn, date(2026, 11, 10), {}).books, [])
+
     def test_targets(self):
         now = datetime.now(db.JST)
         self.conn.execute("UPDATE books SET kindle_asin = NULL, kobo_url = NULL")

@@ -22,7 +22,7 @@ from xml.sax.saxutils import escape as xml_escape
 import holidays as holidays_lib
 
 from . import db, yomi
-from .normalize import isbn13_to_10, series_name
+from .normalize import NOT_COMIC, isbn13_to_10, series_name
 from .render import Writer, page_defaults
 
 DOWS = ["月", "火", "水", "木", "金", "土", "日"]
@@ -152,6 +152,7 @@ class Site:
             "FROM books b JOIN publishers p ON p.id = b.publisher_id LEFT JOIN labels l ON l.id = b.label_id "
             "WHERE (l.is_adult IS NULL OR l.is_adult = 0) AND p.is_adult = 0"
         ).fetchall()
+        rows = [r for r in rows if not NOT_COMIC.search(r["title"])]
         self.books = [Book(r, tag_rows[r["id"]]) for r in rows]
         # 楽天の検索ページを楽天アフィリエイトのリンクにするための ID（取り込んだ本のリンクで一番多いもの）
         hgc = Counter(m.group(1) for m in (AFFILIATE_HGC.match(r["rakuten_url"] or "") for r in rows) if m)
@@ -311,7 +312,7 @@ class Site:
 
     def row(self, root, b, keys=("author", "label", "price")):
         return {
-            "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook,
+            "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook and not b.ebook_only,
             "first": b.is_first, "meta": self.meta(b, keys), "stores": self.stores(b), "image": b.image, "alt": self.alt(b),
             "asin": self.amazon_asin(b),
         }
@@ -608,7 +609,7 @@ def build_top(site, w):
                 bubble, kind = "完結", "final"
             label_price = "・".join(x for x in (b.label, site.price_text(b)) if x)
             cards.append({
-                "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "ebook": b.has_ebook,
+                "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "ebook": b.has_ebook and not b.ebook_only,
                 "author": site.author_text(b), "label_price": label_price, "bubble": bubble, "bubble_kind": kind, "stores": site.stores(b),
                 "image": b.image, "alt": site.alt(b),
             })
@@ -757,7 +758,7 @@ def calendar_context(site, root, y, m, months):
 
 def compact_row(site, root, b):
     stores = {s["kind"]: s["url"] for s in site.stores(b)}
-    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook), "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
+    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook) and not b.ebook_only, "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
 
 
 # ---- 日別一覧 ----
@@ -1056,7 +1057,7 @@ def build_books(site, w):
             "crumbs": crumbs(root, *crumb),
             "book": {
                 "bubble": bubble, "on_sale": on_sale, "release_iso": b.release.isoformat() if b.release else None, "pub": b.publisher, "pub_url": f"{root}publisher/{b.publisher_slug}/",
-                "label": b.label, "label_url": f"{root}label/{b.label_id}/" if b.label_id else "", "ebook": b.has_ebook,
+                "label": b.label, "label_url": f"{root}label/{b.label_id}/" if b.label_id else "", "ebook": b.has_ebook, "ebook_only": b.ebook_only,
                 "title_main": main, "volume": vol, "authors": authors_ctx(root, b),
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
                 "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "ebook_stores": site.ebook_stores(b), "isbn": b.isbn13,
@@ -1496,7 +1497,7 @@ def build_search(site, w):
         stores = {s["kind"]: s["url"] for s in site.stores(b)}
         item = {
             "t": b.title, "p": b.publisher, "l": b.label or "", "a": site.author_text(b), "d": b.release.isoformat() if b.release else "",
-            "e": bool(b.has_ebook), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "ia": site.alt(b), "sr": b.series_id,
+            "e": bool(b.has_ebook), **({"eo": 1} if b.ebook_only else {}), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "ia": site.alt(b), "sr": b.series_id,
         }
         if b.id in words:
             item["k"] = words[b.id]
