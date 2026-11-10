@@ -28,14 +28,18 @@ jobs:
           PYTHONPATH: src
           NEWCOMICS_DB: data/newcomics.sqlite
         run: python -m newcomics.dedupe
-      - name: 確認
-        if: inputs.title != '--dups'
+      - name: 調査
         run: |
           python3 - <<'PY'
-          import os, sqlite3
+          import sqlite3
           c = sqlite3.connect("data/newcomics.sqlite"); c.row_factory = sqlite3.Row
-          cols = [r[1] for r in c.execute("PRAGMA table_info(books)")]
-          want = [k for k in ("id","title","volume","isbn13","asin","release_date","origin","has_ebook","image_url","rakuten_url","rakuten_checked_at","amazon_checked_at","kindle_asin","source_url") if k in cols]
-          for r in c.execute(f"SELECT {', '.join('b.'+k for k in want)}, p.name AS publisher FROM books b JOIN publishers p ON p.id = b.publisher_id WHERE b.title LIKE ?", (f"%{os.environ['TITLE']}%",)):
-              print("----"); [print(f"{k}: {r[k]}") for k in r.keys()]
+          q = lambda sql: [dict(r) for r in c.execute(sql)]
+          print(q("SELECT b.*, l.name AS label FROM books b LEFT JOIN labels l ON l.id=b.label_id WHERE b.id=3727"))
+          print("ISBN なし・2026-10-01 以降・出版社別・レーベル別（書影なし／全体）")
+          for r in q("""SELECT p.name pub, COALESCE(l.name,'-') label, SUM(b.image_url IS NULL) noimg, COUNT(*) n, SUM(b.kindle_asin IS NOT NULL) kindle, SUM(b.kobo_url IS NOT NULL) kobo, SUM(b.asin IS NOT NULL) asin
+              FROM books b JOIN publishers p ON p.id=b.publisher_id LEFT JOIN labels l ON l.id=b.label_id
+              WHERE COALESCE(b.isbn13,'')='' AND b.release_date >= '2026-10-01' GROUP BY 1,2 ORDER BY n DESC LIMIT 40"""): print(r)
+          print("書影なしの例")
+          for r in q("""SELECT b.id,p.name pub,COALESCE(l.name,'-') label,b.title,b.release_date,b.has_ebook,b.kindle_checked_at FROM books b JOIN publishers p ON p.id=b.publisher_id LEFT JOIN labels l ON l.id=b.label_id
+              WHERE COALESCE(b.isbn13,'')='' AND b.image_url IS NULL AND b.release_date >= '2026-10-01' ORDER BY b.release_date LIMIT 40"""): print(r)
           PY
