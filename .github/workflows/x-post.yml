@@ -2,8 +2,8 @@ name: X に今日の新刊を投稿
 
 on:
   schedule:
-    # GitHub の予約実行は数時間遅れることがあるため、夜のうちに何回か起動し、
-    # 先に動き出した実行が日本時間 6:00 まで待って投稿する。あとの実行は投稿済みなら何もしない
+    # ふだんは夜の転送（deploy.yml）のあとに起動された実行が 6:00 に投稿する。
+    # 下の予約実行は、夜の転送が止まった日の予備（GitHub の予約実行は7時間以上遅れることがある）
     - cron: "40 15 * * *"  # 日本時間 0:40
     - cron: "40 17 * * *"  # 日本時間 2:40
     - cron: "40 19 * * *"  # 日本時間 4:40
@@ -21,10 +21,19 @@ on:
         description: 投稿先のアカウントだけを確かめる（投稿しない）
         type: boolean
         default: false
+      nightly_day:
+        description: 自動の投稿の続き（自動で使う。手動では空のまま）
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
-  actions: read
+  actions: write
+
+concurrency:
+  group: x-post
+  cancel-in-progress: false
 
 jobs:
   post:
@@ -37,43 +46,62 @@ jobs:
       DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
       SITE_URL: ${{ vars.SITE_URL }}
     steps:
-      - name: ほかの実行の確認
-        id: other
-        if: github.event_name == 'schedule'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      # 自動の投稿（予約実行、または夜の転送のあとに起動された実行）は 6:00 まで待って投稿する。
+      # 1回の実行で待てるのは6時間までなので、5時間を超えて待つときは5時間待ってから続きの実行を起動する。
+      # 同じ日に投稿済みなら何もしない（印は Actions のキャッシュに残す）。実行は1つずつ順に動く（concurrency）
+      - name: 投稿する日
+        id: day
         run: |
-          n=$(gh api "repos/${{ github.repository }}/actions/workflows/x-post.yml/runs?status=in_progress&event=schedule" \
-            --jq "[.workflow_runs[] | select(.id < ${{ github.run_id }})] | length")
-          if [ "$n" -gt 0 ]; then
-            echo "先に動いている実行があるため、この実行では投稿しません"
-            echo "skip=1" >> "$GITHUB_OUTPUT"
+          if [ -n "${{ inputs.nightly_day }}" ]; then
+            echo "day=${{ inputs.nightly_day }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = schedule ]; then
+            echo "day=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
           fi
-      - name: 日本時間 6:00 まで待つ
-        id: wait
-        if: github.event_name == 'schedule' && steps.other.outputs.skip != '1'
-        run: |
-          now=$(date +%s)
-          target=$(TZ=Asia/Tokyo date -d "$(TZ=Asia/Tokyo date +%F) 06:00" +%s)
-          if [ "$now" -lt "$target" ]; then
-            echo "$(( (target - now) / 60 )) 分待ちます"
-            sleep $(( target - now ))
-          fi
-          echo "day=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
       - name: 投稿済みかの確認
         id: done
-        if: github.event_name == 'schedule' && steps.other.outputs.skip != '1'
+        if: steps.day.outputs.day != ''
         uses: actions/cache/restore@v4
         with:
           path: .xposted
-          key: xposted-${{ steps.wait.outputs.day }}
+          key: xposted-${{ steps.day.outputs.day }}
+          lookup-only: true
+      - name: 日本時間 6:00 まで待つ
+        id: wait
+        if: steps.day.outputs.day != '' && steps.done.outputs.cache-hit != 'true'
+        env:
+          DAY: ${{ steps.day.outputs.day }}
+        run: |
+          left=$(( $(TZ=Asia/Tokyo date -d "$DAY 06:00" +%s) - $(date +%s) ))
+          if [ "$left" -gt 18000 ]; then
+            echo "$(( left / 60 )) 分あるため、5時間待ってから続きの実行を起動します"
+            sleep 18000
+            echo "hop=1" >> "$GITHUB_OUTPUT"
+          elif [ "$left" -gt 0 ]; then
+            echo "$(( left / 60 )) 分待ちます"
+            sleep "$left"
+          fi
+      - name: 続きの実行を起動
+        if: steps.wait.outputs.hop == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DAY: ${{ steps.day.outputs.day }}
+        run: gh workflow run x-post.yml --repo "${{ github.repository }}" --ref main -f nightly_day="$DAY"
+      - name: 待っている間に投稿されたかの確認
+        id: done2
+        if: steps.day.outputs.day != '' && steps.done.outputs.cache-hit != 'true' && steps.wait.outputs.hop != '1'
+        uses: actions/cache/restore@v4
+        with:
+          path: .xposted
+          key: xposted-${{ steps.day.outputs.day }}
           lookup-only: true
       - name: 投稿するかどうか
         id: go
         run: |
-          if [ "${{ github.event_name }}" = schedule ] && { [ "${{ steps.other.outputs.skip }}" = 1 ] || [ "${{ steps.done.outputs.cache-hit }}" = true ]; }; then
-            echo "投稿済み、またはほかの実行が投稿するため、ここで終わります"
-          else
+          if [ -z "${{ steps.day.outputs.day }}" ]; then
+            echo "run=1" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.done.outputs.cache-hit }}" = true ] || [ "${{ steps.done2.outputs.cache-hit }}" = true ]; then
+            echo "${{ steps.day.outputs.day }} は投稿済みのため、ここで終わります"
+          elif [ "${{ steps.wait.outputs.hop }}" != 1 ]; then
             echo "run=1" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4
@@ -97,16 +125,16 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
-          POST_DATE: ${{ inputs.date }}
-          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
-          CHECK: ${{ github.event_name == 'workflow_dispatch' && inputs.check && '--check' || '' }}
+          POST_DATE: ${{ inputs.date || steps.day.outputs.day }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.nightly_day == '' && inputs.dry_run && '--dry-run' || '' }}
+          CHECK: ${{ github.event_name == 'workflow_dispatch' && inputs.nightly_day == '' && inputs.check && '--check' || '' }}
         run: python -m newcomics.xpost ${POST_DATE:+--date "$POST_DATE"} $DRY_RUN $CHECK
       - name: 投稿済みの印を残す
-        if: github.event_name == 'schedule' && steps.go.outputs.run == '1'
+        if: steps.day.outputs.day != '' && steps.go.outputs.run == '1'
         run: mkdir -p .xposted && date > .xposted/at
       - name: 投稿済みの印を保存
-        if: github.event_name == 'schedule' && steps.go.outputs.run == '1'
+        if: steps.day.outputs.day != '' && steps.go.outputs.run == '1'
         uses: actions/cache/save@v4
         with:
           path: .xposted
-          key: xposted-${{ steps.wait.outputs.day }}
+          key: xposted-${{ steps.day.outputs.day }}

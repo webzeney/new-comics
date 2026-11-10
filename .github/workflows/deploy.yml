@@ -11,18 +11,23 @@ on:
         options:
           - check
           - deploy
+      nightly_day:
+        description: "夜の転送の続き（自動で使う。手動では空のまま）"
+        required: false
+        default: ""
+        type: string
   workflow_run:
     workflows: ["出版社サイトの取得"]
     types: [completed]
 
 permissions:
   contents: read
-  actions: read
+  actions: write
 
 concurrency:
   # 転送しない実行（push で起きた取得のあとなど）が順番待ちに入り、手動の転送を取り消さないようにする
   # 夜の転送（0:00 まで待つ）は別の組にして、待っている間も手動の転送ができるようにする
-  group: ${{ github.event_name == 'workflow_dispatch' && 'deploy' || github.event.workflow_run.event == 'schedule' && 'deploy-nightly' || format('skip-{0}', github.run_id) }}
+  group: ${{ (github.event_name == 'workflow_dispatch' && inputs.nightly_day == '') && 'deploy' || (github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'schedule') && 'deploy-nightly' || format('skip-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -71,28 +76,50 @@ jobs:
             exit 1
           fi
           echo "失敗したのは出版社の取得だけなので、保存できたデータで転送します"
-      # 夜の転送は日本時間 0:00 にサイトを切り替える。23:40 まで待ってから、最新のコードとデータを取り出し、
-      # Amazon の書影（取得から24時間以内のものだけを使う）と売れ筋順位を取り直してから、0:00 にページを作って転送する
+      # 夜の転送は日本時間 0:00 にサイトを切り替える。GitHub の予約実行は7時間以上遅れることがあるため、取得はお昼すぎから起動し、
+      # 転送は 23:40 まで待つ。1回の実行で待てるのは6時間までなので、5時間を超えて待つときは5時間待ってから続きの実行を起動する。
+      # 23:40 に最新のコードとデータを取り出し、Amazon の書影（取得から24時間以内のものだけを使う）と売れ筋順位を取り直してから、
+      # 0:00 にページを作って転送する。転送のあと、X の投稿（6:00 まで待つ）を起動する
+      - name: 夜の転送の日
+        id: night
+        run: |
+          if [ "${{ github.event_name }}" = workflow_run ] && [ "${{ steps.fetched.outputs.run }}" = 1 ]; then
+            if [ "$(TZ=Asia/Tokyo date +%H)" -ge 12 ]; then day=$(TZ=Asia/Tokyo date -d tomorrow +%F); else day=$(TZ=Asia/Tokyo date +%F); fi
+          elif [ "${{ github.event_name }}" = workflow_dispatch ] && [ -n "${{ inputs.nightly_day }}" ]; then
+            day="${{ inputs.nightly_day }}"
+          else
+            exit 0
+          fi
+          echo "$day 0:00 の転送"
+          echo "day=$day" >> "$GITHUB_OUTPUT"
       - name: 23:40 まで待つ
         id: wait
-        if: github.event_name == 'workflow_run' && steps.fetched.outputs.run == '1'
+        if: steps.night.outputs.day != ''
+        env:
+          DAY: ${{ steps.night.outputs.day }}
         run: |
-          if [ "$(TZ=Asia/Tokyo date +%H)" -ge 12 ]; then
-            day=$(TZ=Asia/Tokyo date -d tomorrow +%F)
-            target=$(( $(TZ=Asia/Tokyo date -d "$day 00:00" +%s) - 1200 ))
-            now=$(date +%s)
-            if [ "$now" -lt "$target" ]; then
-              echo "$(( (target - now) / 60 )) 分待ちます"
-              sleep $(( target - now ))
-            fi
-          else
-            day=$(TZ=Asia/Tokyo date +%F)
+          target=$(( $(TZ=Asia/Tokyo date -d "$DAY 00:00" +%s) - 1200 ))
+          left=$(( target - $(date +%s) ))
+          if [ "$left" -gt 18000 ]; then
+            echo "$(( left / 60 )) 分あるため、5時間待ってから続きの実行を起動します"
+            sleep 18000
+            echo "hop=1" >> "$GITHUB_OUTPUT"
+          elif [ "$left" -gt 0 ]; then
+            echo "$(( left / 60 )) 分待ちます"
+            sleep "$left"
           fi
-          echo "day=$day" >> "$GITHUB_OUTPUT"
+      - name: 続きの実行を起動
+        if: steps.wait.outputs.hop == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DAY: ${{ steps.night.outputs.day }}
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}" --ref main -f mode=deploy -f nightly_day="$DAY"
       - name: 転送するかどうか
         id: go
         run: |
-          if [ "${{ github.event_name }}" = workflow_dispatch ] || [ "${{ steps.fetched.outputs.run }}" = 1 ]; then
+          if [ "${{ github.event_name }}" = workflow_dispatch ] && [ -z "${{ inputs.nightly_day }}" ]; then
+            echo "run=1" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ steps.night.outputs.day }}" ] && [ "${{ steps.wait.outputs.hop }}" != 1 ]; then
             echo "run=1" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4
@@ -120,7 +147,7 @@ jobs:
           FTP_DIR: ${{ secrets.FTP_DIR }}
         run: python -m newcomics.ftpcheck
       - name: Amazon の書影と売れ筋順位の取り直し
-        if: github.event_name == 'workflow_run' && steps.go.outputs.run == '1'
+        if: steps.night.outputs.day != '' && steps.go.outputs.run == '1'
         continue-on-error: true
         timeout-minutes: 18
         env:
@@ -129,9 +156,9 @@ jobs:
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
         run: python -m newcomics.amazonlink --images-only --minutes 16
       - name: 0:00 まで待つ
-        if: github.event_name == 'workflow_run' && steps.go.outputs.run == '1'
+        if: steps.night.outputs.day != '' && steps.go.outputs.run == '1'
         env:
-          DAY: ${{ steps.wait.outputs.day }}
+          DAY: ${{ steps.night.outputs.day }}
         run: |
           target=$(TZ=Asia/Tokyo date -d "$DAY 00:00" +%s)
           now=$(date +%s)
@@ -152,7 +179,7 @@ jobs:
           VC_SEVEN_PID: "892745070"
           PRIVACY_DATE: ${{ vars.PRIVACY_DATE }}
           FEATURE_API: ${{ vars.SITE_URL }}/feature/wp-json/wp/v2/posts
-          DAY: ${{ steps.wait.outputs.day }}
+          DAY: ${{ steps.night.outputs.day }}
         run: python -m newcomics.build --out dist ${DAY:+--today "$DAY"}
       - name: お問い合わせの通知先を設定
         if: steps.go.outputs.run == '1' && env.MODE == 'deploy'
@@ -190,3 +217,9 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
           FTP_DIR: ${{ secrets.FTP_DIR }}
         run: python -m newcomics.ftpsync --local wordpress/new-comics --remote "${FTP_DIR%/}/feature/wp-content/themes/new-comics/" --workers 2 --make-base
+      - name: X の投稿を起動（6:00 まで待って投稿する）
+        if: steps.night.outputs.day != '' && steps.go.outputs.run == '1' && env.MODE == 'deploy'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DAY: ${{ steps.night.outputs.day }}
+        run: gh workflow run x-post.yml --repo "${{ github.repository }}" --ref main -f nightly_day="$DAY"
