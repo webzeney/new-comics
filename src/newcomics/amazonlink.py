@@ -103,7 +103,7 @@ def targets(conn, now, kind, limit):
         order = "b.amazon_checked_at IS NOT NULL"
     return conn.execute(
         f"""SELECT b.id, b.title, b.volume, b.release_date, b.isbn13, s.name AS series FROM books b LEFT JOIN series s ON s.id = b.series_id
-        WHERE {where} ORDER BY ({order}), b.release_date DESC, b.id LIMIT ?""",
+        WHERE {where} ORDER BY {order}, b.release_date DESC, b.id LIMIT ?""",
         (since, limit),
     ).fetchall()
 

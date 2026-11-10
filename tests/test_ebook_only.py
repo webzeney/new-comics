@@ -2,7 +2,9 @@ import sqlite3
 import unittest
 from datetime import date
 
-from newcomics import db
+from datetime import datetime
+
+from newcomics import amazonlink, db, kobo
 from newcomics.build import Site
 
 
@@ -30,6 +32,13 @@ class EbookOnlyTest(unittest.TestCase):
     def test_cover(self):
         self.assertEqual(self.book.image, "https://thumbnail.image.rakuten.co.jp/a.jpg")
         self.assertEqual(self.book.cover_url, "https://books.rakuten.co.jp/rk/abc/")
+
+    def test_targets(self):
+        now = datetime.now(db.JST)
+        self.conn.execute("UPDATE books SET kindle_asin = NULL, kobo_url = NULL")
+        self.assertEqual(len(amazonlink.targets(self.conn, now, "kindle", 10)), 1)
+        self.assertEqual(len(amazonlink.targets(self.conn, now, "paper", 10)), 0)
+        self.assertEqual(len(kobo.targets(self.conn, now, 10)), 1)
 
 
 if __name__ == "__main__":
