@@ -249,7 +249,7 @@ class Site:
         asin = self.amazon_asin(b)
         amazon = self.amazon_url(asin) if asin else self.amazon_url(search=q)
         rakuten = b.rakuten_url or self.rakuten_search_url(q)
-        seven = f"https://7net.omni7.jp/detail_isbn/{b.isbn13}" if b.isbn13 else f"https://7net.omni7.jp/search/?keyword={quote(q)}"
+        seven = self.seven_url(f"https://7net.omni7.jp/detail_isbn/{b.isbn13}" if b.isbn13 else f"https://7net.omni7.jp/search/?keyword={quote(q)}")
         out = [
             {"name": "Amazon", "short": "Amazon", "kind": "amazon", "button": "Amazon", "url": amazon},
             {"name": "楽天ブックス", "short": "楽天", "kind": "rakuten", "button": "楽天ブックス", "url": rakuten},
@@ -258,6 +258,13 @@ class Site:
         if b.seven_ok != 0:
             out.append({"name": "セブンネットショッピング", "short": "セブンネット", "words": ["セブン", "ネット"], "kind": "seven", "button": "セブンネット", "url": seven})
         return out
+
+    def seven_url(self, url):
+        """セブンネットのリンクをバリューコマースの MyLink にする（VC_SID・VC_SEVEN_PID はリンクのアドレスに入る公開の番号）。"""
+        sid, pid = self.env.get("VC_SID"), self.env.get("VC_SEVEN_PID")
+        if not (sid and pid):
+            return url
+        return f"https://ck.jp.ap.valuecommerce.com/servlet/referral?sid={sid}&pid={pid}&vc_url={quote(url, safe='')}"
 
     def ebook_only_stores(self, b):
         """電子版のみの本のボタン（Kindle と楽天Kobo）。紙の本の書店（Amazon の紙の本・楽天ブックス・セブンネット）は出さない。

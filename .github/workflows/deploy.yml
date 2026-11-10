@@ -147,6 +147,9 @@ jobs:
           ADSENSE_CLIENT: ca-pub-7804029286639938
           RAKUTEN_LINK_ID: _RTLink153451
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
+          # バリューコマース（セブンネットの MyLink）のサイト ID とプログラムの番号。リンクのアドレスに入る公開の番号
+          VC_SID: "3787070"
+          VC_SEVEN_PID: "892745070"
           PRIVACY_DATE: ${{ vars.PRIVACY_DATE }}
           FEATURE_API: ${{ vars.SITE_URL }}/feature/wp-json/wp/v2/posts
           DAY: ${{ steps.wait.outputs.day }}

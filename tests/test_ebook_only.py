@@ -37,6 +37,12 @@ class EbookOnlyTest(unittest.TestCase):
         self.conn.execute("UPDATE books SET title = '【アニマルデジタルフォトブック】名前「題」'")
         self.assertEqual(Site(self.conn, date(2026, 11, 10), {}).books, [])
 
+    def test_seven_mylink(self):
+        site = Site(self.conn, date(2026, 11, 10), {"VC_SID": "1", "VC_SEVEN_PID": "2"})
+        self.assertEqual(site.seven_url("https://7net.omni7.jp/detail_isbn/9784088845678"),
+                         "https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=1&pid=2&vc_url=https%3A%2F%2F7net.omni7.jp%2Fdetail_isbn%2F9784088845678")
+        self.assertEqual(self.site.seven_url("https://7net.omni7.jp/x"), "https://7net.omni7.jp/x")
+
     def test_targets(self):
         now = datetime.now(db.JST)
         self.conn.execute("UPDATE books SET kindle_asin = NULL, kobo_url = NULL")
