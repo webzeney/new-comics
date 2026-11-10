@@ -262,6 +262,7 @@ def main(argv=None):
     ap.add_argument("--minutes", type=int, help="使う時間の上限（分）")
     ap.add_argument("--recheck", action="store_true", help="見つからなかった本を、日数にかかわらず探し直す")
     ap.add_argument("--images", action="store_true", help="--isbn-only のあと、書影のアドレスも取り直す")
+    ap.add_argument("--images-only", action="store_true", help="書影のアドレスと売れ筋順位の取り直しだけを行う（夜0時の転送の直前に使う）")
     args = ap.parse_args(argv)
     api = Api()
     if not api.ready():
@@ -271,6 +272,10 @@ def main(argv=None):
     now = datetime.now(db.JST)
     limit = args.minutes * 60 if args.minutes else TIME_LIMIT
     start = time.monotonic()
+    if args.images_only:
+        img = refresh_images(conn, api, start + limit)
+        print(f"Amazon の書影：あり {img['image']}／なし {img['none']}（売れ筋順位あり {img['rank']}）／エラー {img['error']}／時間切れで取り直せなかった {img['left']}（API {api.calls} 回）")
+        return 1 if img["error"] and not (img["image"] + img["none"]) else 0
     isbn = check_isbn(conn, api, isbn_targets(conn, now, args.max_isbn, args.recheck), start + (limit if args.isbn_only else ISBN_TIME))
     rest = conn.execute("SELECT COUNT(*) FROM books WHERE COALESCE(isbn13, '') <> '' AND amazon_isbn_ok IS NULL").fetchone()[0]
     print(f"Amazon の商品ページの確認：ISBN-10 のページあり {isbn['ok']}／別の ASIN で見つかった {isbn['asin']}／見つからない {isbn['missing']}／エラー {isbn['error']}"

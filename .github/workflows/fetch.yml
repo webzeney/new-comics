@@ -2,7 +2,12 @@ name: 出版社サイトの取得
 
 on:
   schedule:
-    - cron: "15 17 * * *"
+    # サイトは日本時間 0:00 に切り替える。GitHub の予約実行は数時間遅れることがあるため、夕方から何回か起動し、
+    # 先に動き出した実行が取得する（あとの実行は、その日の分を取得済みなら何もしない）。転送は deploy.yml が 0:00 まで待って行う
+    - cron: "40 9 * * *"   # 日本時間 18:40
+    - cron: "40 11 * * *"  # 日本時間 20:40
+    - cron: "40 13 * * *"  # 日本時間 22:40
+    - cron: "5 15 * * *"   # 日本時間 0:05（予備）
   workflow_dispatch:
     inputs:
       publisher:
@@ -14,14 +19,60 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: data-update
   cancel-in-progress: false
 
 jobs:
-  fetch:
+  # 予約実行のときは、切り替える日（日本時間の正午より後なら翌日）の分を取得済みかを確かめる
+  gate:
     if: github.event_name != 'push' || contains(github.event.head_commit.message, '[fetch]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.go.outputs.run }}
+      day: ${{ steps.day.outputs.day }}
+    steps:
+      - name: 切り替える日
+        id: day
+        run: |
+          if [ "$(TZ=Asia/Tokyo date +%H)" -ge 12 ]; then
+            echo "day=$(TZ=Asia/Tokyo date -d tomorrow +%F)" >> "$GITHUB_OUTPUT"
+          else
+            echo "day=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
+          fi
+      - name: 取得済みかの確認
+        id: done
+        if: github.event_name == 'schedule'
+        uses: actions/cache/restore@v4
+        with:
+          path: .fetched
+          key: fetched-${{ steps.day.outputs.day }}
+          lookup-only: true
+      - name: 取得するかどうか
+        id: go
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = schedule ]; then
+            if [ "${{ steps.done.outputs.cache-hit }}" = true ]; then
+              echo "${{ steps.day.outputs.day }} の分は取得済みのため、ここで終わります"
+              exit 0
+            fi
+            n=$(gh api "repos/${{ github.repository }}/actions/workflows/fetch.yml/runs?status=in_progress&event=schedule" \
+              --jq "[.workflow_runs[] | select(.id < ${{ github.run_id }})] | length")
+            if [ "$n" -gt 0 ]; then
+              echo "先に動いている取得があるため、ここで終わります"
+              exit 0
+            fi
+          fi
+          echo "run=1" >> "$GITHUB_OUTPUT"
+
+  fetch:
+    needs: gate
+    if: needs.gate.outputs.run == '1'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
@@ -133,6 +184,15 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m newcomics.build --out dist
+      - name: 取得済みの印を残す
+        if: github.event_name == 'schedule'
+        run: mkdir -p .fetched && date > .fetched/at
+      - name: 取得済みの印を保存
+        if: github.event_name == 'schedule'
+        uses: actions/cache/save@v4
+        with:
+          path: .fetched
+          key: fetched-${{ needs.gate.outputs.day }}
       - name: 補完の失敗を知らせる
         if: steps.amazon.outcome == 'failure' || steps.rakutencover.outcome == 'failure' || steps.kobo.outcome == 'failure' || steps.ga.outcome == 'failure'
         run: echo "::warning::Amazon・楽天・Kobo・アナリティクスのどれかが失敗しました（Amazon=${{ steps.amazon.outcome }} 楽天=${{ steps.rakutencover.outcome }} Kobo=${{ steps.kobo.outcome }} アナリティクス=${{ steps.ga.outcome }}）"
