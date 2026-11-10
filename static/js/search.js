@@ -96,7 +96,7 @@ $('[data-field="title"]', li).textContent = item.t;
 var cover = $('.bookrow__image', li);
 if (cover && item.i) { var img = document.createElement('img'); img.src = item.i; img.alt = item.ia || ''; img.className = 'cover_photo'; img.loading = 'lazy'; cover.textContent = ''; cover.appendChild(img); }
 $('[data-field="meta"]', li).textContent = item.m;
-if (!item.e) $('[data-field="ebook"]', li).remove();
+if (!item.e || item.eo) $('[data-field="ebook"]', li).remove();
 $$('[data-store]', li).forEach(function (a) { var url = item.s && item.s[a.dataset.store]; if (url) { a.href = url; } else { a.remove(); } });
 return li;
 }

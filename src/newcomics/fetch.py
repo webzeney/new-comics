@@ -5,6 +5,7 @@ import traceback
 from datetime import datetime
 
 from . import db, publishers, store
+from .normalize import NOT_COMIC
 from .fetchers import FETCHERS
 from .http import PoliteClient
 
@@ -63,6 +64,8 @@ def run_one(conn, client, module, months, log):
         counts = {"new": 0, "updated": 0, "same": 0}
         unknown = set()
         for rec in records:
+            if NOT_COMIC.search(rec.title_raw or ""):
+                continue
             pid = publisher_id
             if pid is None:
                 slug, name, listed = publishers.resolve(rec.publisher_name)

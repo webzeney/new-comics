@@ -16,6 +16,8 @@ VOLUME_PATTERNS = [
 ]
 EDITION_STRIP = re.compile(r"[\s　]*[（(【\[]?[^（(【\[）)】\]\s　]*(特装版|限定版|特別版|豪華版).*$")
 SPACE = re.compile(r"[\s　]+")
+# 漫画ではない本（出版社の漫画の一覧に載っているデジタル写真集など）。取り込まず、取り込み済みの本も表示しない（2026-11-10 運営者の判断）
+NOT_COMIC = re.compile(r"デジタルフォトブック|デジタル写真集")
 
 
 def nfkc(text):

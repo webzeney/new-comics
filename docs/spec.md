@@ -51,6 +51,8 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
   - 楽天ブックス：楽天の商品ページ。なければ楽天の検索結果のページ（楽天アフィリエイトのリンクにする）
   - セブンネット：ISBN の商品ページ。ISBN がなければ検索結果のページ。以前の確認でセブンネットにないと分かった本（`books.seven_ok = 0`）にはボタンを出さない
 - 電子書籍のボタン（Kindle・楽天Kobo）：電子版ありの本に出す。電子版の有無が分からない本は、見つかったストアだけ出す
+- 電子版のみの本（`books.ebook_only`）：購入ボタンは Kindle と楽天Kobo だけ（見つかるまで検索結果のページ）。書影は楽天Kobo の書影（詳細ページのメインは Kindle版の書影）、紹介文は楽天Kobo の紹介文。照らし合わせではほかの本より先に探し、見つかるまで毎晩探し直す
+- 漫画ではない本（デジタル写真集など。`normalize.NOT_COMIC`）は取り込まず、表示もしない
 - 「まとめてAmazonのカートへ」：Amazon のボタンと同じ ASIN を使う
 
 ## その日の新刊の並び順
@@ -68,6 +70,7 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
 | `asin`・`amazon_isbn_ok` | Amazon の紙の本の ASIN と、ISBN-10 の商品ページがあるか | amazonlink |
 | `amazon_image_url`・`amazon_rank`・`amazon_image_at` | Amazon の書影のアドレス・売れ筋順位と取得日時（24時間を過ぎたものは消す） | amazonlink |
 | `kindle_asin`・`kobo_url` | Kindle版・楽天Kobo版 | amazonlink・kobo |
+| `ebook_only` | 電子版のみの本（白泉社のシリーズ名「電子版のみ」） | fetch |
 
 使っていない列（`seven_checked_at`・`rakuten_code`・`series.latest_volume` など）は、データベースの作り直しを避けるため残している。
 

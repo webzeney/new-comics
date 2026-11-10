@@ -22,7 +22,7 @@ from xml.sax.saxutils import escape as xml_escape
 import holidays as holidays_lib
 
 from . import db, yomi
-from .normalize import isbn13_to_10, series_name
+from .normalize import NOT_COMIC, isbn13_to_10, series_name
 from .render import Writer, page_defaults
 
 DOWS = ["月", "火", "水", "木", "金", "土", "日"]
@@ -85,7 +85,7 @@ PUBLISHER_ORDER = {name: i for i, name in enumerate([
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at", "caption", "amazon_rank",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at", "caption", "amazon_rank", "ebook_only",
     )
 
     def __init__(self, row, tags):
@@ -112,17 +112,21 @@ class Book:
         self.amazon_rank = row["amazon_rank"] if "amazon_rank" in row.keys() else None
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
+        self.ebook_only = bool(row["ebook_only"]) if "ebook_only" in row.keys() and row["ebook_only"] else False
+        self.kobo_url = row["kobo_url"] if "kobo_url" in row.keys() else None
         image = row["image_url"] if "image_url" in row.keys() else None
         # 楽天の書影は、楽天の商品ページへのリンクがあるときだけ使う（書籍詳細ページのメインの書影のリンク先になる。出版社サイトの本は楽天へのリンクがあるときだけ書影を出す）
         if self.origin == "rakuten":
             self.image, self.cover_url = image, (self.rakuten_url if image else None)
+        elif self.ebook_only and image and self.kobo_url:
+            # 電子版のみの本は楽天Kobo の書影と商品ページ（2026-11-10 運営者の判断）
+            self.image, self.cover_url = image, self.kobo_url
         elif image and self.rakuten_url:
             self.image, self.cover_url = image, self.rakuten_url
         else:
             self.image, self.cover_url = None, None
         self.seven_ok = row["seven_ok"] if "seven_ok" in row.keys() else None
         self.title_kana = row["title_kana"] if "title_kana" in row.keys() else None
-        self.kobo_url = row["kobo_url"] if "kobo_url" in row.keys() else None
         self.kindle_asin = row["kindle_asin"] if "kindle_asin" in row.keys() else None
         self.first_seen = row["first_seen_at"]
         self.updated = row["updated_at"] if "updated_at" in row.keys() else None
@@ -148,6 +152,7 @@ class Site:
             "FROM books b JOIN publishers p ON p.id = b.publisher_id LEFT JOIN labels l ON l.id = b.label_id "
             "WHERE (l.is_adult IS NULL OR l.is_adult = 0) AND p.is_adult = 0"
         ).fetchall()
+        rows = [r for r in rows if not NOT_COMIC.search(r["title"])]
         self.books = [Book(r, tag_rows[r["id"]]) for r in rows]
         # 楽天の検索ページを楽天アフィリエイトのリンクにするための ID（取り込んだ本のリンクで一番多いもの）
         hgc = Counter(m.group(1) for m in (AFFILIATE_HGC.match(r["rakuten_url"] or "") for r in rows) if m)
@@ -195,7 +200,10 @@ class Site:
         return f"{root}book/{b.key}/"
 
     def amazon_asin(self, b):
-        """Amazon の紙の本の ASIN。ISBN-10 の商品ページがないと分かった本は、照らし合わせで見つけた ASIN にする。"""
+        """Amazon の紙の本の ASIN。ISBN-10 の商品ページがないと分かった本は、照らし合わせで見つけた ASIN にする。
+        電子版のみの本には紙の本がないので None（まとめてカートに入れる本にもしない）。"""
+        if b.ebook_only:
+            return None
         if b.isbn13 and b.amazon_isbn_ok == 0:
             return b.asin or None
         return isbn13_to_10(b.isbn13) or b.asin or None
@@ -217,7 +225,7 @@ class Site:
     def main_cover(self, b):
         """書籍詳細ページのメインの書影とリンク先。Amazon の書影（取得から24時間以内）があれば Amazon の商品ページへ、
         なければ楽天の書影と楽天の商品ページ。Amazon の書影はここでだけ使う（一覧などは楽天の書影のまま）。"""
-        asin = self.amazon_asin(b)
+        asin = b.kindle_asin if b.ebook_only else self.amazon_asin(b)
         if b.amazon_image and asin and b.amazon_image_at:
             try:
                 fresh = datetime.now(db.JST) - datetime.fromisoformat(b.amazon_image_at) < timedelta(hours=AMAZON_IMAGE_HOURS)
@@ -232,6 +240,8 @@ class Site:
         return {"tag": self.env.get("AMAZON_TAG") or ""}
 
     def stores(self, b):
+        if b.ebook_only:
+            return self.ebook_only_stores(b)
         q = b.isbn13 or b.title
         # ISBN が分かる本は Amazon・セブンネットとも商品ページへ（Amazon に ISBN-10 のページがない本は、ISBN-13 で見つけた ASIN。
         # それもなければ ISBN の検索ページ）。ISBN が分からない本は、Amazon の照らし合わせで見つかった ASIN、
@@ -249,13 +259,24 @@ class Site:
             out.append({"name": "セブンネットショッピング", "short": "セブンネット", "words": ["セブン", "ネット"], "kind": "seven", "button": "セブンネット", "url": seven})
         return out
 
+    def ebook_only_stores(self, b):
+        """電子版のみの本のボタン（Kindle と楽天Kobo）。紙の本の書店（Amazon の紙の本・楽天ブックス・セブンネット）は出さない。
+        照らし合わせで見つかった本は商品ページ、まだ見つかっていない本は検索結果のページ。"""
+        q = unicodedata.normalize("NFKC", b.title)
+        kindle = self.amazon_url(b.kindle_asin) if b.kindle_asin else self.amazon_url(search=q, index="digital-text")
+        kobo = b.kobo_url or self.rakuten_search_url(q, "&g=101")
+        return [
+            {"name": "Kindle", "short": "Kindle", "kind": "kindle", "button": "Kindle", "url": kindle},
+            {"name": "楽天Kobo", "short": "楽天Kobo", "words": ["楽天", "Kobo"], "kind": "kobo", "button": "楽天Kobo", "url": kobo},
+        ]
+
     def ebook_stores(self, b):
         """電子版のボタン。電子版ありと分かっている本には Kindle と楽天Kobo、
         電子版の有無が分からない本には、照らし合わせで見つかったストアだけを出す（2026-11-06 運営者の判断）。
 
         Kindle・楽天Kobo とも、照らし合わせで見つかった本は商品ページ、それ以外は検索結果のページ。
         """
-        if b.has_ebook is False:
+        if b.has_ebook is False or b.ebook_only:
             return []
         if b.has_ebook is None and not (b.kindle_asin or b.kobo_url):
             return []
@@ -291,7 +312,7 @@ class Site:
 
     def row(self, root, b, keys=("author", "label", "price")):
         return {
-            "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook,
+            "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook and not b.ebook_only,
             "first": b.is_first, "meta": self.meta(b, keys), "stores": self.stores(b), "image": b.image, "alt": self.alt(b),
             "asin": self.amazon_asin(b),
         }
@@ -588,7 +609,7 @@ def build_top(site, w):
                 bubble, kind = "完結", "final"
             label_price = "・".join(x for x in (b.label, site.price_text(b)) if x)
             cards.append({
-                "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "ebook": b.has_ebook,
+                "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "ebook": b.has_ebook and not b.ebook_only,
                 "author": site.author_text(b), "label_price": label_price, "bubble": bubble, "bubble_kind": kind, "stores": site.stores(b),
                 "image": b.image, "alt": site.alt(b),
             })
@@ -737,7 +758,7 @@ def calendar_context(site, root, y, m, months):
 
 def compact_row(site, root, b):
     stores = {s["kind"]: s["url"] for s in site.stores(b)}
-    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook), "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
+    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook) and not b.ebook_only, "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
 
 
 # ---- 日別一覧 ----
@@ -1036,7 +1057,7 @@ def build_books(site, w):
             "crumbs": crumbs(root, *crumb),
             "book": {
                 "bubble": bubble, "on_sale": on_sale, "release_iso": b.release.isoformat() if b.release else None, "pub": b.publisher, "pub_url": f"{root}publisher/{b.publisher_slug}/",
-                "label": b.label, "label_url": f"{root}label/{b.label_id}/" if b.label_id else "", "ebook": b.has_ebook,
+                "label": b.label, "label_url": f"{root}label/{b.label_id}/" if b.label_id else "", "ebook": b.has_ebook, "ebook_only": b.ebook_only,
                 "title_main": main, "volume": vol, "authors": authors_ctx(root, b),
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
                 "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "ebook_stores": site.ebook_stores(b), "isbn": b.isbn13,
@@ -1476,7 +1497,7 @@ def build_search(site, w):
         stores = {s["kind"]: s["url"] for s in site.stores(b)}
         item = {
             "t": b.title, "p": b.publisher, "l": b.label or "", "a": site.author_text(b), "d": b.release.isoformat() if b.release else "",
-            "e": bool(b.has_ebook), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "ia": site.alt(b), "sr": b.series_id,
+            "e": bool(b.has_ebook), **({"eo": 1} if b.ebook_only else {}), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "ia": site.alt(b), "sr": b.series_id,
         }
         if b.id in words:
             item["k"] = words[b.id]
