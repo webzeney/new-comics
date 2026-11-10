@@ -158,3 +158,5 @@ class Writer:
         if dest.exists():
             shutil.rmtree(dest)
         shutil.copytree(STATIC, dest)
+        # ファビコンはブラウザがサイトの一番上（/favicon.ico）にも取りに来るので、一番上にも置く
+        shutil.copyfile(STATIC / "img" / "favicon.ico", self.out / "favicon.ico")

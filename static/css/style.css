@@ -20,6 +20,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 ========================================================================== */
 .sidemenu{flex:1 1 220px;max-width:100%;background:#FFFFFF;border-radius:20px;padding:28px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px}
 .sidemenu__logo{display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;color:#222222}
+.sidemenu__mark{display:block;width:180px;height:180px}
 .sidemenu__name{font-size:22px;font-weight:900;letter-spacing:0.04em;line-height:1.2}
 .sidemenu__en{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:11px;letter-spacing:0.24em;line-height:1}
 .sidemenu__toggle{display:none;align-items:center;justify-content:center;gap:8px;min-height:44px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
@@ -615,6 +616,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 スマホ（幅720px以下）
 ========================================================================== */
 @media (max-width: 720px){
+.sidemenu__mark{width:160px;height:160px}
 .weekstrip{gap:4px}
 .weekstrip__day{padding:8px 2px;border-radius:10px}
 .weekstrip__num{font-size:20px}
