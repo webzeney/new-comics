@@ -2,7 +2,12 @@ name: X に今日の新刊を投稿
 
 on:
   schedule:
-    - cron: "53 21 * * *"  # 日本時間 6:53（実際の投稿は 7 時ごろ）
+    # GitHub の予約実行は数時間遅れることがあるため、夜のうちに何回か起動し、
+    # 先に動き出した実行が日本時間 6:00 まで待って投稿する。あとの実行は投稿済みなら何もしない
+    - cron: "40 15 * * *"  # 日本時間 0:40
+    - cron: "40 17 * * *"  # 日本時間 2:40
+    - cron: "40 19 * * *"  # 日本時間 4:40
+    - cron: "40 21 * * *"  # 日本時間 6:40（予備）
   workflow_dispatch:
     inputs:
       date:
@@ -17,17 +22,14 @@ on:
         type: boolean
         default: false
 
-concurrency:
-  group: x-post
-  cancel-in-progress: false
-
 permissions:
   contents: read
+  actions: read
 
 jobs:
   post:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 350
     env:
       PYTHONPATH: src
       NEWCOMICS_DB: ${{ github.workspace }}/data/newcomics.sqlite
@@ -35,17 +37,61 @@ jobs:
       DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
       SITE_URL: ${{ vars.SITE_URL }}
     steps:
+      - name: ほかの実行の確認
+        id: other
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          n=$(gh api "repos/${{ github.repository }}/actions/workflows/x-post.yml/runs?status=in_progress&event=schedule" \
+            --jq "[.workflow_runs[] | select(.id < ${{ github.run_id }})] | length")
+          if [ "$n" -gt 0 ]; then
+            echo "先に動いている実行があるため、この実行では投稿しません"
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          fi
+      - name: 日本時間 6:00 まで待つ
+        id: wait
+        if: github.event_name == 'schedule' && steps.other.outputs.skip != '1'
+        run: |
+          now=$(date +%s)
+          target=$(TZ=Asia/Tokyo date -d "$(TZ=Asia/Tokyo date +%F) 06:00" +%s)
+          if [ "$now" -lt "$target" ]; then
+            echo "$(( (target - now) / 60 )) 分待ちます"
+            sleep $(( target - now ))
+          fi
+          echo "day=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
+      - name: 投稿済みかの確認
+        id: done
+        if: github.event_name == 'schedule' && steps.other.outputs.skip != '1'
+        uses: actions/cache/restore@v4
+        with:
+          path: .xposted
+          key: xposted-${{ steps.wait.outputs.day }}
+          lookup-only: true
+      - name: 投稿するかどうか
+        id: go
+        run: |
+          if [ "${{ github.event_name }}" = schedule ] && { [ "${{ steps.other.outputs.skip }}" = 1 ] || [ "${{ steps.done.outputs.cache-hit }}" = true ]; }; then
+            echo "投稿済み、またはほかの実行が投稿するため、ここで終わります"
+          else
+            echo "run=1" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.go.outputs.run == '1'
       - name: データベースの取り出し（非公開リポジトリ）
+        if: steps.go.outputs.run == '1'
         run: |
           git clone --quiet --depth 1 "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
           test -f data/newcomics.sqlite
       - uses: actions/setup-python@v5
+        if: steps.go.outputs.run == '1'
         with:
           python-version: "3.12"
           cache: pip
       - run: python -m pip install -r requirements.txt
+        if: steps.go.outputs.run == '1'
       - name: 投稿
+        if: steps.go.outputs.run == '1'
         env:
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
@@ -55,3 +101,12 @@ jobs:
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
           CHECK: ${{ github.event_name == 'workflow_dispatch' && inputs.check && '--check' || '' }}
         run: python -m newcomics.xpost ${POST_DATE:+--date "$POST_DATE"} $DRY_RUN $CHECK
+      - name: 投稿済みの印を残す
+        if: github.event_name == 'schedule' && steps.go.outputs.run == '1'
+        run: mkdir -p .xposted && date > .xposted/at
+      - name: 投稿済みの印を保存
+        if: github.event_name == 'schedule' && steps.go.outputs.run == '1'
+        uses: actions/cache/save@v4
+        with:
+          path: .xposted
+          key: xposted-${{ steps.wait.outputs.day }}
