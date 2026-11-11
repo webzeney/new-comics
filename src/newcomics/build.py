@@ -22,6 +22,7 @@ from xml.sax.saxutils import escape as xml_escape
 import holidays as holidays_lib
 
 from . import db, yomi
+from . import intro
 from .normalize import NOT_COMIC, isbn13_to_10, series_name
 from .render import Writer, page_defaults
 
@@ -35,6 +36,9 @@ UPDATE_KINDS = [
 ]
 TOP_BOOKS = 20  # PC は幅に合わせて「1段の数×2」だけ表示する（JavaScript で調整）
 TOP_BOOKS_BASE = 8  # スマホと JavaScript が動かないときに表示する数
+# 一覧ページの説明の文章で使う、タグごとの呼び方
+TAG_NOUN = {"new-series": "新シリーズの1巻", "final": "完結巻", "special-edition": "特装版・限定版", "ebook": "電子版も同時に配信される新刊"}
+
 TAG_INFO = {
     "new-series": ("新シリーズ1巻", "シリーズの1巻として発売される新刊です。"),
     "final": ("完結巻", "最終巻・完結巻として発売される新刊です。"),
@@ -741,6 +745,7 @@ def calendar_context(site, root, y, m, months):
     ctx = {
         "crumbs": crumbs(root, ("新刊カレンダー", f"{root}calendar/"), (f"{y}年{m}月", None)),
         "month": {"no": m, "title": f"{y}年{m}月の漫画新刊カレンダー", "lead": f"{m}月に発売される漫画・コミックの新刊は{total:,}点。日付を選ぶと、その日の新刊が見られます。"},
+        "intro": intro.month(y, m, [b for v in days.values() for b in v]),
         "month_nav": nav,
         "stats": {
             "total": f"{total:,}", "active_days": len(active),
@@ -788,6 +793,7 @@ def build_dates(site, w):
             "groups": [{"name": n, "books": [dict(site.row(root, b, ("author", "price")), label=b.label or n) for b in g]} for n, g in groups.items()],
             "cart": site.cart(),
             "calendar_url": f"{root}calendar/{d.year}/{d.month:02d}/",
+            "intro": intro.day(d, books, site.today),
         }
         page = page_defaults(
             title=f"{d.year}年{d.month}月{d.day}日（{dow(d)}）発売の漫画・コミック新刊{len(books)}点｜{SITE_NAME}",
@@ -835,6 +841,7 @@ def build_today(site, w):
         "date_url": f"{root}date/{d.isoformat()}/" if books else None,
         "week_url": f"{root}week/",
         "cart": site.cart(),
+        "intro": intro.day(d, books, site.today),
     }
     page = page_defaults(
         # 中身が毎日変わるページなので、タイトルと説明文には日付・点数を入れない（検索結果に古い日付が残らないように）
@@ -871,6 +878,7 @@ def build_week(site, w):
         "stats": {"total": total, "first": first, "peak": peak["md"] if peak["count"] else "－", "peak_dow": f"（{peak['dow']}）" if peak["count"] else ""},
         "days": days,
         "per_day": WEEK_DAY_BOOKS,
+        "intro": intro.week(start, end, [(start + timedelta(days=i), site.by_date.get(start + timedelta(days=i), [])) for i in range(7)]),
         "today_url": f"{root}today/",
         "calendar_url": f"{root}calendar/{site.today.year}/{site.today.month:02d}/",
         "cart": site.cart(),
@@ -1134,6 +1142,7 @@ def build_series(site, w):
                 "meta": lt_meta, "stores": site.stores(latest), "image": latest.image, "alt": site.alt(latest),
             },
             "fav": {"id": sid, "name": info["name"], "url": f"/series/{sid}/"},
+            "intro": intro.series(info["name"], vols, latest, status, site.today, latest.authors, fc if status != "完結" else None),
             "feed_url": f"{root}series/{sid}/feed.xml",
             "ical": calendar_links(site, sid),
             "forecast": fc if status != "完結" else None,
@@ -1170,9 +1179,10 @@ def listing_months(site, root, books, keys):
     return out
 
 
-def listing_ctx(site, root, books, keys, crumb, listing, label_links=(), others=None):
+def listing_ctx(site, root, books, keys, crumb, listing, label_links=(), others=None, subject=None):
     """出版社・レーベル・タグ・著者のページ（listing.html）に渡す値。"""
     return {
+        "intro": intro.listing(subject, books, site.today, listing["kind"]) if subject else "",
         "crumbs": crumb, "listing": listing, "label_links": list(label_links), "others": others,
         "months": listing_months(site, root, books, keys),
         "past": listing_past(site, root, books, keys),
@@ -1231,6 +1241,7 @@ def build_listings(site, w):
             {"en": "PUBLISHER", "title": f"{p['name']}の新刊発売予定", "lead": None, "kind": "publisher", "final_badge": False},
             label_links=[{"name": n, "url": f"{root}label/{i}/"} for n, i in labels.items()],
             others={"title": "ほかの出版社の新刊", "links": [{"name": o["name"], "url": f"{root}publisher/{o['slug']}/"} for o in site.publishers if o["name"] != p["name"]]},
+            subject=p["name"],
         )
         page = page_defaults(title=f"{p['name']}の漫画新刊発売予定｜{SITE_NAME}", description=f"{p['name']}から発売される漫画（コミック）の新刊を、発売日順に紹介しています。", menu="publisher", lastmod=lastmod(site, books))
         w.write(f"publisher/{p['slug']}/index.html", "listing.html", page, **ctx)
@@ -1244,6 +1255,7 @@ def build_listings(site, w):
             site, root, books, ("author", "price"),
             crumbs(root, ("レーベルから探す", f"{root}label/"), (l["pub"], f"{root}publisher/{l['slug']}/"), (l["name"], None)),
             {"en": "LABEL", "title": f"{l['name']}の新刊発売予定", "lead": None, "kind": "label", "final_badge": False},
+            subject=f"{l['pub']}の{l['name']}",
         )
         page = page_defaults(title=f"{l['name']}（{l['pub']}）の漫画新刊発売予定｜{SITE_NAME}", description=f"{l['pub']}のレーベル「{l['name']}」から発売される漫画の新刊の発売予定と、これまでに発売された本をまとめています。", menu="label", lastmod=lastmod(site, books))
         w.write(f"label/{l['id']}/index.html", "listing.html", page, **ctx)
@@ -1256,6 +1268,7 @@ def build_listings(site, w):
             site, root, books, ("author", "label", "price"),
             crumbs(root, ("タグ", f"{root}tag/"), (f"#{name}", None)),
             {"en": "TAG", "title": f"#{name}の新刊発売予定", "lead": lead, "kind": "tag", "final_badge": slug == "final"},
+            subject=TAG_NOUN.get(slug, name),
         )
         page = page_defaults(title=f"#{name}の漫画新刊発売予定｜{SITE_NAME}", description=lead, tag=f"tag:{slug}", lastmod=lastmod(site, books))
         w.write(f"tag/{slug}/index.html", "listing.html", page, **ctx)
@@ -1303,6 +1316,7 @@ def build_authors(site, w):
             site, root, books, ("label", "price"),
             crumbs(root, (f"{name}", None)),
             {"en": "AUTHOR", "title": f"{name}の新刊発売予定", "lead": f"{name}さんが関わる漫画の新刊の発売予定と、これまでに発売された本をまとめています。", "kind": "author", "final_badge": False},
+            subject=f"{name}さん",
         )
         page = page_defaults(title=f"{name}の漫画新刊発売予定｜{SITE_NAME}", description=f"{name}さんの漫画（コミック）の新刊の発売予定と、これまでに発売された本をまとめています。", lastmod=lastmod(site, books))
         w.write(f"author/{k}/index.html", "listing.html", page, **ctx)

@@ -26,6 +26,7 @@
 <span class="stat__value"><span class="stat__num">{{ stats.publishers }}</span><span class="stat__unit">社</span></span>
 </div>
 </div>
+{% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
 <div class="filter">
 <span class="filter__label">出版社で絞り込む</span>
 <button type="button" aria-pressed="true" class="chip" data-pub="">すべて<span class="chip__count">{{ stats.total }}</span></button>
