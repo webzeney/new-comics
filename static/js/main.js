@@ -172,11 +172,12 @@ var cover = $('.bookrow__image', li);
 if (cover && b.i) { var img = document.createElement('img'); img.src = b.i; img.alt = b.ia || ''; img.className = 'cover_photo'; img.loading = 'lazy'; cover.textContent = ''; cover.appendChild(img); }
 $('[data-field="meta"]', li).textContent = b.meta;
 if (!b.ebook) $('[data-field="ebook"]', li).remove();
+if (!b.eo) $('[data-field="ebookonly"]', li).remove();
 if (!b.first) $('[data-field="first"]', li).remove();
 $$('[data-store]', li).forEach(function (a) { var url = b.stores[a.dataset.store]; if (url) { a.href = url; } else { a.remove(); } });
 var pick = $('[data-cart-pick]', li);
 var asin = (b.stores.amazon || '').match(/\/dp\/([0-9A-Z]{10})/);
-if (asin) { pick.value = asin[1]; pick.setAttribute('aria-label', (b.ia || b.title) + 'をカートに入れる本に選ぶ'); } else { pick.parentNode.remove(); }
+if (asin) { pick.value = asin[1]; pick.setAttribute('aria-label', (b.ia || b.title) + 'をカートに入れる本に選ぶ'); } else { var none = document.createElement('span'); none.className = 'pick pick--none'; none.setAttribute('aria-hidden', 'true'); pick.parentNode.replaceWith(none); }
 return li;
 }
 

@@ -323,7 +323,7 @@ class Site:
 
     def row(self, root, b, keys=("author", "label", "price")):
         return {
-            "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook and not b.ebook_only,
+            "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook and not b.ebook_only, "eo": b.ebook_only,
             "first": b.is_first, "meta": self.meta(b, keys), "stores": self.stores(b), "image": b.image, "alt": self.alt(b),
             "asin": self.amazon_asin(b),
         }
@@ -620,7 +620,7 @@ def build_top(site, w):
                 bubble, kind = "完結", "final"
             label_price = "・".join(x for x in (b.label, site.price_text(b)) if x)
             cards.append({
-                "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "ebook": b.has_ebook and not b.ebook_only,
+                "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "ebook": b.has_ebook and not b.ebook_only, "eo": b.ebook_only,
                 "author": site.author_text(b), "label_price": label_price, "bubble": bubble, "bubble_kind": kind, "stores": site.stores(b),
                 "image": b.image, "alt": site.alt(b),
             })
@@ -770,7 +770,7 @@ def calendar_context(site, root, y, m, months):
 
 def compact_row(site, root, b):
     stores = {s["kind"]: s["url"] for s in site.stores(b)}
-    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook) and not b.ebook_only, "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
+    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook) and not b.ebook_only, "eo": b.ebook_only, "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
 
 
 # ---- 日別一覧 ----

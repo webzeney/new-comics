@@ -18,7 +18,7 @@
 <div class="book__info">
 <div class="book__tags">
 <a href="{{ book.pub_url }}" class="tag_link">{{ book.pub }}</a>
-{% if book.label %}<a href="{{ book.label_url }}" class="tag_link">{{ book.label }}</a>{% endif %}
+{% if book.label %}<a href="{{ book.label_url }}" class="tag_link{% if book.ebook_only and book.label == '電子版のみ' %} tag_link--ebookonly{% endif %}">{{ book.label }}</a>{% endif %}
 {% if book.ebook and not book.ebook_only %}<span class="tag_badge">電子版あり</span>{% endif %}
 </div>
 <div class="book__titles">
