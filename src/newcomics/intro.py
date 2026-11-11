@@ -4,7 +4,6 @@
 紹介文やあらすじなど、ほかのサイトの文章は使わない。
 """
 from collections import Counter
-from datetime import date
 
 from .normalize import series_name
 
@@ -74,13 +73,13 @@ def day(d, books, today):
     """日ごと・今日発売のページ。books はその日の本（並び順のまま）。"""
     if not books:
         return ""
-    verb = "発売された" if d < today else "発売される"
     pubs = Counter(b.publisher for b in books)
-    s = [f"{_md(d)}に{verb}漫画・コミックの新刊は{len(books)}点です。"]
+    # 点数は見出しの下に出ているので、ここでは出版社から書き始める
+    s = []
     if len(pubs) > 1:
-        s.append(f"{len(pubs)}社から発売され、点数が多いのは{_top(pubs)}です。")
+        s.append(f"この日は{len(pubs)}社から{len(books)}点が発売され、点数が多いのは{_top(pubs)}です。")
     else:
-        s.append(f"すべて{next(iter(pubs))}の本です。")
+        s.append(f"この日の新刊は、すべて{next(iter(pubs))}の本です。")
     s.append(_first_final(books))
     s.append(_ebook(books))
     return "".join(x for x in s if x)
@@ -124,7 +123,7 @@ def listing(subject, books, today, kind):
         nxt = upcoming[0].release
         n_next = sum(1 for b in upcoming if b.release == nxt)
         last = upcoming[-1].release
-        s.append(f"これから発売が予定されている{noun}は{len(upcoming)}点です（{last.year}年{last.month}月発売の分まで）。")
+        s.append(f"これから発売が予定されている{noun}は、{last.year}年{last.month}月までに{len(upcoming)}点です。")
         s.append(f"次の発売日は{_md(nxt)}で、{_count(_names([b for b in upcoming if b.release == nxt]), n_next)}が出ます。")
     elif past:
         s.append(f"これから発売される{noun}は、今のところ登録されていません。")
