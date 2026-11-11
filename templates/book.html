@@ -57,7 +57,7 @@
 <a href="{{ book.follow.google }}" class="follow__button follow__button--light" target="_blank" rel="noopener" data-subscribe="google" data-subscribe-endpoint="{{ book.follow.endpoint }}">Googleカレンダーで受け取る</a>
 </div>
 {% if book.gcal %}<p class="follow__single">この巻の発売日だけ追加する：<a href="{{ book.gcal }}" target="_blank" rel="noopener">Googleカレンダー</a>／<button type="button" class="follow__single_button" data-ics-name="{{ book.ics_name }}" data-ics-start="{{ book.ics_date }}" data-ics-end="{{ book.ics_end }}" data-ics-file="{{ book.isbn or 'release' }}.ics">iPhone・その他</button></p>{% endif %}
-<p class="x_follow"><span class="x_follow__text">毎朝7時、今日の新刊をXでもお知らせ</span><a href="{{ site.x.url }}" class="x_follow__link" target="_blank" rel="noopener">{{ site.x.handle }} をフォロー</a></p>
+<p class="x_follow"><span class="x_follow__text">毎朝6時、今日の新刊をXでもお知らせ</span><a href="{{ site.x.url }}" class="x_follow__link" target="_blank" rel="noopener">{{ site.x.handle }} をフォロー</a></p>
 </div>
 {% elif book.gcal %}
 <div class="calendar_add">
@@ -66,7 +66,7 @@
 <a href="{{ book.gcal }}" class="chip_link" target="_blank" rel="noopener">Googleカレンダー</a>
 <button type="button" class="chip_link chip_link--button" data-ics-name="{{ book.ics_name }}" data-ics-start="{{ book.ics_date }}" data-ics-end="{{ book.ics_end }}" data-ics-file="{{ book.isbn or 'release' }}.ics">iPhone・その他（.ics）</button>
 </div>
-<p class="x_follow"><span class="x_follow__text">毎朝7時、今日の新刊をXでもお知らせ</span><a href="{{ site.x.url }}" class="x_follow__link" target="_blank" rel="noopener">{{ site.x.handle }} をフォロー</a></p>
+<p class="x_follow"><span class="x_follow__text">毎朝6時、今日の新刊をXでもお知らせ</span><a href="{{ site.x.url }}" class="x_follow__link" target="_blank" rel="noopener">{{ site.x.handle }} をフォロー</a></p>
 </div>
 {% endif %}
 {% if book.ebook_stores %}
