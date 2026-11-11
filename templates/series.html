@@ -42,6 +42,7 @@
 {% endif %}
 </div>
 {% if forecast %}<p class="series__note">次巻予測は過去の発売間隔（平均約<span class="en">{{ forecast.interval }}</span>か月）からの目安です。</p>{% endif %}
+{% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
 </section>
 <section aria-labelledby="latest-title" class="panel">
 <div class="latest__head">

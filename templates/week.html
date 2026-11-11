@@ -25,6 +25,7 @@
 <span class="stat__value stat__value--loose"><span class="stat__num">{{ stats.peak }}</span><span class="stat__unit">{{ stats.peak_dow }}</span></span>
 </div>
 </div>
+{% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
 <nav aria-label="今週の発売日" class="weekstrip">
 {% for d in days %}
 {% if d.count %}

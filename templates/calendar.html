@@ -26,6 +26,7 @@
 <span class="stat__value stat__value--loose"><span class="stat__num">{{ stats.peak_date }}</span><span class="stat__unit">{{ stats.peak_suffix }}</span></span>
 </div>
 </div>
+{% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
 <div class="filter">
 <span class="filter__label">出版社で絞り込む</span>
 <button type="button" aria-pressed="true" class="chip" data-pub="">すべて</button>
