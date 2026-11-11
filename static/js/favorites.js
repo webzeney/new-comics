@@ -47,6 +47,7 @@ var cover = $('.bookrow__image', li);
 if (cover && item.i) { var img = document.createElement('img'); img.src = item.i; img.alt = item.ia || ''; img.className = 'cover_photo'; img.loading = 'lazy'; cover.textContent = ''; cover.appendChild(img); }
 $('[data-field="meta"]', li).textContent = item.m;
 if (!item.e || item.eo) $('[data-field="ebook"]', li).remove();
+if (!item.eo) $('[data-field="ebookonly"]', li).remove();
 $$('[data-store]', li).forEach(function (a) { var u = item.s && item.s[a.dataset.store]; if (u) { a.href = u; } else { a.remove(); } });
 var pick = $('[data-cart-pick]', li);
 var asin = ((item.s && item.s.amazon) || '').match(/\/dp\/([0-9A-Z]{10})/);

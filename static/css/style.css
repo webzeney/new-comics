@@ -114,12 +114,14 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .badge{font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:#FFF0EC}
 .badge--ebook{padding:0 8px;background:none;border:1px solid #222222}
 .badge--first{font-weight:900;padding:0 8px;border:2px solid #222222;background:#FFD15C}
+.badge--ebookonly{font-weight:900;padding:0 8px;border:2px solid #B5302A;background:#B5302A;color:#FFFFFF}
 .badge--date{font-weight:900;background:#FFD15C;color:#222222;border:1px solid #222222}
 .badge--onsale{font-weight:900;background:#222222;color:#FFFFFF}
 .kind{flex:0 0 auto;font-size:11px;font-weight:900;padding:2px 10px;border-radius:999px;background:#FFD15C;color:#222222;border:2px solid #222222}
 .kind--change{background:#FFFFFF;color:#B5302A;border-color:#B5302A}
 .kind--fixed{background:#222222;color:#FFFFFF;border-color:#222222}
 .tag_link{font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;background:#FFF0EC;text-decoration:none}
+.tag_link--ebookonly{font-weight:900;background:#B5302A;color:#FFFFFF}
 .tag_badge{font-size:12px;font-weight:700;padding:1px 10px;border-radius:999px;border:1px solid #222222}
 .tag_badge--status{font-weight:900;border:2px solid #222222;background:#FFD15C}
 /* ==========================================================================
@@ -408,6 +410,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 ========================================================================== */
 .pick{flex:0 0 auto;position:relative;display:flex;align-items:center;justify-content:center;width:32px;height:32px;cursor:pointer}
 .pick--cover{position:absolute;top:6px;right:6px;z-index:2;border-radius:8px;background:#FFFFFF}
+.pick--none{cursor:default}
 .pick__input{position:absolute;width:1px;height:1px;margin:0;opacity:0}
 .pick__box{display:flex;align-items:center;justify-content:center;width:24px;height:24px;box-sizing:border-box;border:2px solid #222222;border-radius:6px;background:#FFFFFF}
 .pick__input:checked+.pick__box{background:#222222}

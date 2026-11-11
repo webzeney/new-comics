@@ -32,13 +32,15 @@
 {% macro bookrow(b, chip, meta, top=False, final_badge=False, pick=False) -%}
 <li class="bookrow{% if top %} bookrow--top{% endif %}" data-pub="{{ b.pub }}">
 {% if pick and b.asin %}{{ cart_pick(b.asin, b.alt) }}
+{% elif pick %}<span class="pick pick--none" aria-hidden="true"></span>
 {% endif %}<a href="{{ b.url }}" class="bookrow__cover{% if final_badge %} bookrow__cover--badge{% endif %}">
 <span class="bookrow__image">{{ cover_photo(b.image, b.alt) }}</span>
 {% if final_badge %}<span class="bookrow__final">完結</span>{% endif %}
 </a>
 <div class="bookrow__info">
 <div class="badges">
-<span class="badge">{{ chip }}</span>
+<span class="badge{% if b.eo and chip == '電子版のみ' %} badge--ebookonly{% endif %}">{{ chip }}</span>
+{% if b.eo and chip != '電子版のみ' %}<span class="badge badge--ebookonly">電子版のみ</span>{% endif %}
 {% if b.ebook %}<span class="badge badge--ebook">電子版あり</span>{% endif %}
 {% if b.first and not final_badge %}<span class="badge badge--first">新シリーズ</span>{% endif %}
 </div>
