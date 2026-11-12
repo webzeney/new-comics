@@ -164,6 +164,8 @@ def main(argv=None):
     ap.add_argument("--exclude", action="append", default=[])
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--make-base", action="store_true", help="転送先フォルダがなければ作る")
+    ap.add_argument("--first", action="append", default=[], help="先に送るページ（パターン。日付で変わるページなど）")
+    ap.add_argument("--until", type=int, default=0, help="この時刻（UNIX 時刻）を過ぎたら新しいファイルを送り始めない（残りは次の転送で送る）")
     args = ap.parse_args(argv)
     env = dict(os.environ)
 
@@ -189,10 +191,17 @@ def main(argv=None):
         if final:
             print("記録を保存しました", flush=True)
 
-    # ページ・その他のファイルを並列で送り、CSS・JS とトップページは最後にまとめて送る
+    # ページ・その他のファイルを並列で送り、CSS・JS とトップページは最後にまとめて送る。
+    # --first のページは先に送る（CSS・JS を送るときは、トップページだけはそのあとに回す）
+    assets_change = any(order_key(r)[0] == 2 for r in todo)
+    def is_first(r):
+        if r == "index.html" and assets_change:
+            return False
+        return any(fnmatch.fnmatch(r, pat) for pat in args.first)
     parts = [r for r in todo if order_key(r)[0] < 0]
-    first = [r for r in todo if 0 <= order_key(r)[0] < 2]
-    last = [r for r in todo if order_key(r)[0] >= 2]
+    early = [r for r in todo if order_key(r)[0] >= 0 and is_first(r)]
+    first = [r for r in todo if 0 <= order_key(r)[0] < 2 and not is_first(r)]
+    last = [r for r in todo if order_key(r)[0] >= 2 and not is_first(r)]
 
     def run_batch(batch, workers):
         q = queue.Queue()
@@ -203,6 +212,8 @@ def main(argv=None):
             conn = Conn(env, args.remote)
             try:
                 while True:
+                    if args.until and time.time() >= args.until:
+                        return
                     try:
                         rel = q.get_nowait()
                     except queue.Empty:
@@ -231,6 +242,9 @@ def main(argv=None):
 
     start = time.time()
     run_batch(parts, args.workers)
+    if not errors and early:
+        run_batch(early, args.workers)
+        print(f"先に送るページ {len(early)} 件を送りました（{(time.time() - start) / 60:.1f} 分）", flush=True)
     if not errors:
         run_batch(first, args.workers)
     if not errors:
@@ -243,6 +257,8 @@ def main(argv=None):
     main_conn.close()
     minutes = (time.time() - start) / 60
     print(f"送信 {done_count[0]} 件・{minutes:.1f} 分", flush=True)
+    if args.until and done_count[0] < len(todo) and not errors:
+        print(f"時間になったため {len(todo) - done_count[0]} 件は次の転送で送ります", flush=True)
     if errors:
         print(f"送れなかったファイルが {len(errors)} 件あります。もう一度実行すると残りだけを送ります。", flush=True)
         return 1

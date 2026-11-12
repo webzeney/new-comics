@@ -22,33 +22,29 @@ on:
         type: boolean
         default: false
       nightly_day:
-        description: 自動の投稿の続き（自動で使う。手動では空のまま）
+        description: 自動の投稿の日（夜の転送のあとに自動で使う。手動では空のまま）
         required: false
         default: ""
         type: string
 
 permissions:
   contents: read
-  actions: write
 
 concurrency:
   group: x-post
   cancel-in-progress: false
 
+# 自動の投稿（予約実行、または夜の転送のあとに起動された実行）は 6:00 まで待って投稿する。
+# 1つのジョブで待てるのは6時間までなので、「待つ」ジョブと「投稿」ジョブに分けて順に待つ（ほかの実行を起動しない）。
+# 同じ日に投稿済みなら何もしない（印は Actions のキャッシュに残す）。実行は1つずつ順に動く（concurrency）
 jobs:
-  post:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
-    env:
-      PYTHONPATH: src
-      NEWCOMICS_DB: ${{ github.workspace }}/data/newcomics.sqlite
-      DATA_REPO: ${{ github.repository_owner }}/new-comics-data
-      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
-      SITE_URL: ${{ vars.SITE_URL }}
+    timeout-minutes: 5
+    outputs:
+      day: ${{ steps.day.outputs.day }}
+      skip: ${{ steps.done.outputs.cache-hit }}
     steps:
-      # 自動の投稿（予約実行、または夜の転送のあとに起動された実行）は 6:00 まで待って投稿する。
-      # 1回の実行で待てるのは6時間までなので、5時間を超えて待つときは5時間待ってから続きの実行を起動する。
-      # 同じ日に投稿済みなら何もしない（印は Actions のキャッシュに残す）。実行は1つずつ順に動く（concurrency）
       - name: 投稿する日
         id: day
         run: |
@@ -65,43 +61,64 @@ jobs:
           path: .xposted
           key: xposted-${{ steps.day.outputs.day }}
           lookup-only: true
-      - name: 日本時間 6:00 まで待つ
-        id: wait
-        if: steps.day.outputs.day != '' && steps.done.outputs.cache-hit != 'true'
+      - name: 投稿済みなら終わる
+        if: steps.done.outputs.cache-hit == 'true'
+        run: echo "${{ steps.day.outputs.day }} は投稿済みのため、ここで終わります"
+
+  # 6:00 まで5時間半より長いときに、5時間半まで待つ
+  wait:
+    needs: plan
+    if: needs.plan.outputs.day != '' && needs.plan.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - name: 待つ
         env:
-          DAY: ${{ steps.day.outputs.day }}
+          DAY: ${{ needs.plan.outputs.day }}
         run: |
-          left=$(( $(TZ=Asia/Tokyo date -d "$DAY 06:00" +%s) - $(date +%s) ))
-          if [ "$left" -gt 18000 ]; then
-            echo "$(( left / 60 )) 分あるため、5時間待ってから続きの実行を起動します"
-            sleep 18000
-            echo "hop=1" >> "$GITHUB_OUTPUT"
-          elif [ "$left" -gt 0 ]; then
+          left=$(( $(TZ=Asia/Tokyo date -d "$DAY 06:00" +%s) - $(date +%s) - 19800 ))
+          if [ "$left" -gt 0 ]; then
             echo "$(( left / 60 )) 分待ちます"
             sleep "$left"
           fi
-      - name: 続きの実行を起動
-        if: steps.wait.outputs.hop == '1'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DAY: ${{ steps.day.outputs.day }}
-        run: gh workflow run x-post.yml --repo "${{ github.repository }}" --ref main -f nightly_day="$DAY"
+
+  post:
+    needs: [plan, wait]
+    if: >-
+      !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true' &&
+      (needs.wait.result == 'success' || needs.wait.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      PYTHONPATH: src
+      NEWCOMICS_DB: ${{ github.workspace }}/data/newcomics.sqlite
+      DATA_REPO: ${{ github.repository_owner }}/new-comics-data
+      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+      SITE_URL: ${{ vars.SITE_URL }}
+      DAY: ${{ needs.plan.outputs.day }}
+    steps:
+      - name: 日本時間 6:00 まで待つ
+        if: env.DAY != ''
+        run: |
+          left=$(( $(TZ=Asia/Tokyo date -d "$DAY 06:00" +%s) - $(date +%s) ))
+          if [ "$left" -gt 0 ]; then
+            echo "$(( left / 60 )) 分待ちます"
+            sleep "$left"
+          fi
       - name: 待っている間に投稿されたかの確認
-        id: done2
-        if: steps.day.outputs.day != '' && steps.done.outputs.cache-hit != 'true' && steps.wait.outputs.hop != '1'
+        id: done
+        if: env.DAY != ''
         uses: actions/cache/restore@v4
         with:
           path: .xposted
-          key: xposted-${{ steps.day.outputs.day }}
+          key: xposted-${{ needs.plan.outputs.day }}
           lookup-only: true
       - name: 投稿するかどうか
         id: go
         run: |
-          if [ -z "${{ steps.day.outputs.day }}" ]; then
-            echo "run=1" >> "$GITHUB_OUTPUT"
-          elif [ "${{ steps.done.outputs.cache-hit }}" = true ] || [ "${{ steps.done2.outputs.cache-hit }}" = true ]; then
-            echo "${{ steps.day.outputs.day }} は投稿済みのため、ここで終わります"
-          elif [ "${{ steps.wait.outputs.hop }}" != 1 ]; then
+          if [ "${{ steps.done.outputs.cache-hit }}" = true ]; then
+            echo "$DAY は投稿済みのため、ここで終わります"
+          else
             echo "run=1" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4
@@ -125,16 +142,16 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
-          POST_DATE: ${{ inputs.date || steps.day.outputs.day }}
+          POST_DATE: ${{ inputs.date || needs.plan.outputs.day }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.nightly_day == '' && inputs.dry_run && '--dry-run' || '' }}
           CHECK: ${{ github.event_name == 'workflow_dispatch' && inputs.nightly_day == '' && inputs.check && '--check' || '' }}
         run: python -m newcomics.xpost ${POST_DATE:+--date "$POST_DATE"} $DRY_RUN $CHECK
       - name: 投稿済みの印を残す
-        if: steps.day.outputs.day != '' && steps.go.outputs.run == '1'
+        if: env.DAY != '' && steps.go.outputs.run == '1'
         run: mkdir -p .xposted && date > .xposted/at
       - name: 投稿済みの印を保存
-        if: steps.day.outputs.day != '' && steps.go.outputs.run == '1'
+        if: env.DAY != '' && steps.go.outputs.run == '1'
         uses: actions/cache/save@v4
         with:
           path: .xposted
-          key: xposted-${{ steps.day.outputs.day }}
+          key: xposted-${{ needs.plan.outputs.day }}
