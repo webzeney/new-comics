@@ -28,14 +28,28 @@ jobs:
           PYTHONPATH: src
           NEWCOMICS_DB: data/newcomics.sqlite
         run: python -m newcomics.dedupe
-      - name: 確認
-        if: inputs.title != '--dups'
+      - name: 調査
         run: |
           python3 - <<'PY'
-          import os, sqlite3
+          import sqlite3, collections
           c = sqlite3.connect("data/newcomics.sqlite"); c.row_factory = sqlite3.Row
-          cols = [r[1] for r in c.execute("PRAGMA table_info(books)")]
-          want = [k for k in ("id","title","volume","isbn13","asin","release_date","origin","has_ebook","image_url","rakuten_url","rakuten_checked_at","amazon_checked_at","kindle_asin","source_url") if k in cols]
-          for r in c.execute(f"SELECT {', '.join('b.'+k for k in want)}, p.name AS publisher FROM books b JOIN publishers p ON p.id = b.publisher_id WHERE b.title LIKE ?", (f"%{os.environ['TITLE']}%",)):
-              print("----"); [print(f"{k}: {r[k]}") for k in r.keys()]
+          q = lambda sql, *a: [dict(r) for r in c.execute(sql, a)]
+          print(q("SELECT MIN(release_date) mn, MAX(release_date) mx, COUNT(*) n FROM books"))
+          print("月ごとの件数", q("SELECT substr(release_date,1,7) m, COUNT(*) n FROM books GROUP BY 1 ORDER BY 1"))
+          pubs = q("""SELECT p.name, COUNT(*) n FROM books b JOIN publishers p ON p.id=b.publisher_id
+                     WHERE b.release_date BETWEEN '2026-01-01' AND '2027-01-31' AND p.is_adult=0 GROUP BY 1 ORDER BY n DESC LIMIT 25""")
+          for pr in pubs:
+              rows = q("""SELECT b.release_date d FROM books b JOIN publishers p ON p.id=b.publisher_id
+                          WHERE p.name=? AND b.release_date BETWEEN '2026-01-01' AND '2027-01-31'""", pr["name"])
+              days = collections.Counter(int(r["d"][8:10]) for r in rows)
+              months = collections.Counter(r["d"][:7] for r in rows)
+              dates = collections.Counter(r["d"] for r in rows)
+              print("PUB", pr["name"], pr["n"], "月数", len(months), "日別上位", days.most_common(8), "発売日数", len(dates), "多い日", dates.most_common(6))
+          print("曜日別（全体）", collections.Counter(__import__('datetime').date.fromisoformat(r["d"]).weekday() for r in q("SELECT release_date d FROM books WHERE release_date BETWEEN '2026-01-01' AND '2027-01-31'")))
+          print("長期連載")
+          for r in q("""SELECT s.id, s.name, MAX(b.volume) v, COUNT(*) n, p.name pub,
+                        (SELECT price FROM books x WHERE x.series_id=s.id AND x.volume=(SELECT MAX(volume) FROM books y WHERE y.series_id=s.id) LIMIT 1) price,
+                        MAX(b.release_date) last, MIN(b.release_date) first
+                        FROM books b JOIN series s ON s.id=b.series_id JOIN publishers p ON p.id=b.publisher_id
+                        WHERE b.volume IS NOT NULL GROUP BY s.id ORDER BY v DESC LIMIT 45"""): print(r)
           PY
