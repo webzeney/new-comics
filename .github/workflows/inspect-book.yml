@@ -28,14 +28,26 @@ jobs:
           PYTHONPATH: src
           NEWCOMICS_DB: data/newcomics.sqlite
         run: python -m newcomics.dedupe
-      - name: 確認
-        if: inputs.title != '--dups'
+      - name: 調査
         run: |
           python3 - <<'PY'
-          import os, sqlite3
+          import sqlite3, collections, datetime
           c = sqlite3.connect("data/newcomics.sqlite"); c.row_factory = sqlite3.Row
-          cols = [r[1] for r in c.execute("PRAGMA table_info(books)")]
-          want = [k for k in ("id","title","volume","isbn13","asin","release_date","origin","has_ebook","image_url","rakuten_url","rakuten_checked_at","amazon_checked_at","kindle_asin","source_url") if k in cols]
-          for r in c.execute(f"SELECT {', '.join('b.'+k for k in want)}, p.name AS publisher FROM books b JOIN publishers p ON p.id = b.publisher_id WHERE b.title LIKE ?", (f"%{os.environ['TITLE']}%",)):
-              print("----"); [print(f"{k}: {r[k]}") for k in r.keys()]
+          q = lambda sql, *a: [dict(r) for r in c.execute(sql, a)]
+          print("完結巻（2026年10月〜12月）")
+          for r in q("""SELECT b.title, b.volume, b.release_date d, p.name pub, l.name label, b.amazon_rank rk, b.edition
+                        FROM books b JOIN publishers p ON p.id=b.publisher_id LEFT JOIN labels l ON l.id=b.label_id
+                        WHERE b.is_final=1 AND b.release_date BETWEEN '2026-10-01' AND '2026-12-31' AND p.is_adult=0 AND COALESCE(l.is_adult,0)=0
+                        ORDER BY (b.amazon_rank IS NULL), b.amazon_rank LIMIT 80"""): print(r)
+          print("完結巻 件数", q("SELECT substr(release_date,1,7) m, COUNT(*) n FROM books WHERE is_final=1 GROUP BY 1"))
+          print("日別（12/15〜1/20）")
+          for r in q("""SELECT release_date d, COUNT(*) n FROM books WHERE release_date BETWEEN '2026-12-15' AND '2027-01-20' GROUP BY 1 ORDER BY 1"""): print(r)
+          print("出版社別 12月最後・1月最初")
+          for r in q("""SELECT p.name pub, MAX(CASE WHEN b.release_date<'2027-01-01' THEN b.release_date END) dec_last,
+                        MIN(CASE WHEN b.release_date>='2027-01-01' THEN b.release_date END) jan_first,
+                        SUM(b.release_date BETWEEN '2026-12-01' AND '2026-12-31') dec_n, SUM(b.release_date BETWEEN '2026-11-01' AND '2026-11-30') nov_n
+                        FROM books b JOIN publishers p ON p.id=b.publisher_id GROUP BY 1 ORDER BY dec_n DESC LIMIT 16"""): print(r)
+          print("12月下旬の日別・出版社")
+          for r in q("""SELECT b.release_date d, p.name pub, COUNT(*) n FROM books b JOIN publishers p ON p.id=b.publisher_id
+                        WHERE b.release_date BETWEEN '2026-12-20' AND '2026-12-31' GROUP BY 1,2 HAVING n>=5 ORDER BY 1, n DESC"""): print(r)
           PY
