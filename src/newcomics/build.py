@@ -995,6 +995,25 @@ def book_summary(site, b, main, vol, volumes):
         out.append(f"前の巻（{prev.volume}巻）は{jp_date(prev.release)}の発売で、{gap}ぶりの新刊です。")
     if b.is_final:
         out.append("この巻で完結します。" if b.release and b.release > site.today else "この巻で完結しています。")
+    nxt = next((x for x in volumes if x.volume == (vol or 0) + 1 and x.release), None) if vol else None
+    if nxt and b.release and nxt.release == b.release:
+        out.append(f"次の巻（{nxt.volume}巻）も同じ日に{'発売される予定です' if nxt.release > site.today else ('発売されます' if nxt.release == site.today else '発売されました')}。")
+    elif nxt:
+        out.append(f"次の巻（{nxt.volume}巻）は{jp_date(nxt.release)}に{'発売される予定です' if nxt.release > site.today else ('発売されます' if nxt.release == site.today else '発売されました')}。")
+    elif vol and not b.is_final and volumes and volumes[-1].id == b.id:
+        fc = forecast_for(volumes)
+        if fc:
+            out.append(f"これまでの発売の間隔（約{fc['interval']}か月おき）から、次の巻（{fc['volume']}巻）は{fc['year']}年{fc['month']}月ごろの発売と見込まれます。")
+    if b.release:
+        verb = "発売される予定です" if b.release > site.today else ("発売されます" if b.release == site.today else "発売されました")
+        if b.label_id:
+            same = sum(1 for x in site.by_date.get(b.release, []) if x.label_id == b.label_id)
+            if same >= 2:
+                out.append(f"同じ日に「{b.label}」から、この本を含めて{same}点の新刊が{verb}。")
+        month_n = sum(1 for x in site.dated if x.publisher == b.publisher and x.release and x.release.year == b.release.year and x.release.month == b.release.month) \
+            if not hasattr(site, "pub_month") else site.pub_month.get((b.publisher, b.release.year, b.release.month), 0)
+        if month_n >= 2:
+            out.append(f"{b.publisher}の{b.release.year}年{b.release.month}月の漫画の新刊は、全部で{month_n}点です。")
     return "".join(out)
 
 
@@ -1037,6 +1056,7 @@ def author_works(site, root, b):
 
 def build_books(site, w):
     root = "../../"
+    site.pub_month = Counter((x.publisher, x.release.year, x.release.month) for x in site.dated if x.release)
     for b in site.books:
         main, vol = title_parts(b)
         bubble, on_sale = bubble_for(site, b.release)
