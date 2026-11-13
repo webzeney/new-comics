@@ -37,7 +37,6 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .sidemenu__tag{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;border-radius:999px;background:#FFF0EC;color:#222222;text-decoration:none;font-size:12px;font-weight:500}
 .sidemenu__tag--current{font-weight:700;background:#222222;color:#FFFFFF}
 .sidemenu__contact{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border-radius:999px;background:#222222;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px}
-.sidemenu__note{margin:0;font-size:11px;color:#5A5148;line-height:1.7}
 /* ==========================================================================
 パネル・見出し・パンくず
 ========================================================================== */

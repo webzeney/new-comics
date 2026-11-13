@@ -68,6 +68,54 @@ form.label.value = state.label;
 form.month.value = state.month;
 form.ebook.checked = state.ebook;
 
+var FILTERS = [
+{ name: 'pub', value: function (item) { return item.p || ''; } },
+{ name: 'label', value: function (item) { return item.l || ''; } },
+{ name: 'month', value: function (item) { return (item.d || '').slice(0, 7); } }
+];
+FILTERS.forEach(function (f) {
+f.select = form[f.name];
+f.options = $$('option', f.select).filter(function (o) { return o.value; }).map(function (o) { return { value: o.value, text: o.textContent }; });
+});
+
+function available(target) {
+var set = {};
+items.forEach(function (item) {
+for (var i = 0; i < FILTERS.length; i++) {
+var f = FILTERS[i];
+if (f === target || !f.select.value) continue;
+if (f.value(item) !== f.select.value) return;
+}
+set[target.value(item)] = true;
+});
+return set;
+}
+
+function narrow(changed) {
+if (!items) return;
+if (changed) FILTERS.forEach(function (f) {
+if (f.select === changed || !f.select.value) return;
+if (!available(f)[f.select.value]) f.select.value = '';
+});
+FILTERS.forEach(function (f) {
+var set = available(f);
+var current = f.select.value;
+while (f.select.options.length > 1) f.select.remove(1);
+f.options.forEach(function (o) {
+if (!set[o.value] && o.value !== current) return;
+var option = document.createElement('option');
+option.value = o.value;
+option.textContent = o.text;
+f.select.appendChild(option);
+});
+f.select.value = current;
+});
+}
+
+FILTERS.forEach(function (f) {
+f.select.addEventListener('change', function () { narrow(f.select); });
+});
+
 function match(item) {
 if (state.pub && item.p !== state.pub) return false;
 if (state.label && item.l !== state.label) return false;
@@ -142,6 +190,7 @@ b.addEventListener('click', function () {
 state[c.key] = c.key === 'ebook' ? false : '';
 state.page = 1;
 if (form[c.key]) { if (c.key === 'ebook') form.ebook.checked = false; else form[c.key].value = ''; }
+narrow(null);
 update();
 });
 span.appendChild(b);
@@ -208,6 +257,7 @@ update();
 
 fetch(root.dataset.index).then(function (r) { return r.json(); }).then(function (data) {
 items = data.items;
+narrow(null);
 render();
 }).catch(function () {
 $('[data-search-empty]').hidden = false;
