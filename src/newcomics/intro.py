@@ -115,7 +115,7 @@ def month(y, m, books):
 
 def listing(subject, books, today, kind):
     """出版社・レーベル・タグ・著者のページ。subject は「集英社」「ジャンプコミックス」など。"""
-    noun = subject if kind == "tag" else f"{subject}の漫画の新刊"
+    noun = subject if kind == "tag" else (f"{subject}の新刊" if kind == "genre" else f"{subject}の漫画の新刊")
     upcoming = sorted((b for b in books if b.release and b.release >= today), key=lambda b: b.release)
     past = [b for b in books if b.release and b.release < today]
     s = []
@@ -131,7 +131,7 @@ def listing(subject, books, today, kind):
         labels = Counter(b.label for b in upcoming if b.label)
         if len(labels) > 1:
             s.append(f"レーベル別では{_top(labels)}が多くなっています。")
-    elif kind in ("tag", "author"):
+    elif kind in ("tag", "author", "genre"):
         pubs = Counter(b.publisher for b in upcoming)
         if len(pubs) > 1:
             s.append(f"出版社別では{_top(pubs)}が多くなっています。")
@@ -151,13 +151,18 @@ def listing_month(subject, y, m, books, today, kind):
     by_day = Counter(b.release for b in books)
     peak_d, peak_n = max(by_day.items(), key=lambda x: (x[1], -x[0].toordinal()))
     on_sale = sum(1 for b in books if b.release <= today)
-    s = [f"{subject}から{y}年{m}月に発売される漫画の新刊は{len(books)}点で、発売日は{len(by_day)}日あります。"]
+    s = [f"{y}年{m}月に発売される{subject}の新刊は{len(books)}点で、発売日は{len(by_day)}日あります。" if kind == "genre"
+         else f"{subject}から{y}年{m}月に発売される漫画の新刊は{len(books)}点で、発売日は{len(by_day)}日あります。"]
     if len(by_day) > 1:
         s.append(f"いちばん多いのは{_md(peak_d)}の{peak_n}点です。")
     if kind == "publisher":
         labels = Counter(b.label for b in books if b.label)
         if len(labels) > 1:
             s.append(f"レーベル別では{_top(labels)}が多くなっています。")
+    elif kind == "genre":
+        pubs = Counter(b.publisher for b in books)
+        if len(pubs) > 1:
+            s.append(f"出版社別では{_top(pubs)}が多くなっています。")
     s.append(_first_final(books))
     s.append(_ebook(books))
     if 0 < on_sale < len(books):

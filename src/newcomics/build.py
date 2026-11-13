@@ -384,6 +384,7 @@ def build(conn, out_dir, today, env):
     build_books(site, w)
     build_series(site, w)
     build_listings(site, w)
+    build_genres(site, w)
     build_authors(site, w)
     build_series_feeds(site, w, env.get("SITE_URL"))
     build_series_calendars(site, w, env.get("SITE_URL"))
@@ -1288,7 +1289,7 @@ def build_month_pages(site, w, kind, base, name, books, crumb_items, label_month
         keys = ("author", "price")
         ctx = {
             "crumbs": crumbs(root, *[(label, f"{root}{path}" if path else None) for label, path in crumb_items], (f"{y}年{m}月", None)),
-            "heading": {"en": "PUBLISHER" if kind == "publisher" else "LABEL", "title": f"{name} {y}年{m}月発売の漫画新刊",
+            "heading": {"en": {"publisher": "PUBLISHER", "label": "LABEL", "genre": "GENRE"}[kind], "title": f"{name} {y}年{m}月発売の漫画新刊",
                         "lead": f"{name}から{y}年{m}月に発売される漫画（コミック）の新刊を、発売日順にまとめています。"},
             "month_nav": nav,
             "stats": {"no": m, "total": len(month_books), "active_days": len(days), "peak_date": md(peak_d), "peak_suffix": f"（{dow(peak_d)}）{peak_n}点"},
@@ -1559,6 +1560,52 @@ def build_favorites(site, w):
 
 # ---- 検索 ----
 ALIASES_PATH = Path(__file__).resolve().parent / "aliases.tsv"
+GENRE_PATH = Path(__file__).resolve().parent / "label_genre.tsv"
+# ジャンル（2026-11-13 運営者の判断）。レーベルごとに label_genre.tsv で決める
+GENRES = [("shonen", "少年", "少年漫画"), ("shojo", "少女", "少女漫画"), ("seinen", "青年", "青年漫画"), ("josei", "女性", "女性漫画"), ("bl", "BL", "BL漫画"), ("tl", "TL", "TL漫画")]
+
+
+def load_genres(path=GENRE_PATH):
+    """（出版社, レーベル）→ ジャンル（少年・少女・青年・女性・BL・TL）。"""
+    out = {}
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        if line.startswith("#") or line.count("\t") != 2:
+            continue
+        pub, label, genre = line.split("\t")
+        out[(pub, label)] = genre
+    return out
+
+
+def build_genres(site, w):
+    """ジャンルごとのページ（/genre/shonen/ など）と、その月別のページ。"""
+    table = load_genres()
+    root = "../../"
+    by_genre = defaultdict(list)
+    for b in site.dated:
+        g = table.get((b.publisher, b.label)) if b.label else None
+        if g:
+            by_genre[g].append(b)
+    links = []
+    for slug, key, name in GENRES:
+        books = by_genre.get(key, [])
+        if not books:
+            continue
+        links.append({"name": f"{name}（{len(books)}）", "url": f"../genre/{slug}/"})
+        lead = f"{name}の新刊を、発売日順に紹介しています。ジャンルはレーベルごとに分けています。"
+        ctx = listing_ctx(
+            site, root, books, ("author", "label", "price"),
+            crumbs(root, ("ジャンルから探す", f"{root}genre/"), (name, None)),
+            {"en": "GENRE", "title": f"{name}の新刊発売予定", "lead": lead, "kind": "genre", "final_badge": False},
+            others={"title": "ほかのジャンルの新刊", "links": [{"name": n, "url": f"{root}genre/{s}/"} for s, k, n in GENRES if k != key and by_genre.get(k)]},
+            subject=name,
+            month_pages=True,
+        )
+        page = page_defaults(title=f"{name}の新刊発売予定｜{SITE_NAME}", description=f"{name}の新刊の発売予定と、これまでに発売された本をまとめています。", menu="genre", lastmod=lastmod(site, books))
+        w.write(f"genre/{slug}/index.html", "listing.html", page, **ctx)
+        build_month_pages(site, w, "genre", f"genre/{slug}/", name, books, [("ジャンルから探す", "genre/"), (name, f"genre/{slug}/")])
+    w.write("genre/index.html", "index_list.html", page_defaults(title=f"ジャンルから探す｜{SITE_NAME}", description="少年・少女・青年・女性・BL・TL のジャンルごとの漫画新刊発売予定。", menu="genre"),
+            crumbs=crumbs("../", ("ジャンルから探す", None)), heading={"en": "GENRE", "title": "ジャンルから探す", "lead": "ジャンルを選ぶと、そのジャンルの新刊発売予定を一覧で見られます。ジャンルはレーベルごとに分けています。"},
+            groups=[{"title": "ジャンル", "links": links}])
 
 
 def search_key(text):
