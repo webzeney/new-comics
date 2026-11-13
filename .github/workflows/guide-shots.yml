@@ -1,0 +1,46 @@
+name: 使い方のページの画面写真（手動）
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEWCOMICS_DB: ${{ github.workspace }}/data/newcomics.sqlite
+      DATA_REPO: ${{ github.repository_owner }}/new-comics-data
+      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+      - name: データベースの取り出し（非公開リポジトリ）
+        run: git clone --quiet --depth 1 "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt playwright pillow && python -m playwright install --with-deps chromium
+      - name: ページ生成
+        run: TZ=Asia/Tokyo python -m newcomics.build --out dist --today "$(TZ=Asia/Tokyo date -d tomorrow +%F)" > /dev/null
+      - name: 画面写真
+        run: |
+          php -S 127.0.0.1:8099 -t dist tools/preview_router.php > /dev/null 2>&1 &
+          sleep 2
+          python tools/guide_shots.py dist
+      - name: 画面写真を書き出す（ログで受け取る）
+        run: |
+          python - <<'PY'
+          import base64, glob, io
+          from PIL import Image
+          for f in sorted(glob.glob("shots/*.png")):
+              buf = io.BytesIO()
+              Image.open(f).convert("RGB").save(buf, "PNG", optimize=True)
+              data = base64.b64encode(buf.getvalue()).decode()
+              name = f.split("/")[-1]
+              print("FILES", f, len(data))
+              for i in range(0, len(data), 3000):
+                  print("SHOT", name, i // 3000, data[i:i + 3000])
+          PY
