@@ -63,6 +63,8 @@
 {{ date_groups(m.dates) }}
 {% if not m.dates %}
 <p class="empty">この月の発売予定はまだありません</p>
+{% elif m.url %}
+<p class="monthpanel__more"><a href="{{ m.url }}" class="section_head__link"><span class="en">{{ m.no }}</span>月の新刊を1ページで見る</a></p>
 {% endif %}
 </div>
 {% endfor %}

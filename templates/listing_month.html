@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb, stat, bookrow %}
+{% block content %}
+<section aria-labelledby="month-title" class="panel panel--head">
+{{ breadcrumb(crumbs) }}
+<div class="calendar__head">
+<div class="heading">
+<span class="heading__en">{{ heading.en }}</span>
+<h1 id="month-title" class="heading__title">{{ heading.title }}</h1>
+<p class="heading__lead">{{ heading.lead }}</p>
+</div>
+<nav aria-label="表示する月" class="pill_nav">
+{% for m in month_nav %}
+<a href="{{ m.url }}" class="pill_nav__item{% if m.current %} pill_nav__item--current{% endif %}"{% if m.current %} aria-current="page"{% endif %}><span class="en">{{ m.no }}</span>月</a>
+{% endfor %}
+</nav>
+</div>
+<div class="stats">
+{{ stat(stats.no ~ '月の発売点数', stats.total, '点', main=True) }}
+<div class="stat calendar__stat">
+<span class="stat__label">発売がある日</span>
+<span class="stat__value"><span class="stat__num">{{ stats.active_days }}</span><span class="stat__unit">日</span></span>
+</div>
+<div class="stat calendar__stat">
+<span class="stat__label">いちばん多い日</span>
+<span class="stat__value stat__value--loose"><span class="stat__num">{{ stats.peak_date }}</span><span class="stat__unit">{{ stats.peak_suffix }}</span></span>
+</div>
+</div>
+{% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
+{% if label_links %}
+<div class="filter">
+<span class="filter__label">レーベル別に見る</span>
+{% for l in label_links %}
+<a href="{{ l.url }}" class="chip_link">{{ l.name }}</a>
+{% endfor %}
+</div>
+{% endif %}
+</section>
+<section aria-labelledby="list-title" class="panel">
+<div class="section_head section_head--title">
+<h2 id="list-title" class="section_head__title"><span class="en">{{ stats.no }}</span>月の発売日ごとの新刊<span class="heading__count">{{ stats.total }}点</span></h2>
+<a href="{{ back.url }}" class="section_head__link">{{ back.name }}の新刊発売予定を見る</a>
+</div>
+{% for g in dates %}
+<div class="group">
+<h3 class="group__title"><span class="group__date">{{ g.md }}</span>（{{ g.dow }}）<span class="group__count">{{ g.books|length }}点</span>{% if g.on_sale %}<span class="group__onsale">発売中</span>{% endif %}</h3>
+<ul class="booklist">
+{% for b in g.books %}
+{{ bookrow(b, b.label or b.pub, b.meta) }}
+{% endfor %}
+</ul>
+</div>
+{% endfor %}
+</section>
+{{ ad() -}}
+{% endblock %}

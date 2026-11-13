@@ -144,6 +144,29 @@ def listing(subject, books, today, kind):
     return "".join(x for x in s if x)
 
 
+def listing_month(subject, y, m, books, today, kind):
+    """出版社・レーベルの月別ページ。books はその月に発売される本（発売日の順）。"""
+    if not books:
+        return ""
+    by_day = Counter(b.release for b in books)
+    peak_d, peak_n = max(by_day.items(), key=lambda x: (x[1], -x[0].toordinal()))
+    on_sale = sum(1 for b in books if b.release <= today)
+    s = [f"{subject}から{y}年{m}月に発売される漫画の新刊は{len(books)}点で、発売日は{len(by_day)}日あります。"]
+    if len(by_day) > 1:
+        s.append(f"いちばん多いのは{_md(peak_d)}の{peak_n}点です。")
+    if kind == "publisher":
+        labels = Counter(b.label for b in books if b.label)
+        if len(labels) > 1:
+            s.append(f"レーベル別では{_top(labels)}が多くなっています。")
+    s.append(_first_final(books))
+    s.append(_ebook(books))
+    if 0 < on_sale < len(books):
+        s.append(f"このうち{on_sale}点はすでに発売されています。")
+    elif on_sale == len(books):
+        s.append("この月の新刊は、すべて発売されています。")
+    return "".join(x for x in s if x)
+
+
 def series(name, vols, latest, status, today, authors, forecast=None):
     """作品ごとのページ。vols は巻数のある本（巻数の順）。"""
     who = "・".join(a["name"] for a in authors[:2] if a.get("name"))

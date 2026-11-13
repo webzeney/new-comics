@@ -1172,21 +1172,22 @@ def date_groups(site, root, books, keys):
     return [{"md": md(d), "dow": dow(d), "on_sale": d <= site.today, "books": [site.row(root, b, keys) for b in v]} for d, v in dates.items()]
 
 
-def listing_months(site, root, books, keys):
+def listing_months(site, root, books, keys, month_base=None):
     out = []
     for i, (y, m) in enumerate(chunk_months(site.today)):
         month = sorted((b for b in books if b.release and b.release.year == y and b.release.month == m), key=lambda b: b.release)
         groups = date_groups(site, root, month, keys)
-        out.append({"no": m, "count": sum(len(g["books"]) for g in groups), "current": i == 0, "dates": groups})
+        url = f"{y}-{m:02d}/" if month_base else None
+        out.append({"no": m, "count": sum(len(g["books"]) for g in groups), "current": i == 0, "dates": groups, "url": url})
     return out
 
 
-def listing_ctx(site, root, books, keys, crumb, listing, label_links=(), others=None, subject=None):
+def listing_ctx(site, root, books, keys, crumb, listing, label_links=(), others=None, subject=None, month_pages=False):
     """出版社・レーベル・タグ・著者のページ（listing.html）に渡す値。"""
     return {
         "intro": intro.listing(subject, books, site.today, listing["kind"]) if subject else "",
         "crumbs": crumb, "listing": listing, "label_links": list(label_links), "others": others,
-        "months": listing_months(site, root, books, keys),
+        "months": listing_months(site, root, books, keys, month_pages),
         "past": listing_past(site, root, books, keys),
         **listing_common(site, books),
     }
@@ -1228,6 +1229,60 @@ def lastmod(site, books):
     return max(days).isoformat() if days else None
 
 
+MONTH_PAGE_MIN = 3  # これより点数の少ない月別ページは noindex（2026-11-13 運営者の判断）
+
+
+def subject_months(books):
+    return sorted({(b.release.year, b.release.month) for b in books if b.release})
+
+
+def month_page_path(base, y, m):
+    return f"{base}{y}-{m:02d}/"
+
+
+def build_month_pages(site, w, kind, base, name, books, crumb_items, label_months=None):
+    """出版社・レーベルの月別ページ（/publisher/{slug}/2026-12/ など）。
+
+    kind は "publisher" か "label"。base は "publisher/kodansha/" の形。name は見出しに使う名前。
+    label_months は出版社のページで、その月に本のあるレーベルへのリンクを出すときの {(年, 月): [(名前, パス)]}。
+    """
+    root = "../../../"
+    months = subject_months(books)
+    for idx, (y, m) in enumerate(months):
+        month_books = sorted((b for b in books if b.release and b.release.year == y and b.release.month == m), key=lambda b: b.release)
+        days = Counter(b.release for b in month_books)
+        peak_d, peak_n = max(days.items(), key=lambda x: (x[1], -x[0].toordinal()))
+        nav = []
+        for j in range(max(0, idx - 1), min(len(months), idx + 2)):
+            yy, mm = months[j]
+            nav.append({"no": mm, "url": f"{root}{month_page_path(base, yy, mm)}", "current": j == idx})
+        keys = ("author", "price")
+        ctx = {
+            "crumbs": crumbs(root, *[(label, f"{root}{path}" if path else None) for label, path in crumb_items], (f"{y}年{m}月", None)),
+            "heading": {"en": "PUBLISHER" if kind == "publisher" else "LABEL", "title": f"{name} {y}年{m}月発売の漫画新刊",
+                        "lead": f"{name}から{y}年{m}月に発売される漫画（コミック）の新刊を、発売日順にまとめています。"},
+            "month_nav": nav,
+            "stats": {"no": m, "total": len(month_books), "active_days": len(days), "peak_date": md(peak_d), "peak_suffix": f"（{dow(peak_d)}）{peak_n}点"},
+            "intro": intro.listing_month(name, y, m, month_books, site.today, kind),
+            "label_links": [{"name": n, "url": f"{root}{month_page_path(pth, y, m)}"} for n, pth in (label_months or {}).get((y, m), [])],
+            "dates": date_groups(site, root, month_books, keys),
+            "kind": kind,
+            "back": {"name": name, "url": f"{root}{base}"},
+        }
+        title = f"{name} {y}年{m}月発売の漫画新刊一覧（{len(month_books)}点）｜{SITE_NAME}"
+        page = page_defaults(
+            title=title,
+            description=f"{name}から{y}年{m}月に発売される漫画・コミックの新刊{len(month_books)}点を、発売日順に紹介しています。出版社の発売情報をもとに毎日更新。",
+            menu=kind,
+            jsonld=jsonld({"@type": "ItemList", "name": f"{name} {y}年{m}月発売の漫画新刊", "numberOfItems": len(month_books),
+                           "itemListElement": [{"@type": "ListItem", "position": i, "url": f"{site_base(site)}/book/{b.key}/", "name": b.title} for i, b in enumerate(month_books, 1)]},
+                          breadcrumb_ld(site_base(site), [("トップ", "/")] + [(label, f"/{path}") for label, path in crumb_items if path] + [(f"{y}年{m}月", f"/{month_page_path(base, y, m)}")])),
+            lastmod=lastmod(site, month_books),
+            noindex=len(month_books) < MONTH_PAGE_MIN,
+        )
+        w.write(f"{month_page_path(base, y, m)}index.html", "listing_month.html", page, **ctx)
+
+
 def build_listings(site, w):
     root = "../../"
     # 出版社
@@ -1244,9 +1299,16 @@ def build_listings(site, w):
             label_links=[{"name": n, "url": f"{root}label/{i}/"} for n, i in labels.items()],
             others={"title": "ほかの出版社の新刊", "links": [{"name": o["name"], "url": f"{root}publisher/{o['slug']}/"} for o in site.publishers if o["name"] != p["name"]]},
             subject=p["name"],
+            month_pages=True,
         )
         page = page_defaults(title=f"{p['name']}の漫画新刊発売予定｜{SITE_NAME}", description=f"{p['name']}から発売される漫画（コミック）の新刊を、発売日順に紹介しています。", menu="publisher", lastmod=lastmod(site, books))
         w.write(f"publisher/{p['slug']}/index.html", "listing.html", page, **ctx)
+        label_months = defaultdict(list)
+        for n, i in labels.items():
+            for ym in subject_months([b for b in books if b.label_id == i]):
+                label_months[ym].append((n, f"label/{i}/"))
+        build_month_pages(site, w, "publisher", f"publisher/{p['slug']}/", p["name"], books,
+                          [("出版社から探す", "publisher/"), (p["name"], f"publisher/{p['slug']}/")], label_months)
     # レーベル
     label_rows = site.conn.execute("SELECT l.id, l.name, p.name AS pub, p.slug FROM labels l JOIN publishers p ON p.id = l.publisher_id WHERE l.is_adult = 0 AND p.is_adult = 0").fetchall()
     for l in label_rows:
@@ -1258,9 +1320,12 @@ def build_listings(site, w):
             crumbs(root, ("レーベルから探す", f"{root}label/"), (l["pub"], f"{root}publisher/{l['slug']}/"), (l["name"], None)),
             {"en": "LABEL", "title": f"{l['name']}の新刊発売予定", "lead": None, "kind": "label", "final_badge": False},
             subject=f"{l['pub']}の{l['name']}",
+            month_pages=True,
         )
         page = page_defaults(title=f"{l['name']}（{l['pub']}）の漫画新刊発売予定｜{SITE_NAME}", description=f"{l['pub']}のレーベル「{l['name']}」から発売される漫画の新刊の発売予定と、これまでに発売された本をまとめています。", menu="label", lastmod=lastmod(site, books))
         w.write(f"label/{l['id']}/index.html", "listing.html", page, **ctx)
+        build_month_pages(site, w, "label", f"label/{l['id']}/", l["name"], books,
+                          [("レーベルから探す", "label/"), (l["pub"], f"publisher/{l['slug']}/"), (l["name"], f"label/{l['id']}/")])
     # タグ
     for slug, (name, lead) in TAG_INFO.items():
         books = [b for b in site.dated if slug in b.tags]
