@@ -107,8 +107,17 @@ def main():
         ctx = b.new_context(viewport={"width": 390, "height": 2400}, device_scale_factor=2)
         page = ctx.new_page()
 
-        page.goto(BASE + "calendar/", wait_until="networkidle")
-        shot(page, "calendar", ".calendar__grid", pad=16)
+        pc = b.new_page(viewport={"width": 1280, "height": 1600}, device_scale_factor=1)
+        pc.goto(BASE + "calendar/", wait_until="networkidle")
+        pc.add_style_tag(content=HIDE_COVERS)
+        pc.wait_for_timeout(500)
+        g = pc.locator(".calendar__grid").first
+        g.evaluate("e => { e.scrollIntoView({block: 'start'}); scrollBy(0, -20); }")
+        pc.wait_for_timeout(300)
+        box = g.bounding_box()
+        pc.screenshot(path=str(OUT / "guide_calendar.png"), clip={"x": box["x"] - 12, "y": box["y"] - 12, "width": box["width"] + 24, "height": box["height"] + 24})
+        print("SHOT calendar")
+        pc.close()
 
         if month:
             pub = month.split("/")[1]
@@ -117,7 +126,7 @@ def main():
             page.evaluate("document.querySelector('.monthpanel__more').scrollIntoView({block:'center'})")
             shot(page, "month_link", ".monthpanel:not([hidden]) .group:last-of-type .booklist > li:last-child", until=".monthpanel:not([hidden]) .monthpanel__more")
             page.goto(BASE + month, wait_until="networkidle")
-            shot(page, "month_page", ".panel--head", pad=0)
+            shot(page, "month_page", ".panel--head", pad=0, until=".page_intro")
 
         page.goto(BASE + "search/", wait_until="networkidle")
         page.wait_for_timeout(1000)
