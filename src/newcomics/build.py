@@ -1156,7 +1156,7 @@ def build_series(site, w):
             jsonld=jsonld(series_ld(site, sid, info["name"], vols, latest), breadcrumb_ld(site_base(site), [
                 ("トップ", "/"), (latest.publisher, f"/publisher/{latest.publisher_slug}/"), (info["name"], f"/series/{sid}/")])),
             lastmod=lastmod(site, vols),
-            noindex=len(vols) < 2,
+            noindex=len(vols) < 2 and latest.volume < 2,
         )
         w.write(f"series/{sid}/index.html", "series.html", page, **ctx)
 
