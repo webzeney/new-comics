@@ -24,6 +24,21 @@ var day = Number(d.slice(8, 10));
 return m + '/' + day + '（' + DOWS[new Date(Date.UTC(y, m - 1, day)).getUTCDay()] + '）発売';
 }
 
+function encodeFavs(list) {
+var json = JSON.stringify(list.map(function (f) { return [f.id, f.name]; }));
+var bin = Array.prototype.map.call(new TextEncoder().encode(json), function (c) { return String.fromCharCode(c); }).join('');
+return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function decodeFavs(text) {
+try {
+var bin = atob(text.replace(/-/g, '+').replace(/_/g, '/'));
+var bytes = new Uint8Array(bin.length);
+for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+var list = JSON.parse(new TextDecoder().decode(bytes));
+return list.filter(function (x) { return Array.isArray(x) && /^\d+$/.test(String(x[0])) && typeof x[1] === 'string'; }).map(function (x) { return { id: Number(x[0]), name: x[1].slice(0, 100), url: '/series/' + Number(x[0]) + '/' }; });
+} catch (e) { return []; }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 var listBox = $('[data-fav-list]');
 var booksBox = $('[data-fav-books]');
@@ -62,6 +77,7 @@ function render() {
 var favs = load();
 $$('.fav_chip', listBox).forEach(function (el) { el.remove(); });
 listBox.hidden = favs.length === 0;
+updateTransfer();
 favs.forEach(function (f) {
 var wrap = document.createElement('span');
 wrap.className = 'fav_chip';
@@ -116,6 +132,59 @@ document.dispatchEvent(new Event('cart:refresh'));
 empty.hidden = found.length > 0;
 empty.textContent = favs.length ? 'お気に入りの作品の新刊は、今のところありません。' : 'お気に入りに登録した作品は、まだありません。';
 }
+
+window.addEventListener('hashchange', function () { if (/^#import=/.test(location.hash)) location.reload(); });
+var importBox = $('[data-fav-import]');
+var incoming = /^#import=([A-Za-z0-9_-]+)$/.test(location.hash) ? decodeFavs(location.hash.slice(8)) : [];
+function clearHash() { history.replaceState(null, '', location.pathname + location.search); }
+if (incoming.length) {
+var have = load().map(function (f) { return String(f.id); });
+var adding = incoming.filter(function (f) { return have.indexOf(String(f.id)) === -1; });
+$('[data-fav-import-text]').textContent = adding.length
+? '引き継ぎ用のアドレスから開きました。' + adding.length + '作品（' + adding.slice(0, 3).map(function (f) { return f.name; }).join('、') + (adding.length > 3 ? 'など' : '') + '）を、この端末のお気に入りに追加しますか？'
+: '引き継ぎ用のアドレスの作品は、すべてこの端末のお気に入りに登録されています。';
+$('[data-fav-import-ok]').hidden = !adding.length;
+importBox.hidden = false;
+$('[data-fav-import-ok]').addEventListener('click', function () { save(load().concat(adding)); importBox.hidden = true; clearHash(); render(); });
+$('[data-fav-import-cancel]').addEventListener('click', function () { importBox.hidden = true; clearHash(); });
+}
+
+var transfer = $('[data-fav-transfer]');
+var transferBody = $('#fav-transfer-body');
+var transferOpen = $('[data-fav-transfer-open]');
+var transferUrl = $('[data-fav-transfer-url]');
+function updateTransfer() {
+var favs = load();
+transfer.hidden = favs.length === 0;
+if (!favs.length) { transferBody.hidden = true; transferOpen.setAttribute('aria-expanded', 'false'); return; }
+transferUrl.value = location.origin + location.pathname + '#import=' + encodeFavs(favs);
+if (!transferBody.hidden) drawQr();
+}
+function drawQr() {
+var box = $('[data-fav-transfer-qr]');
+var draw = function () {
+var qr = window.qrcode(0, 'L');
+qr.addData(transferUrl.value, 'Byte');
+qr.make();
+box.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true, alt: '引き継ぎ用のアドレスのQRコード' });
+};
+if (window.qrcode) { draw(); return; }
+var s = document.createElement('script');
+s.src = root + 'assets/js/qrcode.min.js';
+s.onload = draw;
+document.head.appendChild(s);
+}
+transferOpen.addEventListener('click', function () {
+var open = transferBody.hidden;
+transferBody.hidden = !open;
+transferOpen.setAttribute('aria-expanded', open ? 'true' : 'false');
+if (open) drawQr();
+});
+$('[data-fav-transfer-copy]').addEventListener('click', function (e) {
+var b = e.currentTarget;
+var done = function () { b.textContent = 'コピーしました'; setTimeout(function () { b.textContent = 'コピー'; }, 2000); };
+if (navigator.clipboard) { navigator.clipboard.writeText(transferUrl.value).then(done, function () { transferUrl.select(); }); } else { transferUrl.select(); }
+});
 
 render();
 fetch(root + 'search/index.json').then(function (r) { return r.json(); }).then(function (data) { items = data.items || []; render(); }).catch(function () {});

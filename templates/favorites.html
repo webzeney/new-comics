@@ -6,10 +6,28 @@
 <div class="heading">
 <span class="heading__en">FAVORITE</span>
 <h1 id="fav-title" class="heading__title">お気に入り</h1>
-<p class="heading__lead">お気に入りに登録した作品の新刊をまとめて表示します。作品ページや本のページの「お気に入りに追加」から登録できます。お気に入りはこのブラウザに保存されます。</p>
+<p class="heading__lead">お気に入りに登録した作品の新刊をまとめて表示します。作品ページや本のページの「お気に入りに追加」から登録できます。お気に入りはこのブラウザに保存されます。別のスマホやパソコンへは「別の端末に引き継ぐ」から移せます。</p>
+</div>
+<div class="fav_import" data-fav-import hidden>
+<p class="fav_import__text" data-fav-import-text></p>
+<div class="fav_import__actions">
+<button type="button" class="fav_import__ok" data-fav-import-ok>追加する</button>
+<button type="button" class="chip_link chip_link--button" data-fav-import-cancel>やめる</button>
+</div>
 </div>
 <div class="filter" data-fav-list hidden>
 <span class="filter__label">登録中の作品</span>
+</div>
+<div class="fav_transfer" data-fav-transfer hidden>
+<button type="button" class="chip_link chip_link--button" aria-expanded="false" aria-controls="fav-transfer-body" data-fav-transfer-open>別の端末に引き継ぐ</button>
+<div id="fav-transfer-body" class="fav_transfer__body" hidden>
+<p class="fav_transfer__text">下のアドレスを別のスマホやパソコンで開くか、QRコードを読み取ると、お気に入りの作品をその端末に追加できます。</p>
+<div class="fav_transfer__row">
+<input type="text" class="fav_transfer__url" readonly aria-label="引き継ぎ用のアドレス" data-fav-transfer-url>
+<button type="button" class="chip_link chip_link--button fav_transfer__copy" data-fav-transfer-copy>コピー</button>
+</div>
+<div class="fav_transfer__qr" data-fav-transfer-qr></div>
+</div>
 </div>
 </section>
 <section aria-labelledby="fav-list-title" class="panel">
