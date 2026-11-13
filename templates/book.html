@@ -41,7 +41,7 @@
 </div>
 {% if book.change %}<p class="book__notice">発売日が変更されました（<span class="en">{{ book.change.old }}</span> → <span class="en">{{ book.change.new }}</span>）</p>{% endif %}
 <div class="book__buy">
-<span class="book__buy_title">予約・購入する</span>
+<span class="book__buy_title">{{ buy_title }}</span>
 {{ store_buttons(book.stores, '') }}
 <span class="book__buy_note">価格・発売日・在庫は各販売店のページでご確認ください。</span>
 </div>

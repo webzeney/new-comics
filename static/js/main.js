@@ -4,6 +4,20 @@
 function $(sel, root) { return (root || document).querySelector(sel); }
 function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 
+/* 発売前の本の購入ボタンを「○○で予約」にする（JS で並べる一覧用） */
+var RESERVE_WORDS = { amazon: 'Amazon', rakuten: '楽天', seven: 'セブンネット', kindle: 'Kindle', kobo: '楽天Kobo' };
+window.NewComicsReserve = function (li, iso) {
+var today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+if (!iso || iso <= today) return;
+$$('[data-store]', li).forEach(function (a) {
+var word = RESERVE_WORDS[a.dataset.store];
+if (!word) return;
+a.textContent = '';
+[word, 'で予約'].forEach(function (t) { var s = document.createElement('span'); s.className = 'store_tile__word'; s.textContent = t; a.appendChild(s); });
+a.setAttribute('aria-label', a.getAttribute('title') + 'で予約');
+});
+};
+
 /* サイドメニューの開閉（スマホ） */
 function initSidemenu() {
 var button = $('.sidemenu__toggle');
@@ -175,6 +189,7 @@ if (!b.ebook) $('[data-field="ebook"]', li).remove();
 if (!b.eo) $('[data-field="ebookonly"]', li).remove();
 if (!b.first) $('[data-field="first"]', li).remove();
 $$('[data-store]', li).forEach(function (a) { var url = b.stores[a.dataset.store]; if (url) { a.href = url; } else { a.remove(); } });
+window.NewComicsReserve(li, b.d);
 var pick = $('[data-cart-pick]', li);
 var asin = (b.stores.amazon || '').match(/\/dp\/([0-9A-Z]{10})/);
 if (asin) { pick.value = asin[1]; pick.setAttribute('aria-label', (b.ia || b.title) + 'をカートに入れる本に選ぶ'); } else { var none = document.createElement('span'); none.className = 'pick pick--none'; none.setAttribute('aria-hidden', 'true'); pick.parentNode.replaceWith(none); }

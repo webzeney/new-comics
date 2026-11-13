@@ -244,8 +244,16 @@ class Site:
         return {"tag": self.env.get("AMAZON_TAG") or ""}
 
     def stores(self, b):
-        if b.ebook_only:
-            return self.ebook_only_stores(b)
+        """購入ボタン。発売前の本は「Amazonで予約」のような表記にする（2026-11-13 運営者の判断）。"""
+        out = self.ebook_only_stores(b) if b.ebook_only else self.paper_stores(b)
+        if b.release and b.release > self.today:
+            for s in out:
+                s["reserve"] = True
+                s["words"] = [s["short"], "で予約"]
+                s["button"] = s["button"] + "で予約"
+        return out
+
+    def paper_stores(self, b):
         q = b.isbn13 or b.title
         # ISBN が分かる本は Amazon・セブンネットとも商品ページへ（Amazon に ISBN-10 のページがない本は、ISBN-13 で見つけた ASIN。
         # それもなければ ISBN の検索ページ）。ISBN が分からない本は、Amazon の照らし合わせで見つかった ASIN、
@@ -770,7 +778,7 @@ def calendar_context(site, root, y, m, months):
 
 def compact_row(site, root, b):
     stores = {s["kind"]: s["url"] for s in site.stores(b)}
-    return {"url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook) and not b.ebook_only, "eo": b.ebook_only, "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
+    return {"url": site.book_url(root, b), "d": b.release.isoformat() if b.release else None, "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook) and not b.ebook_only, "eo": b.ebook_only, "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
 
 
 # ---- 日別一覧 ----
@@ -1108,6 +1116,7 @@ def build_books(site, w):
             "series": series,
             "sameday": sameday,
             "summary": book_summary(site, b, main, vol, volumes),
+            "buy_title": ("予約する" if b.release > site.today else "購入する") if b.release else "予約・購入する",
             "works": author_works(site, root, b),
         }
         when = f"{b.release.year}年{b.release.month}月{b.release.day}日発売" if b.release else "発売日未定"

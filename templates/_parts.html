@@ -17,14 +17,14 @@
 
 {% macro store_tiles(stores, cls) -%}
 {% for s in stores %}
-<a href="{{ s.url }}" class="store_tile{% if s.kind != 'amazon' %} store_tile--{{ s.kind }}{% endif %}{% if cls %} {{ cls }}{% endif %}" aria-label="{{ s.name }}で購入" title="{{ s.name }}" rel="sponsored noopener" target="_blank">{% if s.get('words') %}{% for w in s.words %}<span class="store_tile__word">{{ w }}</span>{% endfor %}{% else %}{{ s.short }}{% endif %}</a>
+<a href="{{ s.url }}" class="store_tile{% if s.kind != 'amazon' %} store_tile--{{ s.kind }}{% endif %}{% if cls %} {{ cls }}{% endif %}" aria-label="{{ s.name }}で{{ '予約' if s.get('reserve') else '購入' }}" title="{{ s.name }}" rel="sponsored noopener" target="_blank">{% if s.get('words') %}{% for w in s.words %}<span class="store_tile__word">{{ w }}</span>{% endfor %}{% else %}{{ s.short }}{% endif %}</a>
 {% endfor %}
 {%- endmacro %}
 
 {% macro store_buttons(stores, cls) -%}
 <div class="store_buttons{% if cls %} {{ cls }}{% endif %}">
 {% for s in stores %}
-<a href="{{ s.url }}" class="store_button{% if s.kind != 'amazon' %} store_button--{{ s.kind }}{% endif %}" aria-label="{{ s.name }}で予約・購入" rel="sponsored noopener" target="_blank">{{ s.button }}</a>
+<a href="{{ s.url }}" class="store_button{% if s.kind != 'amazon' %} store_button--{{ s.kind }}{% endif %}{% if s.get('reserve') %} store_button--reserve{% endif %}" aria-label="{{ s.name }}で{{ '予約' if s.get('reserve') else '購入' }}" rel="sponsored noopener" target="_blank">{{ s.button }}</a>
 {% endfor %}
 </div>
 {%- endmacro %}

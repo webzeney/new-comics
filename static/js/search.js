@@ -147,6 +147,7 @@ $('[data-field="meta"]', li).textContent = item.m;
 if (!item.e || item.eo) $('[data-field="ebook"]', li).remove();
 if (!item.eo) $('[data-field="ebookonly"]', li).remove();
 $$('[data-store]', li).forEach(function (a) { var url = item.s && item.s[a.dataset.store]; if (url) { a.href = url; } else { a.remove(); } });
+if (window.NewComicsReserve) window.NewComicsReserve(li, item.d);
 return li;
 }
 

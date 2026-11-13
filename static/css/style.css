@@ -135,6 +135,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .store_button--rakuten{color:#BF0000}
 .store_button--seven{color:#00704A}
 .store_button--kobo{color:#BF0000}
+.store_button--reserve{letter-spacing:0.02em}
 .store_buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 /* ==========================================================================
 書籍の行（一覧）
@@ -671,6 +672,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .book__fact_unit{font-size:11px}
 .book__info{flex:1 1 100%}
 .store_button{letter-spacing:0.15em}
+.store_button--reserve{letter-spacing:0.02em}
 .slider__item{flex:0 0 calc((100% - 14px) / 2)}
 .latest__cover{flex:0 0 120px}
 .latest__info{flex:1 1 100%}
