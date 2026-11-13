@@ -28,14 +28,12 @@ jobs:
           PYTHONPATH: src
           NEWCOMICS_DB: data/newcomics.sqlite
         run: python -m newcomics.dedupe
-      - name: 確認
-        if: inputs.title != '--dups'
+      - name: レーベルの一覧
         run: |
-          python3 - <<'PY'
-          import os, sqlite3
-          c = sqlite3.connect("data/newcomics.sqlite"); c.row_factory = sqlite3.Row
-          cols = [r[1] for r in c.execute("PRAGMA table_info(books)")]
-          want = [k for k in ("id","title","volume","isbn13","asin","release_date","origin","has_ebook","image_url","rakuten_url","rakuten_checked_at","amazon_checked_at","kindle_asin","source_url") if k in cols]
-          for r in c.execute(f"SELECT {', '.join('b.'+k for k in want)}, p.name AS publisher FROM books b JOIN publishers p ON p.id = b.publisher_id WHERE b.title LIKE ?", (f"%{os.environ['TITLE']}%",)):
-              print("----"); [print(f"{k}: {r[k]}") for k in r.keys()]
-          PY
+          python3 - <<'PY2'
+          import sqlite3
+          c = sqlite3.connect("data/newcomics.sqlite")
+          for r in c.execute("""SELECT l.id, p.name, l.name, COUNT(b.id) FROM labels l JOIN publishers p ON p.id=l.publisher_id LEFT JOIN books b ON b.label_id=l.id
+                                WHERE l.is_adult=0 AND p.is_adult=0 GROUP BY l.id ORDER BY p.name, l.name"""):
+              print("LBL", *r, sep="\t")
+          PY2
