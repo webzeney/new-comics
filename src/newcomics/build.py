@@ -1681,6 +1681,9 @@ def build_search(site, w):
     target = Path(w.out) / "search" / "index.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps({"items": items}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    # トップの検索の絞り込み用：出版社・レーベル・発売月の組み合わせだけ（search/index.json は重いので使わない）
+    facets = sorted({(i["p"], i["l"], i["d"][:7]) for i in items})
+    (target.parent / "facets.json").write_text(json.dumps({"rows": facets}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     ctx = {
         "crumbs": crumbs(root, ("検索結果", None)),
         "options": search_options(site),

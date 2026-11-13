@@ -519,8 +519,57 @@ $('[data-cart-clear]', bar).addEventListener('click', function () { chosen = [];
 update();
 }
 
+/* トップの検索：出版社・レーベル・発売月のどれかを選ぶと、残りの2つを本のある選択肢だけにする（検索のページと同じ動き） */
+function initFormNarrow() {
+var form = $('form.search_form:not([data-search-form])');
+if (!form || !form.pub || !form.label || !form.month) return;
+var script = $('script[src*="assets/js/main.js"]');
+if (!script) return;
+var root = script.getAttribute('src').replace(/assets\/js\/.*$/, '');
+var filters = [{ select: form.pub, i: 0 }, { select: form.label, i: 1 }, { select: form.month, i: 2 }];
+filters.forEach(function (f) {
+f.options = $$('option', f.select).filter(function (o) { return o.value; }).map(function (o) { return { value: o.value, text: o.textContent }; });
+});
+var rows = null;
+function available(target) {
+var set = {};
+rows.forEach(function (r) {
+for (var k = 0; k < filters.length; k++) {
+var f = filters[k];
+if (f === target || !f.select.value) continue;
+if (r[f.i] !== f.select.value) return;
+}
+set[r[target.i]] = true;
+});
+return set;
+}
+function narrow(changed) {
+if (!rows) return;
+if (changed) filters.forEach(function (f) {
+if (f.select === changed || !f.select.value) return;
+if (!available(f)[f.select.value]) f.select.value = '';
+});
+filters.forEach(function (f) {
+var set = available(f);
+var current = f.select.value;
+while (f.select.options.length > 1) f.select.remove(1);
+f.options.forEach(function (o) {
+if (!set[o.value] && o.value !== current) return;
+var option = document.createElement('option');
+option.value = o.value;
+option.textContent = o.text;
+f.select.appendChild(option);
+});
+f.select.value = current;
+});
+}
+filters.forEach(function (f) { f.select.addEventListener('change', function () { narrow(f.select); }); });
+fetch(root + 'search/facets.json').then(function (r) { return r.json(); }).then(function (data) { rows = data.rows; narrow(null); }).catch(function () {});
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 initSidemenu();
+initFormNarrow();
 initCart();
 initTicker();
 initFilterMore();
