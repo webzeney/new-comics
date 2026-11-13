@@ -1605,11 +1605,21 @@ def search_words(books, aliases):
     return words
 
 
+CHANGE_DAYS = 14
+
+
 def build_search(site, w):
     root = "../"
     items = []
     order = {b.id: i for i, b in enumerate(sorted(site.books, key=lambda b: (b.first_seen, b.id)))}
     words = search_words(site.books, load_aliases())
+    # ここ2週間で発売日が変わった・決まった本（お気に入りのページで目立たせる。2026-11-13 運営者の判断）
+    recent = {}
+    since = site.today - timedelta(days=CHANGE_DAYS)
+    for r in change_rows(site):
+        d = datetime.fromisoformat(r["detected_at"]).date()
+        if d >= since and r["book_id"] not in recent:
+            recent[r["book_id"]] = {"k": r["kind"], "t": update_detail(r["kind"], r["old_value"], r["new_value"]), "at": md(d)}
     for b in site.books:
         stores = {s["kind"]: s["url"] for s in site.stores(b)}
         item = {
@@ -1618,6 +1628,8 @@ def build_search(site, w):
         }
         if b.id in words:
             item["k"] = words[b.id]
+        if b.id in recent:
+            item["ch"] = recent[b.id]
         items.append(item)
     target = Path(w.out) / "search" / "index.json"
     target.parent.mkdir(parents=True, exist_ok=True)

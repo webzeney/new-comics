@@ -48,6 +48,8 @@ if (cover && item.i) { var img = document.createElement('img'); img.src = item.i
 $('[data-field="meta"]', li).textContent = item.m;
 if (!item.e || item.eo) $('[data-field="ebook"]', li).remove();
 if (!item.eo) $('[data-field="ebookonly"]', li).remove();
+var change = $('[data-field="change"]', li);
+if (item.ch) { change.textContent = item.ch.k === '日付決定' ? '発売日決定' : '発売日変更'; if (item.ch.k === '日付決定') change.className = 'kind kind--fixed'; } else { change.remove(); }
 $$('[data-store]', li).forEach(function (a) { var u = item.s && item.s[a.dataset.store]; if (u) { a.href = u; } else { a.remove(); } });
 if (window.NewComicsReserve) window.NewComicsReserve(li, item.d);
 var pick = $('[data-cart-pick]', li);
@@ -88,6 +90,26 @@ var since = new Date(Date.now() + 9 * 3600 * 1000 - 30 * 86400 * 1000).toISOStri
 var found = items.filter(function (it) { return it.sr != null && ids.indexOf(String(it.sr)) !== -1 && (!it.d || it.d >= since); });
 found.sort(function (a, b) { return (a.d || '9999') < (b.d || '9999') ? -1 : (a.d || '9999') > (b.d || '9999') ? 1 : 0; });
 found.forEach(function (it) { booksBox.appendChild(renderRow(it, today)); });
+var changesBox = $('[data-fav-changes]');
+var changesList = $('[data-fav-changes-list]');
+changesList.textContent = '';
+found.filter(function (it) { return it.ch; }).forEach(function (it) {
+var li = document.createElement('li');
+li.className = 'updates__item';
+var k = document.createElement('span');
+k.className = 'kind ' + (it.ch.k === '日付決定' ? 'kind--fixed' : 'kind--change');
+k.textContent = it.ch.k === '日付決定' ? '発売日の決定' : '発売日の変更';
+var a = document.createElement('a');
+a.className = 'updates__link';
+a.href = root + it.u.replace(/^\.\.\//, '');
+a.textContent = it.t;
+var d = document.createElement('span');
+d.className = 'updates__detail';
+d.textContent = it.ch.t + '（' + it.ch.at + 'に更新）';
+li.appendChild(k); li.appendChild(a); li.appendChild(d);
+changesList.appendChild(li);
+});
+changesBox.hidden = !changesList.children.length;
 count.textContent = found.length + '点';
 $('[data-fav-cart]').hidden = !$('[data-cart-pick]', booksBox);
 document.dispatchEvent(new Event('cart:refresh'));

@@ -19,6 +19,10 @@
 <div data-fav-cart hidden>
 {{ cart_intro("チェックを入れた本を、まとめてAmazonのカートに入れられます。予約中の本もOKです。", "すべて選ぶ") }}
 </div>
+<div class="fav_changes" data-fav-changes hidden>
+<h3 class="updates__title">ここ2週間で発売日が変わった・決まった本</h3>
+<ul class="updates__list" data-fav-changes-list></ul>
+</div>
 <ul class="booklist" data-fav-books></ul>
 <p class="empty" data-fav-empty>お気に入りに登録した作品は、まだありません。</p>
 </section>
@@ -35,6 +39,7 @@
 <span class="badge" data-field="pub"></span>
 <span class="badge badge--ebookonly" data-field="ebookonly">電子版のみ</span>
 <span class="badge badge--ebook" data-field="ebook">電子版あり</span>
+<span class="kind kind--change" data-field="change">発売日変更</span>
 </div>
 <a href="#" class="bookrow__title" data-book-url data-field="title"></a>
 <span class="bookrow__meta" data-field="meta"></span>
