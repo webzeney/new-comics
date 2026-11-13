@@ -21,6 +21,7 @@ MENU = [
     ("updates", "発売日の変更・決定", "updates/"),
 ]
 FOOTER = [
+    ("guide", "このサイトの使い方", "guide/"),
     ("about", "運営者情報", "about/"),
     ("privacy", "プライバシーポリシー", "privacy/"),
     ("disclaimer", "免責事項", "disclaimer/"),

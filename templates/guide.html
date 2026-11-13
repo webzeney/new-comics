@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import breadcrumb %}
+{% block content %}
+<article aria-labelledby="page-title" class="panel">
+{{ breadcrumb(crumbs, 'breadcrumb--wide') }}
+<div class="doc">
+<div class="heading">
+<span class="heading__en">GUIDE</span>
+<h1 id="page-title" class="heading__title">このサイトの使い方</h1>
+</div>
+<p class="doc__lead">漫画新刊JPでできることと、それぞれの使い方をまとめました。新しい機能を足したり、見せ方を変えたりしたときは、このページに書き足していきます。</p>
+<section class="doc__section">
+<h2 class="doc__title">新刊を探す</h2>
+<p class="doc__text"><a href="{{ root }}today/" class="doc__link">今日発売の新刊</a>・<a href="{{ root }}week/" class="doc__link">今週発売の新刊</a>では、その日・その週に出る漫画をまとめて見られます。<a href="{{ root }}calendar/" class="doc__link">漫画新刊カレンダー</a>では、日付を選ぶとその日の新刊が下に出ます。</p>
+<p class="doc__text"><a href="{{ root }}publisher/" class="doc__link">出版社から探す</a>・<a href="{{ root }}label/" class="doc__link">レーベルから探す</a>のページでは、3か月分の発売予定を月ごとに切り替えて見られます。各月の一覧の下にある「○月の新刊を1ページで見る」から、その月の新刊だけを1ページにまとめたページに移れます。</p>
+<p class="doc__text">「新シリーズ1巻」「完結巻」「特装版・限定版」「電子同時配信」などのタグや、著者の名前からも探せます。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">キーワードと条件で検索する</h2>
+<p class="doc__text">検索のページでは、作品名・著者名・出版社名などのキーワードと、出版社・レーベル・発売月の3つの条件を組み合わせて探せます。</p>
+<p class="doc__text">出版社・レーベル・発売月のどれかを選ぶと、残りの2つは本がある選択肢だけになります。たとえば出版社を選ぶと、レーベルにはその出版社のレーベルだけが並びます。ほかの出版社に切り替えたいときは、レーベルを「すべて」に戻してから選び直してください。「電子書籍版ありのみ」にチェックを入れると、電子版がある本だけに絞れます。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">本のページで分かること</h2>
+<p class="doc__text">本のページには、発売日・定価・電子版の有無のほか、「この本について」として、前の巻から何か月ぶりの新刊か、次の巻の発売日（決まっていないときは、これまでの発売の間隔から見込んだ時期）、同じ日に同じレーベルから出る点数などをまとめています。</p>
+<p class="doc__text">その下には、作品の既刊、同じ日に発売される新刊、同じ作者のほかの作品が並びます。作品の名前から作品のページに移ると、これまでに出た巻の一覧と次の巻の発売予定を見られます。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">予約・購入する</h2>
+<p class="doc__text">本ごとに、Amazon・楽天ブックス・セブンネットのボタンを置いています。発売前の本は「Amazonで予約」のような表記になっていて、そのまま各書店で予約できます。電子版のみの本は、Kindle と楽天Kobo のボタンになります。</p>
+<p class="doc__text">一覧のページでは、本の左にあるチェックを入れると、選んだ本をまとめて Amazon のカートに入れられます。予約中の本も入れられます。</p>
+<p class="doc__box">価格・発売日・在庫は、各書店のページで確かめてください。発売日は出版社の都合で変わることがあります。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">発売日を見逃さない</h2>
+<p class="doc__text">本のページの「iPhone・Macで受け取る」「Googleカレンダーで受け取る」や、作品のページの「iPhone・Macに登録」「Googleカレンダー」から、その作品の新しい巻の発売日をカレンダーに自動で入れられます。iPhone・Mac では、お知らせのタイミング（1週間前・3日前・前日・発売日の当日）も選べます。新しい巻の発売日が決まったときや変わったときも、カレンダーの予定が自動で直ります。</p>
+<p class="doc__text">RSS リーダーを使っている人は、作品のページの RSS から登録できます。X（旧Twitter）の<a href="https://x.com/newcomics_jp" class="doc__link" target="_blank" rel="noopener">@newcomics_jp</a>では、毎朝6時にその日発売の新刊をお知らせしています。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">お気に入りを使う</h2>
+<p class="doc__text">作品のページや本のページの「お気に入りに追加」を押すと、その作品が<a href="{{ root }}favorites/" class="doc__link">お気に入り</a>に入ります。お気に入りのページでは、登録した作品の新刊をまとめて見られます。会員登録はいりません。</p>
+<p class="doc__text">お気に入りの作品の本の発売日が、ここ2週間で変わったり決まったりしたときは、お気に入りのページの上に赤い枠で知らせ、本にも「発売日変更」「発売日決定」の印を付けます。</p>
+<p class="doc__text">お気に入りは、使っているブラウザの中に保存されます。別のスマホやパソコンでも同じお気に入りを使いたいときは、お気に入りのページの「別の端末に引き継ぐ」を押してください。出てきた QR コードを別の端末で読み取るか、アドレスを別の端末で開くと、「お気に入りに追加しますか？」と確認が出て、追加できます。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">発売日の変更・決定を確かめる</h2>
+<p class="doc__text"><a href="{{ root }}updates/" class="doc__link">発売日の変更・決定</a>のページでは、発売日が変わった本や、新しく発売日が決まった本を、更新された日ごとにまとめています。</p>
+</section>
+<section class="doc__section">
+<h2 class="doc__title">新しくなったこと</h2>
+<p class="doc__date">2026年11月14日</p>
+<p class="doc__text">出版社・レーベルの月別のページを作りました。本のページの「この本について」に、次の巻の発売日や見込みを書くようにしました。発売前の本の書店のボタンを「○○で予約」の表記にしました。お気に入りのページで、発売日が変わった本を目立たせるようにし、別の端末に引き継げるようにしました。</p>
+<p class="doc__date">2026年11月13日</p>
+<p class="doc__text">検索の出版社・レーベル・発売月の条件を、選んだものに合わせて絞り込むようにしました。</p>
+</section>
+</div>
+</article>
+{% endblock %}

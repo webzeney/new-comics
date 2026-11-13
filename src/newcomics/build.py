@@ -1686,6 +1686,7 @@ def build_updates(site, w):
 def build_static(site, w):
     root = "../"
     pages = [
+        ("guide", "このサイトの使い方", "guide.html", {}),
         ("about", "運営者情報", "about.html", {}),
         ("privacy", "プライバシーポリシー", "privacy.html", {"established": site.env.get("PRIVACY_DATE") or site.today.strftime("%Y.%m.%d")}),
         ("disclaimer", "免責事項", "disclaimer.html", {}),
