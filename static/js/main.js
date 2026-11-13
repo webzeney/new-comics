@@ -288,9 +288,9 @@ $('.book__fact_label', box).insertAdjacentHTML('beforeend', '<span class="book__
 
 /* 本のページ：新刊のお知らせをカレンダーで受け取る案内 */
 function initCalendarDialog() {
-var dialog = $('.alarm_dialog');
+var dialog = $('.alarm_dialog:not([data-fav-transfer])');
 if (!dialog) return;
-var backdrop = $('.alarm_dialog__backdrop');
+var backdrop = $('.alarm_dialog__backdrop:not([data-fav-transfer-close])');
 var target = $('[data-alarm-target]', dialog);
 var submit = $('[data-alarm-submit]', dialog);
 var current = null;

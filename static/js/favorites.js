@@ -96,7 +96,7 @@ render();
 });
 wrap.appendChild(a);
 wrap.appendChild(x);
-listBox.appendChild(wrap);
+listBox.insertBefore(wrap, $('[data-fav-transfer-open]'));
 });
 booksBox.textContent = '';
 if (!items) return;
@@ -150,15 +150,15 @@ $('[data-fav-import-cancel]').addEventListener('click', function () { importBox.
 }
 
 var transfer = $('[data-fav-transfer]');
-var transferBody = $('#fav-transfer-body');
+var transferBackdrop = $('.alarm_dialog__backdrop[data-fav-transfer-close]');
 var transferOpen = $('[data-fav-transfer-open]');
 var transferUrl = $('[data-fav-transfer-url]');
 function updateTransfer() {
 var favs = load();
-transfer.hidden = favs.length === 0;
-if (!favs.length) { transferBody.hidden = true; transferOpen.setAttribute('aria-expanded', 'false'); return; }
-transferUrl.value = location.origin + location.pathname + '#import=' + encodeFavs(favs);
-if (!transferBody.hidden) drawQr();
+transferUrl.value = favs.length ? location.origin + location.pathname + '#import=' + encodeFavs(favs) : '';
+$('[data-fav-transfer-count]').textContent = favs.length;
+if (!favs.length) closeTransfer();
+else if (!transfer.hidden) drawQr();
 }
 function drawQr() {
 var box = $('[data-fav-transfer-qr]');
@@ -174,12 +174,20 @@ s.src = root + 'assets/js/qrcode.min.js';
 s.onload = draw;
 document.head.appendChild(s);
 }
+function closeTransfer() {
+if (transfer.hidden) return;
+transfer.hidden = true;
+transferBackdrop.hidden = true;
+transferOpen.focus();
+}
 transferOpen.addEventListener('click', function () {
-var open = transferBody.hidden;
-transferBody.hidden = !open;
-transferOpen.setAttribute('aria-expanded', open ? 'true' : 'false');
-if (open) drawQr();
+transfer.hidden = false;
+transferBackdrop.hidden = false;
+drawQr();
+$('[data-fav-transfer-copy]').focus();
 });
+$$('[data-fav-transfer-close]').forEach(function (el) { el.addEventListener('click', closeTransfer); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeTransfer(); });
 $('[data-fav-transfer-copy]').addEventListener('click', function (e) {
 var b = e.currentTarget;
 var done = function () { b.textContent = 'コピーしました'; setTimeout(function () { b.textContent = 'コピー'; }, 2000); };

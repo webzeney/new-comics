@@ -573,6 +573,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .alarm_dialog__time{margin-left:auto;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:12px;letter-spacing:0.1em;color:#5A5148}
 .alarm_dialog__note{margin:0;font-size:12px;line-height:1.7;color:#5A5148}
 .alarm_dialog__actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.alarm_dialog__actions--single{grid-template-columns:1fr}
 .alarm_dialog__submit,.alarm_dialog__cancel{display:flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:13px;font-weight:700;text-decoration:none;cursor:pointer}
 .alarm_dialog__submit{background:#222222;color:#FFFFFF}
 .alarm_dialog__cancel{background:#FFFFFF;color:#222222}
@@ -624,14 +625,11 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .fav_import__actions{display:flex;flex-wrap:wrap;gap:8px}
 .fav_import__ok{min-height:40px;padding:0 20px;border:2px solid #222222;border-radius:999px;background:#222222;color:#FFFFFF;font-family:inherit;font-size:13px;font-weight:900;cursor:pointer}
 .fav_import__ok[hidden]{display:none}
-.fav_transfer{margin-top:14px}
-.fav_transfer__body{margin-top:12px;padding:14px 16px;border-radius:14px;background:#FFF6EC}
-.fav_transfer__body[hidden]{display:none}
-.fav_transfer__text{margin:0 0 10px;font-size:13px;line-height:1.7}
 .fav_transfer__row{display:flex;gap:8px}
-.fav_transfer__url{flex:1 1 auto;min-width:0;min-height:36px;padding:0 12px;box-sizing:border-box;border:1px solid #D9CFC6;border-radius:10px;background:#FFFFFF;font-family:inherit;font-size:12px}
+.fav_transfer__url{flex:1 1 auto;min-width:0;min-height:40px;padding:0 12px;box-sizing:border-box;border:1px solid #D9CFC6;border-radius:10px;background:#FFFFFF;font-family:inherit;font-size:12px}
 .fav_transfer__copy{flex:0 0 auto;white-space:nowrap}
-.fav_transfer__qr{width:160px;margin-top:12px;background:#FFFFFF}
+.fav_transfer__open{margin-left:auto}
+.fav_transfer__qr{width:180px;margin:0 auto;background:#FFFFFF}
 .fav_transfer__qr svg{display:block;width:100%;height:auto}
 
 /* ==========================================================================

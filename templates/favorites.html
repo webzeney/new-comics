@@ -17,16 +17,22 @@
 </div>
 <div class="filter" data-fav-list hidden>
 <span class="filter__label">登録中の作品</span>
+<button type="button" class="chip_link chip_link--button fav_transfer__open" aria-haspopup="dialog" data-fav-transfer-open>別の端末に引き継ぐ</button>
 </div>
-<div class="fav_transfer" data-fav-transfer hidden>
-<button type="button" class="chip_link chip_link--button" aria-expanded="false" aria-controls="fav-transfer-body" data-fav-transfer-open>別の端末に引き継ぐ</button>
-<div id="fav-transfer-body" class="fav_transfer__body" hidden>
-<p class="fav_transfer__text">下のアドレスを別のスマホやパソコンで開くか、QRコードを読み取ると、お気に入りの作品をその端末に追加できます。</p>
+<div class="alarm_dialog__backdrop" data-fav-transfer-close hidden></div>
+<div class="alarm_dialog" role="dialog" aria-modal="true" aria-labelledby="fav-transfer-title" data-fav-transfer hidden>
+<div class="alarm_dialog__head">
+<span class="alarm_dialog__label">TRANSFER</span>
+<p class="alarm_dialog__title" id="fav-transfer-title">別の端末に引き継ぐ</p>
+<p class="alarm_dialog__lead">別のスマホやパソコンでQRコードを読み取るか、下のアドレスを開くと、お気に入りの作品（<span data-fav-transfer-count></span>作品）をその端末に追加できます。</p>
+</div>
+<div class="fav_transfer__qr" data-fav-transfer-qr></div>
 <div class="fav_transfer__row">
 <input type="text" class="fav_transfer__url" readonly aria-label="引き継ぎ用のアドレス" data-fav-transfer-url>
 <button type="button" class="chip_link chip_link--button fav_transfer__copy" data-fav-transfer-copy>コピー</button>
 </div>
-<div class="fav_transfer__qr" data-fav-transfer-qr></div>
+<div class="alarm_dialog__actions alarm_dialog__actions--single">
+<button type="button" class="alarm_dialog__cancel" data-fav-transfer-close>閉じる</button>
 </div>
 </div>
 </section>
