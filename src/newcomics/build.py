@@ -1158,6 +1158,8 @@ def build_series(site, w):
             lastmod=lastmod(site, vols),
             noindex=len(vols) < 2 and latest.volume < 2,
         )
+        if len(vols) < 2 and latest.volume >= 2 and site_base(site):
+            page["canonical"] = f"{site_base(site)}/book/{latest.key}/"
         w.write(f"series/{sid}/index.html", "series.html", page, **ctx)
 
 
