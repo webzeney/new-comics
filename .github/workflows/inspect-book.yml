@@ -28,12 +28,12 @@ jobs:
           PYTHONPATH: src
           NEWCOMICS_DB: data/newcomics.sqlite
         run: python -m newcomics.dedupe
-      - name: レーベルの一覧
+      - name: 作品の一覧
         run: |
           python3 - <<'PY2'
           import sqlite3
           c = sqlite3.connect("data/newcomics.sqlite")
-          for r in c.execute("""SELECT l.id, p.name, l.name, COUNT(b.id) FROM labels l JOIN publishers p ON p.id=l.publisher_id LEFT JOIN books b ON b.label_id=l.id
-                                WHERE l.is_adult=0 AND p.is_adult=0 GROUP BY l.id ORDER BY p.name, l.name"""):
-              print("LBL", *r, sep="\t")
+          for r in c.execute("""SELECT s.id, s.name, COUNT(b.id), MAX(b.volume) FROM series s JOIN books b ON b.series_id=s.id JOIN publishers p ON p.id=b.publisher_id
+                                LEFT JOIN labels l ON l.id=b.label_id WHERE p.is_adult=0 AND COALESCE(l.is_adult,0)=0 GROUP BY s.id"""):
+              print("SER", *r, sep="\t")
           PY2
