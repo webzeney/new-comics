@@ -645,6 +645,23 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .fav_transfer__qr svg{display:block;width:100%;height:auto}
 
 /* ==========================================================================
+マウスオーバー（PC）
+========================================================================== */
+@media (hover: hover) and (pointer: fine){
+.arrow_button,.release__more_link,.search_form__button,.cart_bar__button,.follow__button,.fav_import__ok,.alarm_dialog__submit,.alarm_dialog__cancel,.chip,.chip_link,.pill_nav__item,.daynav__item,.monthtab__item,.pager__item,.fav_button,.toggle_button,.store_tile,.store_button,.others__link,.tag_link,.sidemenu__link,.bookrow__cover,.cover_link,.sameday__item{transition:background-color .15s,border-color .15s,color .15s,transform .15s,box-shadow .15s}
+.arrow_button:hover,.release__more_link:hover,.search_form__button:hover,.cart_bar__button:hover,.follow__button:hover,.fav_import__ok:hover,.alarm_dialog__submit:hover{background:#B5302A;border-color:#B5302A;color:#FFFFFF}
+.follow__button--light:hover,.alarm_dialog__cancel:hover,.chip:hover,.chip_link:hover,.pill_nav__item:hover,.daynav__item:hover,.monthtab__item:hover,.pager__item:hover,.fav_button:hover,.toggle_button:hover{background:#FFF0EC;color:#222222}
+.pill_nav__item--current:hover,.monthtab__item--current:hover,.pager__item--current:hover,.chip[aria-pressed="true"]:hover,.toggle_button[aria-pressed="true"]:hover,.toggle_button[aria-current="page"]:hover{background:#222222;color:#FFFFFF}
+.fav_button[aria-pressed="true"]:hover{background:#FFD15C}
+.chip_link--rss:hover{background:#FFE3CF;color:#B4530F}
+.store_button:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 #222222}
+.store_tile:hover{border-color:#222222;background:#FFF6EC}
+.others__link:hover,.tag_link:hover{background:#FFD9CF;color:#222222}
+.sidemenu__link:hover{color:#B5302A;transform:translateX(4px)}
+.bookrow__cover:hover,.cover_link:hover,.sameday__item:hover{transform:translateY(-3px)}
+}
+
+/* ==========================================================================
 スマホ（幅720px以下）
 ========================================================================== */
 @media (max-width: 720px){
