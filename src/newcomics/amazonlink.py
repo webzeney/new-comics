@@ -2,6 +2,7 @@
 
 1. 電子版ありの本と、電子版の有無が分からない本：Kindle版を作品名で探し、書名に作品名と同じ巻数が入っている Kindle版を同じ本とみなす（books.kindle_asin）。
 2. ISBN の分からない本：紙の本を書名で探し、作品名・巻数・発売日が合う本を同じ本とみなす（books.asin）。
+   「作品名 巻数」→「作品名 ○巻」→ 作品名で新しい順、の順に探す。
 3. ISBN の分かる本：ISBN-10 の商品ページ（/dp/ISBN-10）が Amazon にあるかを確かめる（books.amazon_isbn_ok）。
    ない本（Amazon が ISBN-10 ではない ASIN で登録している本）は、ISBN-13 で探して EAN が同じ紙の本を同じ本とみなす（books.asin）。
    商品ページがあった本は確かめ直さない。見つからなかった本は ISBN_RECHECK_DAYS 日たったら確かめ直す。
@@ -116,13 +117,17 @@ def run(conn, api, kind, rows, deadline):
             break
         name = series_name(r)
         if kind == "kindle":
-            queries = ([r["isbn13"]] if r["isbn13"] else []) + [name]
+            queries = [(q, {}) for q in ([r["isbn13"]] if r["isbn13"] else []) + [name]]
+        elif r["volume"] is not None:
+            # 書名と巻数だけで探すと Kindle版が先に並んで紙の本が出てこないことがあるので、「○巻」を付けて探し、
+            # それでもなければ作品名で新しい順に探す（2026-11-16）
+            queries = [(f"{name} {r['volume']}", {}), (f"{name} {r['volume']}巻", {}), (name, {"sortBy": "NewestArrivals"})]
         else:
-            queries = [f"{name} {r['volume']}" if r["volume"] is not None else r["title"]]
+            queries = [(r["title"], {})]
         hit, failed = None, False
-        for words in queries:
+        for words, extra in queries:
             try:
-                items = api.search(words, index="KindleStore" if kind == "kindle" else "Books", availability="IncludeOutOfStock")
+                items = api.search(words, index="KindleStore" if kind == "kindle" else "Books", availability="IncludeOutOfStock", **extra)
             except (requests.RequestException, AmazonError, ValueError):
                 failed = True
                 continue
