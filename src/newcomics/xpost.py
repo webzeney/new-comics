@@ -110,6 +110,7 @@ def main(argv=None):
     ap.add_argument("--date", help="投稿する日（YYYY-MM-DD）。省略すると今日（日本時間）")
     ap.add_argument("--dry-run", action="store_true", help="投稿せずに文面だけを表示する")
     ap.add_argument("--check", action="store_true", help="認証情報と投稿先のアカウントだけを確かめる")
+    ap.add_argument("--text", help="新刊の代わりに、この文面を投稿する（お知らせ用）")
     args = ap.parse_args(argv)
     keys = {"api_key": os.environ.get("X_API_KEY"), "api_secret": os.environ.get("X_API_SECRET"),
             "token": os.environ.get("X_ACCESS_TOKEN"), "token_secret": os.environ.get("X_ACCESS_SECRET")}
@@ -118,6 +119,17 @@ def main(argv=None):
         if missing:
             raise SystemExit("登録されていない認証情報があります：" + ", ".join(missing))
         check(keys)
+        return 0
+    if args.text:
+        text = args.text.replace("\\n", "\n")
+        print(text)
+        print(f"（文字数の目安 {weight(text)}／{LIMIT}）")
+        if weight(text) > LIMIT:
+            raise SystemExit("文字数が多すぎます")
+        if args.dry_run or not all(keys.values()):
+            print("（投稿していません）")
+            return 0
+        print("投稿しました：", post(text, keys))
         return 0
     day = date.fromisoformat(args.date) if args.date else datetime.now(db.JST).date()
     base = (os.environ.get("SITE_URL") or "https://new-comics.jp").rstrip("/")
