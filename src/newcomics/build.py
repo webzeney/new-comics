@@ -173,6 +173,11 @@ class Site:
             self.views = {r["book_key"]: r["views"] for r in conn.execute("SELECT book_key, views FROM page_views")}
         except sqlite3.OperationalError:
             self.views = {}
+        # 前の巻の売れ筋順位（発売前で順位のまだない本の並び順に使う。2026-11-16 運営者の判断）
+        self.series_ranks = defaultdict(list)
+        for b in self.books:
+            if b.series_id and b.volume and b.amazon_rank:
+                self.series_ranks[b.series_id].append((b.volume, b.amazon_rank))
         # 同じ日の本は、出版社の順（PUBLISHER_ORDER）→ 出版社の中は売れている順（new_release_key）に並べる
         self.dated = sorted([b for b in self.books if b.release], key=lambda b: (b.release,) + self.new_release_key(b))
         self.by_date = OrderedDict()
@@ -185,11 +190,19 @@ class Site:
                 self.series_books[b.series_id].append(b)
 
     def new_release_key(self, b):
-        """その日の新刊の並び順。出版社の順 → Amazon の売れ筋順位（紙の本）→ このサイトでよく見られている順
+        """その日の新刊の並び順。出版社の順 → Amazon の売れ筋順位（紙の本。順位のない本は前の巻の順位）→ このサイトでよく見られている順
         → 新シリーズの1巻 → 巻数の多い作品（2026-11-09 運営者の判断）。"""
         rank = PUBLISHER_ORDER.get(b.publisher)
         pub = (0, rank, "") if rank is not None else (1, 0, yomi.sort_key(b.publisher))
-        return pub + (b.amazon_rank is None, b.amazon_rank or 0, -self.views.get(b.key, 0), not b.is_first, -(b.volume or 0), b.title, b.id)
+        sales = b.amazon_rank or self.prev_rank(b)
+        return pub + (sales is None, sales or 0, -self.views.get(b.key, 0), not b.is_first, -(b.volume or 0), b.title, b.id)
+
+    def prev_rank(self, b):
+        """順位のない本は、同じ作品の前の巻（巻数がいちばん近いもの）の売れ筋順位を使う。"""
+        if not (b.series_id and b.volume):
+            return None
+        prev = [(v, r) for v, r in self.series_ranks.get(b.series_id, []) if v < b.volume]
+        return max(prev)[1] if prev else None
 
     def _publishers(self):
         counts = defaultdict(int)
