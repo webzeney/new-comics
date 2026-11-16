@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble, cover_photo, alarm_dialog %}
+{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble, cover_photo, alarm_dialog, rss_icon %}
 {% block content %}
 <section aria-labelledby="book-title" class="panel panel--head">
 {{ breadcrumb(crumbs, 'breadcrumb--wide') }}
@@ -56,6 +56,7 @@
 <a href="{{ book.follow.webcal }}" class="follow__button" data-subscribe="apple" data-subscribe-endpoint="{{ book.follow.endpoint }}">iPhone・Macで受け取る</a>
 <a href="{{ book.follow.google }}" class="follow__button follow__button--light" target="_blank" rel="noopener" data-subscribe="google" data-subscribe-endpoint="{{ book.follow.endpoint }}">Googleカレンダーで受け取る</a>
 </div>
+<p class="follow__rss">RSSリーダーでも受け取れます：<a href="{{ book.follow.feed }}" class="follow__rss_link">{{ rss_icon() }}RSSで受け取る</a></p>
 {% if book.gcal %}<p class="follow__single">この巻の発売日だけ追加する：<a href="{{ book.gcal }}" target="_blank" rel="noopener">Googleカレンダー</a>／<button type="button" class="follow__single_button" data-ics-name="{{ book.ics_name }}" data-ics-start="{{ book.ics_date }}" data-ics-end="{{ book.ics_end }}" data-ics-file="{{ book.isbn or 'release' }}.ics">iPhone・その他</button></p>{% endif %}
 <p class="x_follow"><span class="x_follow__text">毎朝6時、今日の新刊をXでもお知らせ</span><a href="{{ site.x.url }}" class="x_follow__link" target="_blank" rel="noopener">{{ site.x.handle }} をフォロー</a></p>
 </div>

@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, bookrow %}
+{% from "_parts.html" import ad, breadcrumb, bookrow, rss_icon %}
 {% macro date_groups(dates) %}
 {% for g in dates %}
 <div class="group">
@@ -39,6 +39,9 @@
 </div>
 </div>
 {% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
+{% if rss is defined %}
+<p class="rss_follow"><a href="{{ rss.url }}" class="chip_link chip_link--rss">{{ rss_icon() }}RSSで受け取る</a><span class="rss_follow__text">{{ rss.name }}がサイトに載ると、RSSリーダーに届きます</span></p>
+{% endif %}
 {% if label_links %}
 <div class="filter">
 <span class="filter__label">レーベル別に見る</span>

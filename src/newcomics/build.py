@@ -387,6 +387,7 @@ def build(conn, out_dir, today, env):
     build_genres(site, w)
     build_authors(site, w)
     build_series_feeds(site, w, env.get("SITE_URL"))
+    build_listing_feeds(site, w, env.get("SITE_URL"))
     build_series_calendars(site, w, env.get("SITE_URL"))
     build_favorites(site, w)
     build_search(site, w)
@@ -1111,7 +1112,7 @@ def build_books(site, w):
                 "gcal": gcal_url(b), "ics_date": b.release.strftime("%Y%m%d") if b.release else None,
                 "ics_end": (b.release + timedelta(days=1)).strftime("%Y%m%d") if b.release else None, "ics_name": f"『{b.title}』発売日",
                 "fav": {"id": b.series_id, "name": site.series[b.series_id]["name"], "url": f"/series/{b.series_id}/"} if b.series_id in site.series else None,
-                "follow": dict(calendar_links(site, b.series_id), name=site.series[b.series_id]["name"], released=bool(b.release and b.release <= site.today),
+                "follow": dict(calendar_links(site, b.series_id), name=site.series[b.series_id]["name"], released=bool(b.release and b.release <= site.today), feed=f"{root}series/{b.series_id}/feed.xml",
                                next_vol=(int(b.volume) + 1) if str(b.volume or "").isdigit() else None) if b.series_id in site.series else None,
             },
             "series": series,
@@ -1331,7 +1332,9 @@ def build_listings(site, w):
             subject=p["name"],
             month_pages=True,
         )
-        page = page_defaults(title=f"{p['name']}の漫画新刊発売予定｜{SITE_NAME}", description=f"{p['name']}から発売される漫画（コミック）の新刊を、発売日順に紹介しています。", menu="publisher", lastmod=lastmod(site, books))
+        page = page_defaults(title=f"{p['name']}の漫画新刊発売予定｜{SITE_NAME}", description=f"{p['name']}から発売される漫画（コミック）の新刊を、発売日順に紹介しています。", menu="publisher", lastmod=lastmod(site, books),
+                             feed={"title": f"{p['name']}の漫画の新刊（{SITE_NAME}）", "url": "feed.xml"})
+        ctx["rss"] = {"url": "feed.xml", "name": f"{p['name']}の新刊"}
         w.write(f"publisher/{p['slug']}/index.html", "listing.html", page, **ctx)
         label_months = defaultdict(list)
         for n, i in labels.items():
@@ -1352,7 +1355,9 @@ def build_listings(site, w):
             subject=f"{l['pub']}の{l['name']}",
             month_pages=True,
         )
-        page = page_defaults(title=f"{l['name']}（{l['pub']}）の漫画新刊発売予定｜{SITE_NAME}", description=f"{l['pub']}のレーベル「{l['name']}」から発売される漫画の新刊の発売予定と、これまでに発売された本をまとめています。", menu="label", lastmod=lastmod(site, books))
+        page = page_defaults(title=f"{l['name']}（{l['pub']}）の漫画新刊発売予定｜{SITE_NAME}", description=f"{l['pub']}のレーベル「{l['name']}」から発売される漫画の新刊の発売予定と、これまでに発売された本をまとめています。", menu="label", lastmod=lastmod(site, books),
+                             feed={"title": f"{l['name']}（{l['pub']}）の新刊（{SITE_NAME}）", "url": "feed.xml"})
+        ctx["rss"] = {"url": "feed.xml", "name": f"{l['name']}の新刊"}
         w.write(f"label/{l['id']}/index.html", "listing.html", page, **ctx)
         build_month_pages(site, w, "label", f"label/{l['id']}/", l["name"], books,
                           [("レーベルから探す", "label/"), (l["pub"], f"publisher/{l['slug']}/"), (l["name"], f"label/{l['id']}/")])
@@ -1367,7 +1372,9 @@ def build_listings(site, w):
             {"en": "TAG", "title": f"#{name}の新刊発売予定", "lead": lead, "kind": "tag", "final_badge": slug == "final"},
             subject=TAG_NOUN.get(slug, name),
         )
-        page = page_defaults(title=f"#{name}の漫画新刊発売予定｜{SITE_NAME}", description=lead, tag=f"tag:{slug}", lastmod=lastmod(site, books))
+        page = page_defaults(title=f"#{name}の漫画新刊発売予定｜{SITE_NAME}", description=lead, tag=f"tag:{slug}", lastmod=lastmod(site, books),
+                             feed={"title": f"#{name}の新刊（{SITE_NAME}）", "url": "feed.xml"})
+        ctx["rss"] = {"url": "feed.xml", "name": f"#{name}の新刊"}
         w.write(f"tag/{slug}/index.html", "listing.html", page, **ctx)
     # 一覧ページ
     root1 = "../"
@@ -1419,43 +1426,73 @@ def build_authors(site, w):
         w.write(f"author/{k}/index.html", "listing.html", page, **ctx)
 
 
-# ---- 作品ごとの RSS ----
+# ---- RSS（作品・出版社・レーベル・ジャンル・タグ） ----
+FEED_COUNT = 30
+
+
+def write_feed(w, base, rel_path, title, link, desc, books, count=FEED_COUNT):
+    """新しくサイトに載った本の順に、最新 count 件の RSS を書く。"""
+    items = sorted(books, key=lambda b: (b.first_seen or "", b.id), reverse=True)[:count]
+    entries = []
+    for b in items:
+        when = f"{b.release.year}年{b.release.month}月{b.release.day}日発売" if b.release else "発売日未定"
+        try:
+            pub = datetime.fromisoformat(b.first_seen).strftime("%a, %d %b %Y %H:%M:%S %z")
+        except (TypeError, ValueError):
+            pub = None
+        entries.append(
+            "<item>"
+            f"<title>{xml_escape(b.title)}（{when}）</title>"
+            f"<link>{base}/book/{b.key}/</link>"
+            f"<guid isPermaLink=\"true\">{base}/book/{b.key}/</guid>"
+            f"<description>{xml_escape(f'{b.publisher}・{when}')}</description>"
+            + (f"<pubDate>{pub}</pubDate>" if pub else "")
+            + "</item>"
+        )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0"><channel>'
+        f"<title>{xml_escape(title)}</title>"
+        f"<link>{base}{link}</link>"
+        f"<description>{xml_escape(desc)}</description>"
+        "<language>ja</language>"
+        + "".join(entries)
+        + "</channel></rss>"
+    )
+    target = Path(w.out) / rel_path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(xml, encoding="utf-8")
+
+
 def build_series_feeds(site, w, site_url):
     base = (site_url or "https://new-comics.jp").rstrip("/")
     for sid, books in site.series_books.items():
         if sid not in site.series:
             continue
         name = site.series[sid]["name"]
-        items = sorted(books, key=lambda b: (b.first_seen or "", b.id), reverse=True)[:20]
-        entries = []
-        for b in items:
-            when = f"{b.release.year}年{b.release.month}月{b.release.day}日発売" if b.release else "発売日未定"
-            try:
-                pub = datetime.fromisoformat(b.first_seen).strftime("%a, %d %b %Y %H:%M:%S %z")
-            except (TypeError, ValueError):
-                pub = None
-            entries.append(
-                "<item>"
-                f"<title>{xml_escape(b.title)}（{when}）</title>"
-                f"<link>{base}/book/{b.key}/</link>"
-                f"<guid isPermaLink=\"true\">{base}/book/{b.key}/</guid>"
-                f"<description>{xml_escape(f'{b.publisher}・{when}')}</description>"
-                + (f"<pubDate>{pub}</pubDate>" if pub else "")
-                + "</item>"
-            )
-        xml = (
-            '<?xml version="1.0" encoding="UTF-8"?>'
-            '<rss version="2.0"><channel>'
-            f"<title>{xml_escape(name)}の新刊（{SITE_NAME}）</title>"
-            f"<link>{base}/series/{sid}/</link>"
-            f"<description>{xml_escape(name)}の新刊が載ったらお知らせします。</description>"
-            "<language>ja</language>"
-            + "".join(entries)
-            + "</channel></rss>"
-        )
-        target = Path(w.out) / "series" / str(sid) / "feed.xml"
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(xml, encoding="utf-8")
+        write_feed(w, base, f"series/{sid}/feed.xml", f"{name}の新刊（{SITE_NAME}）", f"/series/{sid}/", f"{name}の新刊が載ったらお知らせします。", books, 20)
+
+
+def build_listing_feeds(site, w, site_url):
+    """出版社・レーベル・ジャンル・タグごとの RSS（2026-11-16 運営者の判断）。"""
+    base = (site_url or "https://new-comics.jp").rstrip("/")
+    for p in site.publishers:
+        books = [b for b in site.dated if b.publisher == p["name"]]
+        if books:
+            write_feed(w, base, f"publisher/{p['slug']}/feed.xml", f"{p['name']}の漫画の新刊（{SITE_NAME}）", f"/publisher/{p['slug']}/", f"{p['name']}の漫画の新刊が載ったらお知らせします。", books)
+    for l in site.conn.execute("SELECT l.id, l.name, p.name AS pub FROM labels l JOIN publishers p ON p.id = l.publisher_id WHERE l.is_adult = 0 AND p.is_adult = 0"):
+        books = [b for b in site.dated if b.label_id == l["id"]]
+        if books:
+            write_feed(w, base, f"label/{l['id']}/feed.xml", f"{l['name']}（{l['pub']}）の新刊（{SITE_NAME}）", f"/label/{l['id']}/", f"{l['pub']}の「{l['name']}」の新刊が載ったらお知らせします。", books)
+    table = load_genres()
+    for slug, key, name in GENRES:
+        books = [b for b in site.dated if b.label and table.get((b.publisher, b.label)) == key]
+        if books:
+            write_feed(w, base, f"genre/{slug}/feed.xml", f"{name}の新刊（{SITE_NAME}）", f"/genre/{slug}/", f"{name}の新刊が載ったらお知らせします。", books)
+    for slug, (name, _lead) in TAG_INFO.items():
+        books = [b for b in site.dated if slug in b.tags]
+        if books:
+            write_feed(w, base, f"tag/{slug}/feed.xml", f"#{name}の新刊（{SITE_NAME}）", f"/tag/{slug}/", f"#{name}の新刊が載ったらお知らせします。", books)
 
 
 # ---- よく見られている新刊（サイドメニュー） ----
@@ -1600,7 +1637,9 @@ def build_genres(site, w):
             subject=name,
             month_pages=True,
         )
-        page = page_defaults(title=f"{name}の新刊発売予定｜{SITE_NAME}", description=f"{name}の新刊の発売予定と、これまでに発売された本をまとめています。", menu="genre", lastmod=lastmod(site, books))
+        page = page_defaults(title=f"{name}の新刊発売予定｜{SITE_NAME}", description=f"{name}の新刊の発売予定と、これまでに発売された本をまとめています。", menu="genre", lastmod=lastmod(site, books),
+                             feed={"title": f"{name}の新刊（{SITE_NAME}）", "url": "feed.xml"})
+        ctx["rss"] = {"url": "feed.xml", "name": f"{name}の新刊"}
         w.write(f"genre/{slug}/index.html", "listing.html", page, **ctx)
         build_month_pages(site, w, "genre", f"genre/{slug}/", name, books, [("ジャンルから探す", "genre/"), (name, f"genre/{slug}/")])
     w.write("genre/index.html", "index_list.html", page_defaults(title=f"ジャンルから探す｜{SITE_NAME}", description="少年・少女・青年・女性・BL・TL のジャンルごとの漫画新刊発売予定。", menu="genre"),
