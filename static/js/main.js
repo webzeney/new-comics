@@ -4,6 +4,32 @@
 function $(sel, root) { return (root || document).querySelector(sel); }
 function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 
+/* アナリティクスに操作を記録する（2026-11-16 運営者の判断。個人を特定する情報は送らない） */
+function pageType() {
+var path = location.pathname.replace(/^\/+/, '');
+var seg = path.split('/')[0] || 'top';
+if (/^(publisher|label|genre)\/[^/]+\/\d{4}-\d{2}\/$/.test(path)) return seg + '_month';
+return seg;
+}
+function track(name, params) {
+try { if (typeof window.gtag === 'function') window.gtag('event', name, Object.assign({ page_type: pageType() }, params || {})); } catch (e) {}
+}
+window.NewComicsTrack = track;
+document.addEventListener('click', function (e) {
+var a = e.target.closest ? e.target.closest('a') : null;
+if (!a) return;
+var store = a.getAttribute('data-ga-store') || a.getAttribute('data-store');
+if (store && (a.classList.contains('store_tile') || a.classList.contains('store_button'))) {
+track('store_click', { store: store, buy_type: /予約$/.test(a.getAttribute('aria-label') || '') ? 'reserve' : 'purchase' });
+} else if (/feed\.xml$/.test(a.getAttribute('href') || '')) {
+track('rss_subscribe', { feed: a.getAttribute('href').replace(/^(\.\.\/)+/, '').replace(/^\//, '').replace(/\/?feed\.xml$/, '') });
+} else if (/calendar\.google\.com\/calendar\/render/.test(a.href)) {
+track('calendar_subscribe', { service: 'google_one_book' });
+} else if (a.hasAttribute('data-cart-go')) {
+track('cart_add', { items: $$('[data-cart-pick]:checked').length });
+}
+}, true);
+
 /* 発売前の本の購入ボタンを「○○で予約」にする（JS で並べる一覧用） */
 var RESERVE_WORDS = { amazon: 'Amazon', rakuten: '楽天', seven: 'セブンネット', kindle: 'Kindle', kobo: '楽天Kobo' };
 window.NewComicsReserve = function (li, iso) {
@@ -329,6 +355,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !d
 submit.addEventListener('click', function (e) {
 e.preventDefault();
 var href = url();
+track('calendar_subscribe', { service: current.kind, alarms: boxes.filter(function (x) { return x.checked; }).length });
 close();
 if (current.kind === 'google') window.open(href, '_blank', 'noopener');
 else location.href = href;
@@ -450,6 +477,7 @@ b.addEventListener('click', function () {
 var list = loadFavs();
 var exists = list.some(function (f) { return String(f.id) === id; });
 list = exists ? list.filter(function (f) { return String(f.id) !== id; }) : list.concat([{ id: id, name: b.dataset.favName, url: b.dataset.favUrl }]);
+track('favorite', { fav_action: exists ? 'remove' : 'add' });
 saveFavs(list);
 document.dispatchEvent(new CustomEvent('fav:change'));
 });
@@ -469,6 +497,7 @@ var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//new-comics.jp//JA', 'B
 'DTSTART;VALUE=DATE:' + b.dataset.icsStart, 'DTEND;VALUE=DATE:' + b.dataset.icsEnd,
 'SUMMARY:' + esc(b.dataset.icsName), 'URL:' + location.href.split('#')[0], 'END:VEVENT', 'END:VCALENDAR'];
 var blob = new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/calendar' });
+track('calendar_subscribe', { service: 'ics_one_book' });
 var a = document.createElement('a');
 a.href = URL.createObjectURL(blob);
 a.download = b.dataset.icsFile;

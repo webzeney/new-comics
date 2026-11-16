@@ -92,6 +92,7 @@ x.setAttribute('aria-label', f.name + 'をお気に入りから外す');
 x.textContent = '×';
 x.addEventListener('click', function () {
 save(load().filter(function (g) { return String(g.id) !== String(f.id); }));
+if (window.NewComicsTrack) window.NewComicsTrack('favorite', { fav_action: 'remove' });
 render();
 });
 wrap.appendChild(a);
@@ -145,7 +146,7 @@ $('[data-fav-import-text]').textContent = adding.length
 : '引き継ぎ用のアドレスの作品は、すべてこの端末のお気に入りに登録されています。';
 $('[data-fav-import-ok]').hidden = !adding.length;
 importBox.hidden = false;
-$('[data-fav-import-ok]').addEventListener('click', function () { save(load().concat(adding)); importBox.hidden = true; clearHash(); render(); });
+$('[data-fav-import-ok]').addEventListener('click', function () { save(load().concat(adding)); if (window.NewComicsTrack) window.NewComicsTrack('favorite', { fav_action: 'import', items: adding.length }); importBox.hidden = true; clearHash(); render(); });
 $('[data-fav-import-cancel]').addEventListener('click', function () { importBox.hidden = true; clearHash(); });
 }
 
