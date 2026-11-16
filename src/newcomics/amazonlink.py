@@ -27,7 +27,7 @@ import requests
 from . import db
 from .amazon import AmazonError, Api, release_of, title_of
 from .kobo import SKIP_WORDS, has_volume, key, series_name
-from .normalize import isbn13_to_10
+from .normalize import NOT_COMIC, isbn13_to_10
 
 MAX_KINDLE = 400
 MAX_PAPER = 150
@@ -115,6 +115,10 @@ def run(conn, api, kind, rows, deadline):
     for i, r in enumerate(rows, start=1):
         if time.monotonic() > deadline:
             break
+        if NOT_COMIC.search(r["title"] or ""):
+            # 漫画ではない本（サイトに載せない本）は探さない
+            conn.execute(f"UPDATE books SET {checked} = ? WHERE id = ?", (db.now_iso(), r["id"]))
+            continue
         name = series_name(r)
         if kind == "kindle":
             queries = [(q, {}) for q in ([r["isbn13"]] if r["isbn13"] else []) + [name]]

@@ -12,7 +12,7 @@
 1. お昼すぎ（日本時間 12:40〜22:40 の2時間ごと、予備 0:05）、GitHub Actions の「出版社サイトの取得」（fetch.yml）が非公開リポジトリ new-comics-data のデータベースを取り出し、次の順に更新して保存する。
    1. 単体テスト
    2. 出版社サイトと楽天ブックスからの取得（`newcomics.fetch`）。ISBN のない重複の整理（`store.merge_isbnless_duplicates`・`store.merge_isbnless_by_title`）もここで行う
-   3. Amazon の照らし合わせ（`newcomics.amazonlink`）：ISBN-10 の商品ページの確認 → 書影のアドレスの取り直し → ISBN のない本の紙の本 → Kindle版
+   3. Amazon の照らし合わせ（`newcomics.amazonlink`）：ISBN-10 の商品ページの確認 → 書影のアドレスの取り直し → ISBN のない本の紙の本（「作品名 巻数」→「作品名 ○巻」→ 作品名で新しい順に探す）→ Kindle版（漫画ではない本は探さない）
    4. 楽天の書影・紹介文の補完（`newcomics.rakutencover`）
    5. 楽天Kobo の照らし合わせ（`newcomics.kobo`）
    6. アナリティクスの読み込み（`newcomics.ga`、よく見られている本）
@@ -66,7 +66,7 @@ CSS・JS のアドレスには中身から作った印（`?v=…`）を付け、
 
 ## その日の新刊の並び順
 
-出版社の順（漫画の売上の規模の目安。`build.PUBLISHER_ORDER`）→ 出版社の中は Amazon の売れ筋順位 → よく見られている順 → 新シリーズの1巻 → 巻数の多い作品。
+出版社の順（漫画の売上の規模の目安。`build.PUBLISHER_ORDER`）→ 出版社の中は Amazon の売れ筋順位（順位のまだない本は、同じ作品の前の巻の順位）→ よく見られている順 → 新シリーズの1巻 → 巻数の多い作品。
 トップ・日ごと・今日発売・今週発売・カレンダー・書籍詳細ページの同じ日の新刊・X の投稿で同じ順を使う。
 
 ## データベースのおもな項目（books）
