@@ -247,6 +247,14 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .top_side--pickup .tomorrow_card__date{display:block;margin:2px 0 4px;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:26px;line-height:1.2;letter-spacing:0.1em;color:#B5302A;white-space:nowrap}
 .top_side--pickup .tomorrow_card__dow{font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;letter-spacing:0}
 /* ==========================================================================
+看板キャラクター（吹き出し）
+========================================================================== */
+.kumiko{margin:16px 0 0;display:flex;align-items:center;gap:18px}
+.kumiko__image{flex:0 0 auto;width:110px;height:auto}
+.kumiko__bubble{position:relative;margin:0;padding:14px 18px;border:2px solid #222222;border-radius:18px;background:#FFFFFF;font-size:14px;font-weight:700;line-height:1.7}
+.kumiko__bubble::before{content:"";position:absolute;left:-12px;top:50%;margin-top:-9px;border-style:solid;border-width:9px 12px 9px 0;border-color:transparent #222222 transparent transparent}
+.kumiko__bubble::after{content:"";position:absolute;left:-8px;top:50%;margin-top:-7px;border-style:solid;border-width:7px 9px 7px 0;border-color:transparent #FFFFFF transparent transparent}
+/* ==========================================================================
 トップ：注目の新刊
 ========================================================================== */
 .pickup{background:#FFFFFF;border-radius:20px;padding:16px 18px 14px;display:flex;flex-direction:column;gap:12px}
@@ -544,6 +552,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .doc--form{gap:24px}
 .doc--guide{gap:48px}
 .doc--guide .doc__section{gap:16px}
+.doc--guide .kumiko{margin:-24px 0 0}
 .doc__head{display:flex;flex-direction:column;gap:8px}
 .doc__lead{margin:0;font-size:15px;line-height:1.9}
 .doc__section{display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
@@ -721,6 +730,9 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 スマホ（幅720px以下）
 ========================================================================== */
 @media (max-width: 720px){
+.kumiko{gap:14px}
+.kumiko__image{width:84px}
+.kumiko__bubble{padding:12px 14px;font-size:13px}
 .doc__media{grid-template-columns:minmax(0,1fr);gap:16px}
 .doc__media .doc__figure{align-items:center}
 .doc__media .doc__caption{text-align:center}

@@ -37,6 +37,11 @@ UPDATE_KINDS = [
 TOP_BOOKS = 20  # PC は幅に合わせて「1段の数×2」だけ表示する（JavaScript で調整）
 TOP_BOOKS_BASE = 8  # スマホと JavaScript が動かないときに表示する数
 # 一覧ページの説明の文章で使う、タグごとの呼び方
+# 看板キャラクターの吹き出し（タグのページ）
+TAG_KUMIKO = {
+    "final": ("cry", "完結巻…。読む前から泣きそう…。最後まで見届けようね"),
+    "new-series": ("shinkan", "新シリーズの1巻はここでまとめてチェック！ 新しい推しが見つかるかも！"),
+}
 TAG_NOUN = {"new-series": "新シリーズの1巻", "final": "完結巻", "special-edition": "特装版・限定版", "ebook": "電子版も同時に配信される新刊"}
 
 TAG_INFO = {
@@ -1476,7 +1481,7 @@ def build_listings(site, w):
         ctx = listing_ctx(
             site, root, books, ("author", "label", "price"),
             crumbs(root, ("タグ", f"{root}tag/"), (f"#{name}", None)),
-            {"en": "TAG", "title": f"#{name}の新刊発売予定", "lead": lead, "kind": "tag", "final_badge": slug == "final"},
+            {"en": "TAG", "title": f"#{name}の新刊発売予定", "lead": lead, "kind": "tag", "final_badge": slug == "final", "kumiko": TAG_KUMIKO.get(slug)},
             subject=TAG_NOUN.get(slug, name),
         )
         page = page_defaults(title=f"#{name}の漫画新刊発売予定｜{SITE_NAME}", description=lead, tag=f"tag:{slug}", lastmod=lastmod(site, books),

@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import breadcrumb %}
+{% from "_parts.html" import breadcrumb, kumiko %}
 {% block content %}
 <article aria-labelledby="page-title" class="panel">
 {{ breadcrumb(crumbs, 'breadcrumb--wide') }}
@@ -8,6 +8,7 @@
 <span class="heading__en">GUIDE</span>
 <h1 id="page-title" class="heading__title">このサイトの使い方</h1>
 </div>
+{{ kumiko(root, "cheer", "漫画新刊JPの使い方を案内するね！ 気になるところから読んでみて！") }}
 <p class="doc__lead">漫画新刊JPでできることと、それぞれの使い方を、画面の写真とあわせてまとめました。新しい機能を足したり、見せ方を変えたりしたときは、このページに書き足していきます。画面の写真では、本の表紙の画像を省いています。</p>
 <nav aria-labelledby="toc-title" class="toc">
 <p id="toc-title" class="toc__title">このページの内容</p>

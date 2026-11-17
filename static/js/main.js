@@ -619,8 +619,15 @@ box.addEventListener('focusout', start);
 start();
 }
 
+function initKumiko() {
+var day = new Date().getDay();
+if (day !== 0 && day !== 6) return;
+document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) { img.src = img.getAttribute('data-kumiko-weekend'); });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 initSidemenu();
+initKumiko();
 initPick();
 initFormNarrow();
 initCart();

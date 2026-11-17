@@ -131,7 +131,7 @@ count.textContent = found.length + '点';
 $('[data-fav-cart]').hidden = !$('[data-cart-pick]', booksBox);
 document.dispatchEvent(new Event('cart:refresh'));
 empty.hidden = found.length > 0;
-empty.textContent = favs.length ? 'お気に入りの作品の新刊は、今のところありません。' : 'お気に入りに登録した作品は、まだありません。';
+$('[data-fav-empty-text]').textContent = favs.length ? 'お気に入りの作品の新刊は、今のところありません。発売日が決まったら、ここに出るよ！' : 'お気に入りに登録した作品は、まだありません。気になる作品で「お気に入りに追加」を押すと、ここに新刊が集まるよ！';
 }
 
 window.addEventListener('hashchange', function () { if (/^#import=/.test(location.hash)) location.reload(); });

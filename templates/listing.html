@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, bookrow, rss_icon %}
+{% from "_parts.html" import ad, breadcrumb, bookrow, rss_icon, kumiko %}
 {% macro date_groups(dates) %}
 {% for g in dates %}
 <div class="group">
@@ -24,6 +24,7 @@
 <h1 id="pub-title" class="heading__title">{{ listing.title }}</h1>
 {% if listing.lead %}<p class="heading__lead">{{ listing.lead }}</p>{% endif %}
 </div>
+{% if listing.get("kumiko") %}{{ kumiko(root, listing.kumiko[0], listing.kumiko[1]) }}{% endif %}
 <div class="stats stats--wide">
 <div class="stat stat--main">
 <span class="stat__label">次の発売日</span>
