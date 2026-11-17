@@ -168,6 +168,25 @@
 {% endfor %}
 </ul>
 </section>
+{% if news %}
+<section aria-labelledby="news-title" class="panel">
+<div class="feature_panel__head">
+<span class="heading__en">NEWS</span>
+<h2 id="news-title" class="feature_panel__title">お知らせ</h2>
+</div>
+<ul class="news_panel__list">
+{% for n in news %}
+<li class="news_panel__item">
+<a href="{{ n.url }}" class="news_panel__link">
+<time datetime="{{ n.iso }}" class="news_panel__date">{{ n.date }}</time>
+<span class="news_panel__text">{{ n.title }}</span>
+</a>
+</li>
+{% endfor %}
+</ul>
+<a href="{{ news_url }}" class="news_panel__more">お知らせの一覧へ</a>
+</section>
+{% endif %}
 {{ ad(rect=True) -}}
 </div>
 </div>
