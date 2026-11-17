@@ -722,6 +722,21 @@ def load_pickup(site):
     return out
 
 
+KUMIKO_LINES = Path(__file__).with_name("kumiko_lines.tsv")
+KUMIKO_WHEN = {"すべて": "all", "朝": "morning", "昼": "noon", "夕方": "evening", "夜": "night", "深夜": "late", "週末": "weekend", "金曜": "friday",
+               "今日あり": "today", "今日なし": "notoday", "明日あり": "tomorrow"}
+
+
+def load_kumiko_lines():
+    """トップで看板キャラクターが話すセリフ（ポーズ・条件・セリフ）。ページを開くたびに JS で1つ選ぶ（2026-11-18 運営者の判断）。"""
+    out = []
+    for line in KUMIKO_LINES.read_text(encoding="utf-8").splitlines()[1:]:
+        cols = line.split("\t")
+        if len(cols) >= 3 and cols[0].strip() and cols[1].strip() in KUMIKO_WHEN:
+            out.append({"p": cols[0].strip(), "w": KUMIKO_WHEN[cols[1].strip()], "t": cols[2].strip()})
+    return out
+
+
 def build_top(site, w):
     root = ""
     today, tomorrow = site.today, site.today + timedelta(days=1)
@@ -764,6 +779,9 @@ def build_top(site, w):
         "updates": updates,
         "features": load_features(site.env, base=site_base(site)),
         "news": load_news(site.env, base=site_base(site)),
+        "kumiko_lines": load_kumiko_lines(),
+        "today_count": sum(1 for b in site.dated if b.release == today),
+        "tomorrow_count": sum(1 for b in site.dated if b.release == tomorrow),
         "news_url": NEWS_PATH,
     }
     for key, path in (("features", FEATURE_CACHE), ("news", NEWS_CACHE)):

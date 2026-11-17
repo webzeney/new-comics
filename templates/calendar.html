@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, stat, bookrow, cart_intro, cart_bar %}
+{% from "_parts.html" import ad, breadcrumb, stat, bookrow, cart_intro, cart_bar, kumiko %}
 {% block content %}
 <section aria-labelledby="cal-title" class="panel panel--head calendar" data-calendar data-selected="{{ selected.day }}">
 {{ breadcrumb(crumbs, 'breadcrumb--pc') }}
@@ -15,6 +15,7 @@
 {% endfor %}
 </nav>
 </div>
+{{ kumiko(root, "calendar", "日付を押すと、その日の新刊が下に出るよ！ 気になる日に丸をつけておこう") }}
 <div class="stats">
 {{ stat(month.no ~ '月の発売点数', stats.total, '点', main=True) }}
 <div class="stat calendar__stat">

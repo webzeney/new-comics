@@ -619,15 +619,69 @@ box.addEventListener('focusout', start);
 start();
 }
 
-function initKumiko() {
+function kumikoWeekend() {
 var day = new Date().getDay();
-if (day !== 0 && day !== 6) return;
+return day === 0 || day === 6;
+}
+
+function initKumiko() {
+var box = document.querySelector('[data-kumiko-random]');
+if (box) {
+var lines = [];
+try { lines = JSON.parse(box.getAttribute('data-lines') || '[]'); } catch (e) { lines = []; }
+var now = new Date(), h = now.getHours(), day = now.getDay();
+var today = parseInt(box.getAttribute('data-today') || '0', 10), tomorrow = parseInt(box.getAttribute('data-tomorrow') || '0', 10);
+var ok = {
+all: true,
+morning: h >= 5 && h < 10,
+noon: h >= 10 && h < 16,
+evening: h >= 16 && h < 19,
+night: h >= 19,
+late: h < 5,
+weekend: day === 0 || day === 6,
+friday: day === 5,
+today: today > 0,
+notoday: today === 0,
+tomorrow: tomorrow > 0
+};
+var pool = lines.filter(function (l) { return ok[l.w]; });
+if (pool.length) {
+var pick = pool[Math.floor(Math.random() * pool.length)];
+var base = box.getAttribute('data-base');
+var img = box.querySelector('[data-kumiko-image]');
+img.src = base + pick.p + (kumikoWeekend() ? '_c' : '_u') + '.webp';
+img.removeAttribute('data-kumiko-weekend');
+box.querySelector('[data-kumiko-text]').textContent = pick.t.replace('{n}', today).replace('{m}', tomorrow);
+}
+}
+if (kumikoWeekend()) {
 document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) { img.src = img.getAttribute('data-kumiko-weekend'); });
+}
+}
+
+function initToTop() {
+var btns = document.querySelectorAll('[data-totop]');
+if (!btns.length) return;
+function update() {
+var show = window.scrollY > 800 && document.documentElement.scrollHeight > window.innerHeight * 2;
+btns.forEach(function (b) { b.toggleAttribute('data-shown', show); });
+}
+btns.forEach(function (b) {
+b.addEventListener('click', function () {
+var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+window.scrollTo({ top: 0, behavior: still ? 'auto' : 'smooth' });
+var target = document.querySelector('main') || document.body;
+if (target) { target.setAttribute('tabindex', '-1'); target.focus({ preventScroll: true }); }
+});
+});
+window.addEventListener('scroll', update, { passive: true });
+update();
 }
 
 document.addEventListener('DOMContentLoaded', function () {
 initSidemenu();
 initKumiko();
+initToTop();
 initPick();
 initFormNarrow();
 initCart();

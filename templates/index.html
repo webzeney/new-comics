@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, arrow, store_tiles, kind_badge, cover_photo %}
+{% from "_parts.html" import ad, arrow, store_tiles, kind_badge, cover_photo, kumiko %}
 {% block content %}
 <div aria-label="本日発売" class="ticker">
 <span class="ticker__label">TODAY</span>
@@ -120,6 +120,10 @@
 <button type="button" role="tab" id="release-tab-{{ loop.index }}" aria-controls="release-panel-{{ loop.index }}" aria-selected="{{ 'true' if loop.first else 'false' }}" class="release__tab">{{ r.word }} <span class="en">{{ r.date }}</span></button>
 {% endfor %}
 </div>
+</div>
+<div class="kumiko kumiko--top" data-kumiko-random data-lines='{{ kumiko_lines|tojson }}' data-today="{{ today_count }}" data-tomorrow="{{ tomorrow_count }}" data-base="{{ root }}assets/img/kumiko/">
+<img src="{{ root }}assets/img/kumiko/point_u.webp" data-kumiko-weekend="{{ root }}assets/img/kumiko/point_c.webp" alt="" class="kumiko__image" data-kumiko-image>
+<p class="kumiko__bubble" data-kumiko-text>下の一覧で、今日と明日の新刊をまとめて見られるよ！</p>
 </div>
 {% for r in releases %}
 <div role="tabpanel" id="release-panel-{{ loop.index }}" aria-labelledby="release-tab-{{ loop.index }}" class="release__grid"{% if not loop.first %} hidden{% endif %}>

@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, arrow, breadcrumb, stat, bookrow, cart_intro, cart_bar %}
+{% from "_parts.html" import ad, arrow, breadcrumb, stat, bookrow, cart_intro, cart_bar, kumiko %}
 {% block content %}
 <section aria-labelledby="week-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -14,6 +14,7 @@
 <a href="{{ calendar_url }}" class="daynav__item">カレンダー<span aria-hidden="true">›</span></a>
 </nav>
 </div>
+{{ kumiko(root, "books", "今週はこんなに出るよ〜！ チェックを入れると、まとめてAmazonのカートに入れられるよ") }}
 <div class="stats">
 {{ stat('今週の発売点数', stats.total, '点', main=True) }}
 <div class="stat daypage__stat">
