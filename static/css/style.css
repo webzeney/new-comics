@@ -725,6 +725,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .doc__media .doc__figure{align-items:center}
 .doc__media .doc__caption{text-align:center}
 .toc__list{grid-template-columns:minmax(0,1fr)}
+.toggle_group--sort{flex-wrap:wrap}
+.toggle_group--sort .toggle_button{white-space:nowrap}
 .sidemenu__mark{width:160px;height:160px}
 .weekstrip{gap:4px}
 .weekstrip__day{padding:8px 2px;border-radius:10px}

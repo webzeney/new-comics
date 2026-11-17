@@ -1806,6 +1806,9 @@ def build_search(site, w):
     items = []
     order = {b.id: i for i, b in enumerate(sorted(site.books, key=lambda b: (b.first_seen, b.id)))}
     words = search_words(site.books, load_aliases())
+    # 売れ筋順の並び順の番号（Amazon の順位の数字は書き出さない。順位のない本は前の巻の順位。2026-11-17 運営者の判断）
+    sales = [(b.amazon_rank or site.prev_rank(b), b.id) for b in site.books]
+    sales_order = {bid: i + 1 for i, (r, bid) in enumerate(sorted(x for x in sales if x[0]))}
     # ここ2週間で発売日が変わった・決まった本（お気に入りのページで目立たせる。2026-11-13 運営者の判断）
     recent = {}
     since = site.today - timedelta(days=CHANGE_DAYS)
@@ -1819,6 +1822,8 @@ def build_search(site, w):
             "t": b.title, "p": b.publisher, "l": b.label or "", "a": site.author_text(b), "d": b.release.isoformat() if b.release else "",
             "e": bool(b.has_ebook), **({"eo": 1} if b.ebook_only else {}), "u": f"../book/{b.key}/", "m": site.meta(b, ("author", "label", "price")), "s": stores, "f": order[b.id], "i": b.image, "ia": site.alt(b), "sr": b.series_id,
         }
+        if b.id in sales_order:
+            item["o"] = sales_order[b.id]
         if b.id in words:
             item["k"] = words[b.id]
         if b.id in recent:
@@ -1834,7 +1839,7 @@ def build_search(site, w):
         "crumbs": crumbs(root, ("検索結果", None)),
         "options": search_options(site),
         "search": {"heading": "検索結果", "total": len(items), "q": "", "pub": "", "label": "", "month": "", "ebook": False,
-                   "range": "", "sort": "date"},
+                   "range": "", "sort": "sales"},
         "search_js": True,
     }
     page = page_defaults(title=f"検索結果｜{SITE_NAME}", description="漫画の新刊を作品名・出版社・レーベル・発売月で検索できます。")
