@@ -58,7 +58,38 @@
 </form>
 </div>
 </section>
-<div class="top_side">
+<div class="top_side{% if pickup %} top_side--pickup{% endif %}">
+{% if pickup %}
+<section aria-labelledby="pick-title" class="pickup" data-pick>
+<div class="pickup__head">
+<span class="pickup__en">PICK UP</span>
+<h2 id="pick-title" class="pickup__title">注目の新刊</h2>
+</div>
+<div class="pickup__slides">
+{% for p in pickup %}
+<article class="pickup__slide" data-pick-slide{% if not loop.first %} hidden{% endif %}>
+<a href="{{ p.url }}" class="pickup__link">
+<span class="pickup__cover">{{ cover_photo(p.image, p.alt) }}</span>
+<span class="pickup__body">
+<span class="pickup__status{% if p.on_sale %} pickup__status--sale{% endif %}">{{ p.status }}</span>
+<span class="pickup__name">{{ p.title }}</span>
+<span class="pickup__meta">{{ p.author }}</span>
+<span class="pickup__meta">{{ p.pub }}{% if p.label %}・{{ p.label }}{% endif %}</span>
+<span class="pickup__date">{{ p.date }}発売</span>
+</span>
+</a>
+</article>
+{% endfor %}
+</div>
+{% if pickup|length > 1 %}
+<div class="pickup__dots">
+{% for p in pickup %}
+<button type="button" class="pickup__dot" data-pick-dot aria-label="{{ loop.index }}冊目を見る"{% if loop.first %} aria-current="true"{% endif %}></button>
+{% endfor %}
+</div>
+{% endif %}
+</section>
+{% endif %}
 <a href="{{ calendar.url }}" class="calendar_card">
 <span class="calendar_card__en">CALENDAR</span>
 <span class="calendar_card__month"><span class="calendar_card__num">{{ calendar.month }}</span><span class="calendar_card__text">月の新刊<br>カレンダー</span></span>
@@ -67,12 +98,12 @@
 {% if tomorrow.url %}
 <a href="{{ tomorrow.url }}" class="tomorrow_card">
 <span class="tomorrow_card__en">TOMORROW</span>
-<span class="tomorrow_card__text">明日 {{ tomorrow.label }}発売の新刊をチェック</span>
+<span class="tomorrow_card__text">明日 <span class="tomorrow_card__date">{{ tomorrow.md }}<span class="tomorrow_card__dow">{{ tomorrow.dow }}</span></span>発売の新刊をチェック</span>
 </a>
 {% else %}
 <div class="tomorrow_card">
 <span class="tomorrow_card__en">TOMORROW</span>
-<span class="tomorrow_card__text">明日 {{ tomorrow.label }}は<br>新刊の発売がありません</span>
+<span class="tomorrow_card__text">明日 <span class="tomorrow_card__date">{{ tomorrow.md }}<span class="tomorrow_card__dow">{{ tomorrow.dow }}</span></span>は<br>新刊の発売がありません</span>
 {% if tomorrow.next %}<a href="{{ tomorrow.next.url }}" class="tomorrow_card__next">次の発売日 {{ tomorrow.next.label }}の新刊を見る{{ arrow('#222222', 14) }}</a>{% endif %}
 </div>
 {% endif %}

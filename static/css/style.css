@@ -235,6 +235,36 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .tomorrow_card__en{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:13px;letter-spacing:0.16em;color:#B5302A}
 .tomorrow_card__text{font-size:16px;font-weight:900}
 .tomorrow_card__next{display:inline-flex;align-items:center;gap:6px;margin-top:4px;font-size:13px;font-weight:700;color:#222222}
+.top_side--pickup{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-content:start}
+.top_side--pickup .pickup{grid-column:1/-1}
+.top_side--pickup .calendar_card{min-height:0;padding:14px 16px;gap:8px;border-radius:16px}
+.top_side--pickup .calendar_card__month{gap:6px}
+.top_side--pickup .calendar_card__num{font-size:46px}
+.top_side--pickup .calendar_card__text{font-size:12px;padding-bottom:0;white-space:nowrap}
+.top_side--pickup .calendar_card__link{padding-top:6px;font-size:13px}
+.top_side--pickup .tomorrow_card{padding:14px 16px;border-radius:16px;justify-content:space-between}
+.top_side--pickup .tomorrow_card__text{font-size:12px;line-height:1.5}
+.top_side--pickup .tomorrow_card__date{display:block;margin:2px 0 4px;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:26px;line-height:1.2;letter-spacing:0.1em;color:#B5302A;white-space:nowrap}
+.top_side--pickup .tomorrow_card__dow{font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;letter-spacing:0}
+/* ==========================================================================
+トップ：注目の新刊
+========================================================================== */
+.pickup{background:#FFFFFF;border-radius:20px;padding:16px 18px 14px;display:flex;flex-direction:column;gap:12px}
+.pickup__head{display:flex;align-items:baseline;gap:10px}
+.pickup__en{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:13px;letter-spacing:0.16em;color:#B5302A}
+.pickup__title{margin:0;font-size:18px;font-weight:900}
+.pickup__slide[hidden]{display:none}
+.pickup__link{display:grid;grid-template-columns:110px minmax(0,1fr);gap:16px;align-items:center;color:#222222;text-decoration:none}
+.pickup__cover{aspect-ratio:2 / 3;background:#F3EEE8;border:2px solid #222222;border-radius:6px;box-shadow:4px 4px 0 #222222;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#5A5148;font-size:13px}
+.pickup__body{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+.pickup__status{display:inline-block;padding:3px 10px;border:2px solid #222222;border-radius:999px;background:#FFD15C;font-size:12px;font-weight:900}
+.pickup__status--sale{background:#B5302A;border-color:#B5302A;color:#FFFFFF}
+.pickup__name{font-size:17px;font-weight:900;line-height:1.45}
+.pickup__meta{font-size:12px;line-height:1.5;color:#5A5148}
+.pickup__date{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:14px;letter-spacing:0.1em}
+.pickup__dots{display:flex;justify-content:center;gap:8px}
+.pickup__dot{width:10px;height:10px;padding:0;border:2px solid #222222;border-radius:50%;background:#FFFFFF;cursor:pointer}
+.pickup__dot[aria-current="true"]{background:#222222}
 /* ==========================================================================
 トップ：今日・明日発売の新刊
 ========================================================================== */
@@ -681,6 +711,10 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .others__link:hover,.tag_link:hover{background:#FFD9CF;color:#222222}
 .sidemenu__link:hover{color:#B5302A;transform:translateX(4px)}
 .bookrow__cover:hover,.cover_link:hover,.sameday__item:hover{transform:translateY(-3px)}
+.pickup__cover{transition:transform .15s}
+.pickup__link:hover .pickup__cover{transform:translateY(-3px)}
+.pickup__link:hover .pickup__name{color:#B5302A}
+.pickup__dot:hover{background:#FFD15C}
 }
 
 /* ==========================================================================
