@@ -451,7 +451,12 @@ def news_category_id(api):
 def fetch_features(api, limit):
     """WordPress の REST API から特集の新しい記事を取る（お知らせのカテゴリーの記事は除く）。"""
     params = {"per_page": limit, "_embed": "wp:term", "_fields": "title,link,_embedded,_links"}
-    cid = news_category_id(api)
+    try:
+        cid = news_category_id(api)
+    except Exception as exc:
+        # お知らせのカテゴリーが分からなくても、特集の記事は取る
+        print(f"お知らせのカテゴリーを取得できませんでした：{exc}")
+        cid = None
     if cid:
         params["categories_exclude"] = cid
     return wp_get(api, params)

@@ -23,11 +23,20 @@ CACHED = [{"no": "01", "tag": "特集", "title": "前回の記事", "url": "http
 class FeaturesTest(unittest.TestCase):
     def setUp(self):
         self.sleep = mock.patch("time.sleep").start()
+        build._news_id.clear()
         self.addCleanup(mock.patch.stopall)
 
     def test_retries_then_succeeds(self):
         calls = [ConnectionError("x"), Resp(POST)]
-        with mock.patch("requests.get", side_effect=lambda *a, **k: (lambda c: (_ for _ in ()).throw(c) if isinstance(c, Exception) else c)(calls.pop(0))):
+
+        def fake(url, **kw):
+            if url.endswith("/categories"):
+                return Resp([])
+            c = calls.pop(0)
+            if isinstance(c, Exception):
+                raise c
+            return c
+        with mock.patch("requests.get", side_effect=fake):
             out = build.load_features({"FEATURE_API": "https://example.test/wp-json"}, base="https://new-comics.jp")
         self.assertEqual(out[0]["title"], "記事")
 
