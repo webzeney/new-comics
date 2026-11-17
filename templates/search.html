@@ -36,7 +36,8 @@
 <section aria-labelledby="result-title" class="panel">
 <div class="section_head">
 <h2 id="result-title" class="result_head__title">検索結果<span class="result_head__count"><span class="en" data-search-range>{{ search.range }}</span>件を表示</span></h2>
-<div role="group" aria-label="並び順" class="toggle_group">
+<div role="group" aria-label="並び順" class="toggle_group toggle_group--sort">
+<button type="button" aria-pressed="{{ 'true' if search.sort == 'sales' else 'false' }}" class="toggle_button" data-search-sort="sales">売れ筋順</button>
 <button type="button" aria-pressed="{{ 'true' if search.sort == 'date' else 'false' }}" class="toggle_button" data-search-sort="date">発売日が近い順</button>
 <button type="button" aria-pressed="{{ 'true' if search.sort == 'added' else 'false' }}" class="toggle_button" data-search-sort="added">新しく追加された順</button>
 </div>

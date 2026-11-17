@@ -21,7 +21,7 @@ pub: p.get('pub') || '',
 label: p.get('label') || '',
 month: p.get('month') || '',
 ebook: p.get('ebook') === '1',
-sort: p.get('sort') === 'added' ? 'added' : 'date',
+sort: p.get('sort') === 'added' || p.get('sort') === 'date' ? p.get('sort') : 'sales',
 page: Math.max(1, parseInt(p.get('page') || '1', 10) || 1)
 };
 }
@@ -33,7 +33,7 @@ if (state.pub) p.set('pub', state.pub);
 if (state.label) p.set('label', state.label);
 if (state.month) p.set('month', state.month);
 if (state.ebook) p.set('ebook', '1');
-if (state.sort !== 'date') p.set('sort', state.sort);
+if (state.sort !== 'sales') p.set('sort', state.sort);
 if (state.page > 1) p.set('page', String(state.page));
 var qs = p.toString();
 history.replaceState(null, '', qs ? '?' + qs : location.pathname);
@@ -165,6 +165,7 @@ function render() {
 var found = items.filter(match);
 found.sort(function (a, b) {
 if (state.sort === 'added') return b.f - a.f;
+if (state.sort === 'sales' && (a.o || b.o)) return !a.o ? 1 : !b.o ? -1 : a.o - b.o;
 return (a.d || '9999') < (b.d || '9999') ? -1 : (a.d || '9999') > (b.d || '9999') ? 1 : 0;
 });
 var pageCount = Math.max(1, Math.ceil(found.length / PER_PAGE));
