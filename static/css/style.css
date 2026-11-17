@@ -243,7 +243,9 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .top_side--pickup .calendar_card__text{font-size:12px;padding-bottom:0;white-space:nowrap}
 .top_side--pickup .calendar_card__link{padding-top:6px;font-size:13px}
 .top_side--pickup .tomorrow_card{padding:14px 16px;border-radius:16px;justify-content:space-between}
-.top_side--pickup .tomorrow_card__text{font-size:14px;line-height:1.5}
+.top_side--pickup .tomorrow_card__text{font-size:12px;line-height:1.5}
+.top_side--pickup .tomorrow_card__date{display:block;margin:2px 0 4px;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:26px;line-height:1.2;letter-spacing:0.1em;color:#B5302A;white-space:nowrap}
+.top_side--pickup .tomorrow_card__dow{font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;letter-spacing:0}
 /* ==========================================================================
 トップ：注目の新刊
 ========================================================================== */

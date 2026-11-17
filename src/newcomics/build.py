@@ -668,7 +668,7 @@ def crumbs(root, *items):
 # ---- トップ ----
 def tomorrow_card(site, tomorrow):
     """トップの「TOMORROW」。明日発売の本がない日は、リンクにせず「ありません」と出し、次の発売日へ案内する。"""
-    card = {"label": f"{md(tomorrow)}（{dow(tomorrow)}）", "url": None, "next": None}
+    card = {"label": f"{md(tomorrow)}（{dow(tomorrow)}）", "md": md(tomorrow), "dow": f"（{dow(tomorrow)}）", "url": None, "next": None}
     if tomorrow in site.by_date:
         card["url"] = f"date/{tomorrow.isoformat()}/"
     else:
