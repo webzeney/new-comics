@@ -37,6 +37,11 @@ UPDATE_KINDS = [
 TOP_BOOKS = 20  # PC は幅に合わせて「1段の数×2」だけ表示する（JavaScript で調整）
 TOP_BOOKS_BASE = 8  # スマホと JavaScript が動かないときに表示する数
 # 一覧ページの説明の文章で使う、タグごとの呼び方
+# 看板キャラクターの吹き出し（タグのページ）
+TAG_KUMIKO = {
+    "final": ("cry", "完結巻…。読む前から泣きそう…。最後まで見届けようね"),
+    "new-series": ("shinkan", "新シリーズの1巻はここでまとめてチェック！ 新しい推しが見つかるかも！"),
+}
 TAG_NOUN = {"new-series": "新シリーズの1巻", "final": "完結巻", "special-edition": "特装版・限定版", "ebook": "電子版も同時に配信される新刊"}
 
 TAG_INFO = {
@@ -717,6 +722,21 @@ def load_pickup(site):
     return out
 
 
+KUMIKO_LINES = Path(__file__).with_name("kumiko_lines.tsv")
+KUMIKO_WHEN = {"すべて": "all", "朝": "morning", "昼": "noon", "夕方": "evening", "夜": "night", "深夜": "late", "週末": "weekend", "金曜": "friday",
+               "今日あり": "today", "今日なし": "notoday", "明日あり": "tomorrow"}
+
+
+def load_kumiko_lines():
+    """トップで看板キャラクターが話すセリフ（ポーズ・条件・セリフ）。ページを開くたびに JS で1つ選ぶ（2026-11-18 運営者の判断）。"""
+    out = []
+    for line in KUMIKO_LINES.read_text(encoding="utf-8").splitlines()[1:]:
+        cols = line.split("\t")
+        if len(cols) >= 3 and cols[0].strip() and cols[1].strip() in KUMIKO_WHEN:
+            out.append({"p": cols[0].strip(), "w": KUMIKO_WHEN[cols[1].strip()], "t": cols[2].strip()})
+    return out
+
+
 def build_top(site, w):
     root = ""
     today, tomorrow = site.today, site.today + timedelta(days=1)
@@ -759,6 +779,9 @@ def build_top(site, w):
         "updates": updates,
         "features": load_features(site.env, base=site_base(site)),
         "news": load_news(site.env, base=site_base(site)),
+        "kumiko_lines": load_kumiko_lines(),
+        "today_count": sum(1 for b in site.dated if b.release == today),
+        "tomorrow_count": sum(1 for b in site.dated if b.release == tomorrow),
         "news_url": NEWS_PATH,
     }
     for key, path in (("features", FEATURE_CACHE), ("news", NEWS_CACHE)):
@@ -1481,7 +1504,7 @@ def build_listings(site, w):
         ctx = listing_ctx(
             site, root, books, ("author", "label", "price"),
             crumbs(root, ("タグ", f"{root}tag/"), (f"#{name}", None)),
-            {"en": "TAG", "title": f"#{name}の新刊発売予定", "lead": lead, "kind": "tag", "final_badge": slug == "final"},
+            {"en": "TAG", "title": f"#{name}の新刊発売予定", "lead": lead, "kind": "tag", "final_badge": slug == "final", "kumiko": TAG_KUMIKO.get(slug)},
             subject=TAG_NOUN.get(slug, name),
         )
         page = page_defaults(title=f"#{name}の漫画新刊発売予定｜{SITE_NAME}", description=lead, tag=f"tag:{slug}", lastmod=lastmod(site, books),

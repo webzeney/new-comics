@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, arrow, breadcrumb, stat, bookrow, cart_intro, cart_bar %}
+{% from "_parts.html" import ad, arrow, breadcrumb, stat, bookrow, cart_intro, cart_bar, kumiko %}
 {% block content %}
 <section aria-labelledby="day-title" class="panel panel--head" data-daypage>
 {{ breadcrumb(crumbs) }}
@@ -14,6 +14,7 @@
 <a href="{{ week_url }}" class="daynav__item">今週の新刊<span aria-hidden="true">›</span></a>
 </nav>
 </div>
+{% if stats.total %}{{ kumiko(root, "clock", "今日が発売日の本だよ！ 買い逃しに注意してね！") }}{% else %}{{ kumiko(root, "fumu", "今日は新刊の発売がない日みたい。次の発売日の新刊をチェックしておこう！") }}{% endif %}
 {% if stats.total %}
 <div class="stats">
 {{ stat('今日の発売点数', stats.total, '点', main=True) }}

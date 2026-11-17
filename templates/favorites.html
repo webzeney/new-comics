@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, cart_intro, cart_bar %}
+{% from "_parts.html" import ad, breadcrumb, cart_intro, cart_bar, kumiko %}
 {% block content %}
 <section aria-labelledby="fav-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -48,7 +48,9 @@
 <ul class="updates__list" data-fav-changes-list></ul>
 </div>
 <ul class="booklist" data-fav-books></ul>
-<p class="empty" data-fav-empty>お気に入りに登録した作品は、まだありません。</p>
+<div data-fav-empty>
+{{ kumiko(root, "pug", "お気に入りに登録した作品は、まだありません。気になる作品で「お気に入りに追加」を押すと、ここに新刊が集まるよ！", " data-fav-empty-text") }}
+</div>
 </section>
 {{ ad() -}}
 <template id="fav-row-template">

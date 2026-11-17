@@ -263,7 +263,7 @@ narrow(null);
 render();
 }).catch(function () {
 $('[data-search-empty]').hidden = false;
-$('[data-search-empty]').textContent = '検索データを読み込めませんでした。時間をおいて再度お試しください。';
+$('[data-search-empty-text]').textContent = '検索データを読み込めませんでした。時間をおいて再度お試しください。';
 });
 };
 })();

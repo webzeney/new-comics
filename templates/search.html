@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb %}
+{% from "_parts.html" import ad, breadcrumb, kumiko %}
 {% block content %}
 <section aria-labelledby="search-title" class="panel panel--head" data-search data-index="{{ root }}search/index.json">
 {{ breadcrumb(crumbs) }}
@@ -42,7 +42,9 @@
 <button type="button" aria-pressed="{{ 'true' if search.sort == 'added' else 'false' }}" class="toggle_button" data-search-sort="added">新しく追加された順</button>
 </div>
 </div>
-<p class="empty" data-search-empty hidden>条件に合う新刊は見つかりませんでした</p>
+<div data-search-empty hidden>
+{{ kumiko(root, "fumu", "うーん、条件に合う新刊は見つからないみたい…。キーワードや条件を変えてみてね！", " data-search-empty-text") }}
+</div>
 <ul class="booklist" data-search-results>
 </ul>
 <nav aria-label="ページ送り" class="pager" data-search-pager>

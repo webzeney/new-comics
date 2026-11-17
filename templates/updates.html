@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, kind_badge %}
+{% from "_parts.html" import ad, breadcrumb, kind_badge, kumiko %}
 {% block content %}
 <section aria-labelledby="upd-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -12,6 +12,7 @@
 <div class="legend__item"><dt class="legend__term legend__term--change">発売日の変更</dt><dd class="legend__desc">発売日が変わった（延期など）</dd></div>
 <div class="legend__item"><dt class="legend__term legend__term--fixed">発売日の決定</dt><dd class="legend__desc">未定だった発売日が決まった</dd></div>
 </dl>
+{{ kumiko(root, "surprise", "えっ、発売日が変わってる!? 予約した本の延期や、新しく決まった発売日はここでチェック！") }}
 </section>
 <section aria-labelledby="list-title" class="panel">
 <div class="section_head">
