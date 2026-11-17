@@ -678,6 +678,37 @@ def tomorrow_card(site, tomorrow):
     return card
 
 
+PICKUP_FILE = "featured.tsv"
+
+
+def load_pickup(site):
+    """トップの「注目の新刊」。運営者が非公開リポジトリの featured.tsv に書いた本を、書いた順に出す（2026-11-17 運営者の判断）。
+    1列目は本のページのアドレスか ISBN、2列目は掲載の終わりの日（その日まで出す）。発売日より前は「予約受付中」、発売日からは「発売中」。"""
+    path = site.env.get("PICKUP_FILE") or str(Path(site.env.get("NEWCOMICS_DB", "data/newcomics.sqlite")).parent / PICKUP_FILE)
+    if not Path(path).exists():
+        return []
+    by_key = {b.key: b for b in site.books}
+    by_isbn = {b.isbn13: b for b in site.books if b.isbn13}
+    out = []
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        cols = [c.strip() for c in line.split("\t")]
+        if not cols[0] or cols[0].startswith("#") or cols[0] == "本":
+            continue
+        m = re.search(r"/book/([^/]+)/?", cols[0])
+        b = by_key.get(m.group(1)) if m else by_isbn.get(re.sub(r"\D", "", cols[0]))
+        if b is None:
+            print(f"注目の新刊：見つからない本があります（{len(out) + 1}件目の前後）")
+            continue
+        try:
+            end = date.fromisoformat(cols[1]) if len(cols) > 1 and cols[1] else None
+        except ValueError:
+            end = None
+        if end and end < site.today:
+            continue
+        out.append(b)
+    return out
+
+
 def build_top(site, w):
     root = ""
     today, tomorrow = site.today, site.today + timedelta(days=1)
@@ -710,6 +741,12 @@ def build_top(site, w):
         "calendar": {"url": f"calendar/{today.year}/{today.month:02d}/", "month": today.month},
         "tomorrow": tomorrow_card(site, tomorrow),
         "releases": [release(today, "今日"), release(tomorrow, "明日")],
+        "pickup": [{
+            "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "author": site.author_text(b),
+            "date": f"{b.release.year}年{b.release.month}月{b.release.day}日" if b.release else "発売日未定",
+            "status": "発売中" if b.release and b.release <= today else "予約受付中",
+            "on_sale": bool(b.release and b.release <= today), "image": b.image, "alt": site.alt(b),
+        } for b in load_pickup(site)],
         "updates": updates,
         "features": load_features(site.env, base=site_base(site)),
         "news": load_news(site.env, base=site_base(site)),
