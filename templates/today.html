@@ -9,12 +9,12 @@
 <h1 id="day-title" class="heading__title">今日<span class="en">{{ day.md }}</span>（{{ day.dow }}）発売の漫画新刊</h1>
 <span class="heading__sub">{% if stats.total %}{{ day.long }}に発売される漫画・コミックの新刊は{{ stats.total }}点です。毎朝自動で更新しています{% else %}{{ day.long }}に発売される漫画・コミックの新刊はありません{% endif %}</span>
 </div>
+{% if stats.total %}{{ kumiko(root, "clock", "今日が発売日の本だよ！ 買い逃しに注意してね！", mod="head") }}{% else %}{{ kumiko(root, "fumu", "今日は新刊の発売がない日みたい。次の発売日の新刊をチェックしておこう！", mod="head") }}{% endif %}
 <nav aria-label="ほかの発売日" class="daynav">
 {% if next %}<a href="{{ next.url }}" class="daynav__item">{{ next.word or '次の発売日' }}の新刊<span aria-hidden="true">›</span></a>{% endif %}
 <a href="{{ week_url }}" class="daynav__item">今週の新刊<span aria-hidden="true">›</span></a>
 </nav>
 </div>
-{% if stats.total %}{{ kumiko(root, "clock", "今日が発売日の本だよ！ 買い逃しに注意してね！") }}{% else %}{{ kumiko(root, "fumu", "今日は新刊の発売がない日みたい。次の発売日の新刊をチェックしておこう！") }}{% endif %}
 {% if stats.total %}
 <div class="stats">
 {{ stat('今日の発売点数', stats.total, '点', main=True) }}
