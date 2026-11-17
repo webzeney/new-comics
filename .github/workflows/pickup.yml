@@ -1,0 +1,90 @@
+name: 注目の新刊の書き換え（手動）
+
+on:
+  workflow_dispatch:
+    inputs:
+      month:
+        description: 掲載する月（2026-12 の形）
+        required: true
+      books:
+        description: 本の ISBN か本のページのアドレス（並べたい順に、空白かカンマ区切り）。空にするとその月の本を外す
+        required: false
+        default: ""
+      dry_run:
+        description: 確認だけ（書き換えない）
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: data-repo-pickup
+
+jobs:
+  pickup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DATA_REPO: ${{ github.repository_owner }}/new-comics-data
+      DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+      MONTH: ${{ inputs.month }}
+      BOOKS: ${{ inputs.books }}
+    steps:
+      - name: 非公開リポジトリの取り出し
+        run: git clone --quiet --depth 1 "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
+      - name: その月の本を書き換える
+        run: |
+          python3 - <<'PY'
+          import os, re, sqlite3, sys
+          from pathlib import Path
+          m = re.fullmatch(r"(\d{4})[-/](\d{1,2})", os.environ["MONTH"].strip())
+          if not m:
+              sys.exit("掲載する月は 2026-12 の形で書いてください")
+          month = f"{m.group(1)}-{int(m.group(2)):02d}"
+          c = sqlite3.connect("data/newcomics.sqlite")
+          keys = []
+          for w in re.split(r"[\s,、]+", os.environ["BOOKS"].strip()):
+              if not w:
+                  continue
+              u = re.search(r"/book/([^/]+)/?", w)
+              key = u.group(1) if u else re.sub(r"\D", "", w)
+              if key.startswith("b") and key[1:].isdigit():
+                  row = c.execute("SELECT title, release_date FROM books WHERE id = ?", (int(key[1:]),)).fetchone()
+              else:
+                  row = c.execute("SELECT title, release_date FROM books WHERE isbn13 = ?", (key,)).fetchone()
+              if not row:
+                  sys.exit(f"見つからない本があります：{w}")
+              print(f"{month}：{row[0]}（{row[1] or '発売日未定'}）")
+              keys.append(key)
+          path = Path("data/featured.tsv")
+          lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+          keep = []
+          for line in lines:
+              cols = line.split()
+              if len(cols) > 1 and re.fullmatch(r"(\d{4})[-/年.](\d{1,2})", cols[1]):
+                  y, mo = re.split(r"[-/年.]", cols[1])
+                  if f"{y}-{int(mo):02d}" == month:
+                      continue
+              keep.append(line)
+          if not keep or keep[0].split()[:1] != ["本"]:
+              keep.insert(0, "本\t掲載する月")
+          keep += [f"{k}\t{month}" for k in keys]
+          path.write_text("\n".join(keep) + "\n", encoding="utf-8")
+          print(f"{month} の本：{len(keys)} 冊")
+          PY
+      - name: 保存
+        if: ${{ !inputs.dry_run }}
+        run: |
+          cd data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add featured.tsv
+          if git diff --cached --quiet; then
+            echo "変更はありません"
+          else
+            git commit -q -m "data: 注目の新刊 ${MONTH}"
+            git pull -q --rebase
+            git push -q
+            echo "保存しました（次の0時の更新で反映されます）"
+          fi
