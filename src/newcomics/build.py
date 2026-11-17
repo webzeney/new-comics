@@ -417,7 +417,7 @@ FEATURE_WAIT = 5
 FEATURE_CACHE = "assets/features.json"
 # お知らせ（WordPress のカテゴリー「お知らせ」。特集の欄には出さず、トップの別の欄に出す。2026-11-17 運営者の判断）
 NEWS_SLUG = "news"
-NEWS_PATH = f"feature/category/{NEWS_SLUG}/"
+NEWS_PATH = f"feature/archives/category/{NEWS_SLUG}"
 NEWS_CACHE = "assets/news.json"
 
 
