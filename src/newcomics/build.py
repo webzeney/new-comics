@@ -462,7 +462,7 @@ def news_category_id(api):
 
 def fetch_features(api, limit):
     """WordPress の REST API から特集の新しい記事を取る（お知らせのカテゴリーの記事は除く）。"""
-    params = {"per_page": limit, "_embed": "wp:term", "_fields": "title,link,date,nc_icon_url,_embedded,_links"}
+    params = {"per_page": limit, "_embed": "wp:term", "_fields": "title,link,date,nc_icon_url,_embedded,_links", "orderby": "date", "order": "desc"}
     try:
         cid = category_id(api, FEATURE_SLUG)
     except Exception as exc:
