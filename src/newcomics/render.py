@@ -19,6 +19,7 @@ MENU = [
     ("genre", "ジャンルから探す", "genre/"),
     ("favorites", "お気に入り", "favorites/"),
     ("feature", "特集", "feature/"),
+    ("news", "お知らせ", "feature/archives/category/news"),
     ("updates", "発売日の変更・決定", "updates/"),
 ]
 FOOTER = [

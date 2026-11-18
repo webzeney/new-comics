@@ -50,6 +50,44 @@ add_shortcode('books', function ($atts): string {
     return '<ul class="article__books">' . "\n" . implode("\n", $rows) . "\n" . '</ul>';
 });
 
+/* 看板キャラクター（ねむ）。平日は制服、土日は私服（main.js が data-kumiko-weekend で差し替える） */
+function nc_nemu(string $pose, string $text, string $mod = ''): string
+{
+    $pose = preg_match('/^[a-z0-9]+$/', $pose) ? $pose : 'point';
+    $base = nc_site_url() . '/assets/img/kumiko/' . $pose;
+    return '<div class="kumiko' . ($mod ? ' kumiko--' . esc_attr($mod) : '') . '">'
+        . '<img src="' . esc_url($base . '_u.webp') . '" srcset="' . esc_url($base . '_u.webp') . ' 2x" data-kumiko-weekend="' . esc_url($base . '_c.webp') . '" alt="" class="kumiko__image" loading="lazy">'
+        . '<p class="kumiko__bubble">' . $text . '</p></div>';
+}
+
+/* 記事の本文に [nemu pose="cheer"]セリフ[/nemu] と書くと、ねむが吹き出しで話す */
+add_shortcode('nemu', function ($atts, $content = ''): string {
+    $atts = shortcode_atts(['pose' => 'point'], $atts, 'nemu');
+    return nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), 'article');
+});
+
+/* 特集の一覧はコラムだけにする（2026-11-18 運営者の判断） */
+add_action('pre_get_posts', function (WP_Query $q): void {
+    if (!is_admin() && $q->is_main_query() && $q->is_home()) {
+        $q->set('category_name', 'column');
+    }
+});
+
+/* 一覧と記事のページで、ねむが話すこと */
+function nc_nemu_head(): string
+{
+    if (is_category('news')) {
+        return nc_nemu('wave', '漫画新刊JPの新しい機能や、見せ方を変えたことをお知らせするよ！', 'side');
+    }
+    if (is_single() && has_category('news')) {
+        return nc_nemu('surprise', 'お知らせだよ！ 新しくなったところ、ぜひ使ってみてね。', 'side');
+    }
+    if (is_single()) {
+        return nc_nemu('laptop', 'このコラムは、わたしが書いたよ！ 最後まで読んでくれるとうれしいな。', 'side');
+    }
+    return nc_nemu('laptop', 'わたしが書いた漫画のコラムを集めているよ！ 気になる記事から読んでみてね。', 'side');
+}
+
 add_action('after_setup_theme', function (): void {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');

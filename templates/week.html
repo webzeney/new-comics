@@ -9,7 +9,6 @@
 <h1 id="week-title" class="heading__title">今週発売の漫画新刊</h1>
 <span class="heading__sub">今週 <span class="en">{{ week.range }}</span> に発売される漫画・コミックの新刊は{{ stats.total }}点です。毎朝自動で更新しています</span>
 </div>
-{{ kumiko(root, "books", "今週はこんなに出るよ〜！ チェックを入れると、まとめてAmazonのカートに入れられるよ", mod="head") }}
 <nav aria-label="ほかのページ" class="daynav">
 <a href="{{ today_url }}" class="daynav__item">今日の新刊<span aria-hidden="true">›</span></a>
 <a href="{{ calendar_url }}" class="daynav__item">カレンダー<span aria-hidden="true">›</span></a>
@@ -26,7 +25,7 @@
 <span class="stat__value stat__value--loose"><span class="stat__num">{{ stats.peak }}</span><span class="stat__unit">{{ stats.peak_dow }}</span></span>
 </div>
 </div>
-{% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
+{% if intro %}{{ kumiko(root, "books", intro, mod="intro") }}{% endif %}
 <nav aria-label="今週の発売日" class="weekstrip">
 {% for d in days %}
 {% if d.count %}

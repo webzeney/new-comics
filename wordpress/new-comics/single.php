@@ -3,9 +3,12 @@
 <article aria-labelledby="page-title" class="panel">
 <?php nc_breadcrumb([['トップ', nc_site_url() . '/'], ['特集', home_url('/')], [get_the_title(), null]]); ?>
 <div class="article">
+<div class="page_head page_head--nemu">
 <div class="heading">
-<span class="heading__en">FEATURE</span>
+<span class="heading__en"><?php echo has_category('news') ? 'NEWS' : 'FEATURE'; ?></span>
 <h1 id="page-title" class="heading__title"><?php the_title(); ?></h1>
+</div>
+<?php echo nc_nemu_head(); ?>
 </div>
 <div class="article__meta"><time class="article__date" datetime="<?php echo esc_attr(get_the_date('Y-m-d')); ?>"><?php echo esc_html(get_the_date('Y.m.d')); ?></time><?php if ($cat): ?><a href="<?php echo esc_url(get_category_link($cat)); ?>" class="article__tag"><?php echo esc_html($cat->name); ?></a><?php endif; ?></div>
 <?php if (has_post_thumbnail()): $banner = nc_banner_url(); ?><figure class="article__eyecatch<?php echo $banner ? ' article__eyecatch--banner' : ''; ?>"><?php if ($banner): ?><picture><source media="(min-width: 721px)" srcset="<?php echo esc_url($banner); ?>"><?php endif; ?><?php the_post_thumbnail('full', ['class' => 'article__eyecatch_img', 'alt' => '', 'sizes' => '(min-width: 721px) 1100px, 100vw']); ?><?php if ($banner): ?></picture><?php endif; ?></figure><?php endif; ?>

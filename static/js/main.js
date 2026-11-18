@@ -650,12 +650,13 @@ var pick = pool[Math.floor(Math.random() * pool.length)];
 var base = box.getAttribute('data-base');
 var img = box.querySelector('[data-kumiko-image]');
 img.src = base + pick.p + (kumikoWeekend() ? '_c' : '_u') + '.webp';
+img.srcset = img.src + ' 2x';
 img.removeAttribute('data-kumiko-weekend');
 box.querySelector('[data-kumiko-text]').textContent = pick.t.replace('{n}', today).replace('{m}', tomorrow);
 }
 }
 if (kumikoWeekend()) {
-document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) { img.src = img.getAttribute('data-kumiko-weekend'); });
+document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) { img.src = img.getAttribute('data-kumiko-weekend'); img.srcset = img.src + ' 2x'; });
 }
 }
 

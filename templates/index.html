@@ -110,19 +110,21 @@
 </div>
 </div>
 <section aria-labelledby="new-title" class="panel">
-<div class="release__head">
+<div class="release__head release__head--nemu">
+<div class="release__main">
 <div class="heading">
 <span class="heading__en">NEW RELEASE</span>
 <h2 id="new-title" class="release__title">今日・明日発売の新刊</h2>
-</div>
-<div class="kumiko kumiko--head kumiko--top" data-kumiko-random data-lines='{{ kumiko_lines|tojson }}' data-today="{{ today_count }}" data-tomorrow="{{ tomorrow_count }}" data-base="{{ root }}assets/img/kumiko/">
-<img src="{{ root }}assets/img/kumiko/point_u.webp" data-kumiko-weekend="{{ root }}assets/img/kumiko/point_c.webp" alt="" class="kumiko__image" data-kumiko-image>
-<p class="kumiko__bubble" data-kumiko-text>下の一覧で、今日と明日の新刊をまとめて見られるよ！</p>
 </div>
 <div role="tablist" aria-label="発売日" class="release__tabs">
 {% for r in releases %}
 <button type="button" role="tab" id="release-tab-{{ loop.index }}" aria-controls="release-panel-{{ loop.index }}" aria-selected="{{ 'true' if loop.first else 'false' }}" class="release__tab">{{ r.word }} <span class="en">{{ r.date }}</span></button>
 {% endfor %}
+</div>
+</div>
+<div class="kumiko kumiko--side" data-kumiko-random data-lines='{{ kumiko_lines|tojson }}' data-today="{{ today_count }}" data-tomorrow="{{ tomorrow_count }}" data-base="{{ root }}assets/img/kumiko/">
+<img src="{{ root }}assets/img/kumiko/point_u.webp" srcset="{{ root }}assets/img/kumiko/point_u.webp 2x" data-kumiko-weekend="{{ root }}assets/img/kumiko/point_c.webp" alt="" class="kumiko__image" data-kumiko-image>
+<p class="kumiko__bubble" data-kumiko-text>下の一覧で、今日と明日の新刊をまとめて見られるよ！</p>
 </div>
 </div>
 {% for r in releases %}
@@ -158,6 +160,31 @@
 </div>
 </section>
 {{ ad() -}}
+<section aria-labelledby="feat-title" class="panel feature_panel feature_panel--wide">
+<div class="feature_panel__head feature_panel__head--row">
+<div class="heading">
+<span class="heading__en">FEATURE</span>
+<h2 id="feat-title" class="feature_panel__title">特集</h2>
+</div>
+<a href="{{ root }}feature/" class="updates_panel__all">特集の一覧へ</a>
+</div>
+<ul class="feature_panel__list">
+{% if not features %}
+<li class="feature_panel__item feature_panel__empty">特集記事は準備中です。</li>
+{% endif %}
+{% for f in features %}
+<li class="feature_panel__item">
+<a href="{{ f.url }}" class="feature_panel__link">
+<span class="feature_panel__no">{{ f.no }}</span>
+<span class="feature_panel__body">
+<span class="feature_panel__tag">{{ f.tag }}</span>
+<span class="feature_panel__text">{{ f.title }}</span>
+</span>
+</a>
+</li>
+{% endfor %}
+</ul>
+</section>
 <div class="top_row top_row--start">
 <section aria-labelledby="upd-title" class="panel updates_panel">
 <div class="updates_panel__head">
@@ -181,30 +208,8 @@
 </ul>
 </section>
 <div class="top_side top_side--start">
-<section aria-labelledby="feat-title" class="panel">
-<div class="feature_panel__head">
-<span class="heading__en">FEATURE</span>
-<h2 id="feat-title" class="feature_panel__title">特集</h2>
-</div>
-<ul class="feature_panel__list">
-{% if not features %}
-<li class="feature_panel__item feature_panel__empty">特集記事は準備中です。</li>
-{% endif %}
-{% for f in features %}
-<li class="feature_panel__item">
-<a href="{{ f.url }}" class="feature_panel__link">
-<span class="feature_panel__no">{{ f.no }}</span>
-<span class="feature_panel__body">
-<span class="feature_panel__tag">{{ f.tag }}</span>
-<span class="feature_panel__text">{{ f.title }}</span>
-</span>
-</a>
-</li>
-{% endfor %}
-</ul>
-</section>
 {% if news %}
-<section aria-labelledby="news-title" class="panel">
+<section aria-labelledby="news-title" class="panel news_panel">
 <div class="feature_panel__head">
 <span class="heading__en">NEWS</span>
 <h2 id="news-title" class="feature_panel__title">お知らせ</h2>
