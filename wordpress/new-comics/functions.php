@@ -94,6 +94,59 @@ function nc_nemu_float_fit(string $html): string
 }
 add_filter('the_content', 'nc_nemu_float_fit', 12);
 
+/* 記事の本文に [box title="作品情報"]…[/box] と書くと、見出し付きの枠で囲む */
+add_shortcode('box', function ($atts, $content = ''): string {
+    $atts = shortcode_atts(['title' => ''], $atts, 'box');
+    $title = trim((string) $atts['title']);
+    return '<div class="article__box">' . ($title !== '' ? '<p class="article__box_label">' . esc_html($title) . '</p>' : '')
+        . '<div class="article__box_body">' . wpautop(do_shortcode(trim((string) $content))) . '</div></div>';
+});
+
+/* 記事の見出し（h2・h3）から目次を作り、最初の見出しの前に入れる。サイドの目次にも同じものを使う */
+$GLOBALS['nc_toc'] = '';
+function nc_toc_build(string $html): string
+{
+    if (!is_single() || !in_the_loop() || !is_main_query()) {
+        return $html;
+    }
+    $items = [];
+    $n = 0;
+    $html = preg_replace_callback('/<h([23])([^>]*)>(.*?)<\/h\1>/s', function (array $m) use (&$items, &$n): string {
+        $n += 1;
+        $id = preg_match('/\sid="([^"]+)"/', $m[2], $a) ? $a[1] : 'sec' . $n;
+        $items[] = [(int) $m[1], $id, trim(wp_strip_all_tags($m[3]))];
+        $attr = preg_match('/\sid="/', $m[2]) ? $m[2] : $m[2] . ' id="' . $id . '"';
+        return '<h' . $m[1] . $attr . '>' . $m[3] . '</h' . $m[1] . '>';
+    }, $html);
+    if (count(array_filter($items, fn ($i) => $i[0] === 2)) < 3) {
+        $GLOBALS['nc_toc'] = '';
+        return $html;
+    }
+    $list = '';
+    $num = 0;
+    $open = false;
+    foreach ($items as [$level, $id, $text]) {
+        if ($level === 2) {
+            if ($open) {
+                $list .= '</ul>';
+                $open = false;
+            }
+            $list .= ($num ? '</li>' : '') . '<li class="article_toc__item"><a href="#' . esc_attr($id) . '" class="article_toc__link"><span class="article_toc__num">' . sprintf('%02d', ++$num) . '</span>' . esc_html($text) . '</a>';
+        } elseif ($num) {
+            if (!$open) {
+                $list .= '<ul class="article_toc__sub">';
+                $open = true;
+            }
+            $list .= '<li class="article_toc__item article_toc__item--sub"><a href="#' . esc_attr($id) . '" class="article_toc__link">' . esc_html($text) . '</a></li>';
+        }
+    }
+    $list .= ($open ? '</ul>' : '') . '</li>';
+    $GLOBALS['nc_toc'] = '<ol class="article_toc__list">' . $list . '</ol>';
+    $box = '<nav class="article_toc" aria-label="もくじ"><p class="article_toc__title">もくじ</p>' . $GLOBALS['nc_toc'] . '</nav>';
+    return preg_match('/<h2[\s>]/', $html, $h, PREG_OFFSET_CAPTURE) ? substr_replace($html, $box, $h[0][1], 0) : $html;
+}
+add_filter('the_content', 'nc_toc_build', 20);
+
 /* 特集の一覧はコラムだけにする（2026-11-18 運営者の判断） */
 add_action('pre_get_posts', function (WP_Query $q): void {
     if (!is_admin() && $q->is_main_query() && $q->is_home()) {

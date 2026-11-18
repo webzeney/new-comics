@@ -40,10 +40,11 @@ Text Domain: new-comics
 .article__eyecatch--banner .article__eyecatch_img{max-width:1100px;margin:0 auto}
 .article__date{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:13px;color:#5A5148;letter-spacing:0.1em}
 .article__tag{font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;background:#FFF0EC;color:#B5302A;text-decoration:none}
-.article__body{display:flow-root;font-size:15px;line-height:1.9}
-.article__body h2{margin:40px 0 14px;padding-bottom:6px;border-bottom:3px solid #FFD15C;font-size:21px;font-weight:900;line-height:1.5}
-.article__body h3{margin:28px 0 10px;padding-left:12px;border-left:5px solid #D9483B;font-size:18px;font-weight:900;line-height:1.5}
-.article__body p{margin:0 0 1.2em}
+.article__layout{display:grid;grid-template-columns:minmax(0,1fr);gap:48px}
+.article__body{display:flow-root;min-width:0;font-size:16px;line-height:2;letter-spacing:0.04em;color:#3A3530}
+.article__body h2{margin:64px 0 24px;padding:0 0 10px;border-bottom:2px solid #FFD15C;font-size:22px;font-weight:900;line-height:1.5;color:#222222;scroll-margin-top:24px}
+.article__body h3{margin:40px 0 16px;padding:2px 0 2px 14px;border-left:5px solid #D9483B;font-size:18px;font-weight:900;line-height:1.5;color:#222222;scroll-margin-top:24px}
+.article__body p{margin:0 0 1.6em}
 .article__body .kumiko--article{margin:28px 0}
 .article__body .kumiko__bubble{margin:0;font-size:14px;font-weight:700;line-height:1.7}
 .article__body .kumiko--article .kumiko__bubble{flex:0 1 auto;max-width:560px}
@@ -73,6 +74,40 @@ Text Domain: new-comics
 .article__body .store_tile--seven{color:#00704A}
 .article__note{margin:0;padding:14px 18px;border-radius:12px;background:#FFF6EC;font-size:13px;line-height:1.8;color:#5A5148}
 .article__back{display:inline-flex;align-items:center;justify-content:center;align-self:center;min-width:220px;min-height:52px;padding:0 28px;border-radius:999px;background:#222222;color:#FFFFFF;font-weight:700;text-decoration:none}
+/* ==========================================================================
+もくじ
+========================================================================== */
+.article_toc{margin:40px 0;padding:28px 32px;border:2px solid #F3C6BE;border-radius:16px;background:#FFFFFF}
+.article_toc__title{margin:0 0 16px;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:18px;letter-spacing:0.2em;text-align:center;color:#D9483B}
+.article_toc__list{list-style:none;margin:0;padding:0}
+.article_toc__item{margin:0 0 10px}
+.article_toc__link{display:flex;gap:12px;font-size:15px;font-weight:700;line-height:1.6;color:#222222;text-decoration:none}
+.article_toc__num{flex:0 0 auto;padding-right:12px;border-right:1px solid #F3C6BE;font-family:'Yusei Magic',sans-serif;font-weight:400;letter-spacing:0.1em;color:#D9483B}
+.article_toc__sub{list-style:none;margin:6px 0 0;padding:0 0 0 46px}
+.article_toc__item--sub{margin:0 0 4px}
+.article__body .article_toc__link{color:#222222}
+.article_toc__item--sub .article_toc__link{position:relative;padding-left:14px;font-size:14px;font-weight:500}
+.article_toc__item--sub .article_toc__link::before{content:"";position:absolute;left:0;top:0.75em;width:6px;height:6px;border-radius:50%;background:#F3C6BE}
+.article__side{display:none}
+.article_toc--side{position:sticky;top:24px;margin:0;padding:20px 22px}
+.article_toc--side .article_toc__title{text-align:left;font-size:16px}
+.article_toc--side .article_toc__link{font-size:13px;color:#8A7F74}
+.article_toc--side .article_toc__sub{padding-left:34px}
+.article_toc--side .article_toc__item--sub .article_toc__link{font-size:12px}
+.article_toc--side .article_toc__link[data-current]{color:#222222}
+.article_toc--side .article_toc__link[data-current] .article_toc__num{color:#D9483B}
+/* ==========================================================================
+見出し付きの枠
+========================================================================== */
+.article__box{position:relative;margin:40px 0 32px;padding:28px 28px 8px;border:2px solid #F3C6BE;border-radius:14px;background:#FFFAF7}
+.article__box_label{position:absolute;left:20px;top:-15px;margin:0;padding:2px 14px;border-radius:8px;background:#D9483B;color:#FFFFFF;font-size:13px;font-weight:700;line-height:1.8;letter-spacing:0.1em}
+.article__box_label::after{content:"";position:absolute;left:16px;bottom:-6px;border-style:solid;border-width:6px 6px 0 6px;border-color:#D9483B transparent transparent transparent}
+.article__box_body p{margin:0 0 1em}
+.article__box_body ul{margin:0 0 1em}
+@media (min-width: 1100px) {
+.article__layout{grid-template-columns:minmax(0,760px) 240px;justify-content:center}
+.article__side{display:block}
+}
 @media (min-width: 721px) {
 .article__body .kumiko--article:not(.kumiko--nowrap){float:left;width:220px;margin:4px 28px 12px 0;flex-direction:column-reverse;align-items:center;gap:14px}
 .article__body .kumiko--article:not(.kumiko--nowrap).kumiko--right{float:right;margin:4px 0 12px 28px}
@@ -92,7 +127,11 @@ Text Domain: new-comics
 .article__body .kumiko--article:not(.kumiko--nowrap).kumiko--fit_row.kumiko--right .kumiko__bubble::after{left:auto;right:-8px;border-width:7px 0 7px 9px;border-color:transparent transparent transparent #FFFFFF}
 }
 @media (max-width: 720px) {
-.article__body h2{font-size:19px}
+.article__body{font-size:15px}
+.article__body h2{margin-top:48px;font-size:19px}
+.article_toc{padding:22px 20px}
+.article_toc__sub{padding-left:34px}
+.article__box{padding:24px 18px 4px}
 .feature_list__title{font-size:16px}
 .feature_list__thumb{flex:1 1 100%}
 }

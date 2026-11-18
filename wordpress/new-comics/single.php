@@ -12,8 +12,11 @@
 </div>
 <div class="article__meta"><time class="article__date" datetime="<?php echo esc_attr(get_the_date('Y-m-d')); ?>"><?php echo esc_html(get_the_date('Y.m.d')); ?></time><?php if ($cat): ?><a href="<?php echo esc_url(get_category_link($cat)); ?>" class="article__tag"><?php echo esc_html($cat->name); ?></a><?php endif; ?></div>
 <?php if (has_post_thumbnail()): $banner = nc_banner_url(); ?><figure class="article__eyecatch<?php echo $banner ? ' article__eyecatch--banner' : ''; ?>"><?php if ($banner): ?><picture><source media="(min-width: 721px)" srcset="<?php echo esc_url($banner); ?>"><?php endif; ?><?php the_post_thumbnail('full', ['class' => 'article__eyecatch_img', 'alt' => '', 'sizes' => '(min-width: 721px) 1100px, 100vw']); ?><?php if ($banner): ?></picture><?php endif; ?></figure><?php endif; ?>
+<div class="article__layout">
 <div class="article__body">
 <?php the_content(); ?>
+</div>
+<?php if ($GLOBALS['nc_toc']): ?><aside class="article__side"><nav class="article_toc article_toc--side" aria-label="もくじ" data-toc><p class="article_toc__title">もくじ</p><?php echo $GLOBALS['nc_toc']; ?></nav></aside><?php endif; ?>
 </div>
 <p class="article__note">発売日・価格は変更される場合があります。最新の情報は各出版社・販売店でご確認ください。</p>
 <a href="<?php echo esc_url(home_url('/')); ?>" class="article__back">特集の一覧へ</a>

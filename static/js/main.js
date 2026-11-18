@@ -701,6 +701,30 @@ window.addEventListener('load', fit);
 window.addEventListener('resize', function () { clearTimeout(timer); timer = setTimeout(fit, 150); });
 }
 
+function initToc() {
+var nav = document.querySelector('[data-toc]');
+if (!nav || !('IntersectionObserver' in window)) return;
+var links = Array.prototype.slice.call(nav.querySelectorAll('.article_toc__link'));
+var heads = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); }).filter(Boolean);
+var current = null;
+function update() {
+var pick = heads[0];
+heads.forEach(function (h) { if (h.getBoundingClientRect().top < window.innerHeight * 0.3) pick = h; });
+if (pick === current) return;
+current = pick;
+links.forEach(function (a) {
+if (a.getAttribute('href') === '#' + pick.id) a.setAttribute('data-current', ''); else a.removeAttribute('data-current');
+});
+}
+var ticking = false;
+window.addEventListener('scroll', function () {
+if (ticking) return;
+ticking = true;
+window.requestAnimationFrame(function () { ticking = false; update(); });
+}, { passive: true });
+update();
+}
+
 function initToTop() {
 var btns = document.querySelectorAll('[data-totop]');
 if (!btns.length) return;
@@ -724,6 +748,7 @@ document.addEventListener('DOMContentLoaded', function () {
 initSidemenu();
 initKumiko();
 initNemuFloat();
+initToc();
 initToTop();
 initPick();
 initFormNarrow();
