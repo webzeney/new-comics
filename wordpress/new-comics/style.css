@@ -47,13 +47,11 @@ Text Domain: new-comics
 .article__body .kumiko--article{margin:28px 0}
 .article__body .kumiko__bubble{margin:0;font-size:14px;font-weight:700;line-height:1.7}
 .article__body .kumiko--article .kumiko__bubble{flex:0 1 auto;max-width:560px}
-.article__body .kumiko--right{flex-direction:row-reverse}
-.article__body .kumiko--right .kumiko__bubble::before{left:auto;right:-12px;border-width:9px 0 9px 12px;border-color:transparent transparent transparent #222222}
-.article__body .kumiko--right .kumiko__bubble::after{left:auto;right:-8px;border-width:7px 0 7px 9px;border-color:transparent transparent transparent #FFFFFF}
-.article__body .kumiko--float{float:right;width:260px;margin:4px 0 16px 28px;flex-direction:column-reverse;gap:14px}
-.article__body .kumiko--float .kumiko__bubble{max-width:none}
-.article__body .kumiko--float .kumiko__bubble::before{left:50%;top:auto;bottom:-12px;margin:0 0 0 -9px;border-width:12px 9px 0 9px;border-color:#222222 transparent transparent transparent}
-.article__body .kumiko--float .kumiko__bubble::after{left:50%;top:auto;bottom:-8px;margin:0 0 0 -7px;border-width:9px 7px 0 7px;border-color:#FFFFFF transparent transparent transparent}
+.article__body .kumiko--right,.article__body .kumiko--float{flex-direction:row-reverse}
+.article__body .kumiko--right .kumiko__bubble::before,.article__body .kumiko--float .kumiko__bubble::before{left:auto;right:-12px;border-width:9px 0 9px 12px;border-color:transparent transparent transparent #222222}
+.article__body .kumiko--right .kumiko__bubble::after,.article__body .kumiko--float .kumiko__bubble::after{left:auto;right:-8px;border-width:7px 0 7px 9px;border-color:transparent transparent transparent #FFFFFF}
+.article__body .kumiko--float{float:right;width:400px;margin:4px 0 12px 28px}
+.article__body .kumiko--float .kumiko__bubble{flex:1 1 auto}
 .article__body h2,.article__body h3,.article__body .article__books,.article__body .article__sources{clear:both}
 .article__body ul,.article__body ol{margin:0 0 1.2em;padding-left:1.4em}
 .article__body li{margin-bottom:4px}
@@ -79,9 +77,8 @@ Text Domain: new-comics
 .article__back{display:inline-flex;align-items:center;justify-content:center;align-self:center;min-width:220px;min-height:52px;padding:0 28px;border-radius:999px;background:#222222;color:#FFFFFF;font-weight:700;text-decoration:none}
 @media (max-width: 720px) {
 .article__body h2{font-size:19px}
-.article__body .kumiko--float{float:none;width:auto;margin:28px 0;flex-direction:row-reverse;gap:14px}
-.article__body .kumiko--float .kumiko__bubble::before{left:auto;right:-12px;top:50%;bottom:auto;margin:-9px 0 0;border-width:9px 0 9px 12px;border-color:transparent transparent transparent #222222}
-.article__body .kumiko--float .kumiko__bubble::after{left:auto;right:-8px;top:50%;bottom:auto;margin:-7px 0 0;border-width:7px 0 7px 9px;border-color:transparent transparent transparent #FFFFFF}
+.article__body .kumiko--float{float:none;width:auto;margin:28px 0}
+.article__body .kumiko--float .kumiko__bubble{flex:0 1 auto}
 .feature_list__title{font-size:16px}
 .feature_list__thumb{flex:1 1 100%}
 }

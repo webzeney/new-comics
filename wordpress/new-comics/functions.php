@@ -73,6 +73,28 @@ add_shortcode('nemu', function ($atts, $content = ''): string {
     return nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), $mod);
 });
 
+/* 文章の横（float）のねむは、すぐあとに文章が続くところだけにする。
+   あとの文章とリストが短く、すぐ表・見出しなどになるときは、右に置く形に変える（2026-11-18 運営者の判断） */
+function nc_nemu_float_fit(string $html): string
+{
+    return preg_replace_callback('/<div class="kumiko kumiko--article kumiko--float">.*?<\/div>/s', function (array $m) use ($html): string {
+        static $offset = 0;
+        $pos = strpos($html, $m[0], $offset);
+        $offset = $pos + strlen($m[0]);
+        $rest = substr($html, $offset);
+        $lines = 0;
+        while (preg_match('/\A\s*<(p|ul|ol)(?:\s[^>]*)?>(.*?)<\/\1>/s', $rest, $p)) {
+            $items = $p[1] === 'p' ? [$p[2]] : (preg_match_all('/<li(?:\s[^>]*)?>(.*?)<\/li>/s', $p[2], $li) ? $li[1] : []);
+            foreach ($items as $item) {
+                $lines += (int) ceil(mb_strlen(trim(strip_tags($item))) / 36);
+            }
+            $rest = substr($rest, strlen($p[0]));
+        }
+        return $lines >= 6 ? $m[0] : str_replace('kumiko--float', 'kumiko--right', $m[0]);
+    }, $html);
+}
+add_filter('the_content', 'nc_nemu_float_fit', 12);
+
 /* 特集の一覧はコラムだけにする（2026-11-18 運営者の判断） */
 add_action('pre_get_posts', function (WP_Query $q): void {
     if (!is_admin() && $q->is_main_query() && $q->is_home()) {
