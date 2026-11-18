@@ -3,10 +3,13 @@
 毎朝 GitHub Actions から動かす。発売のない日は投稿しない。
 書名は、サイトの一覧と同じ順（出版社の順 → 売れている順）に、文字数の上限まで並べる。
 リンクはサイトの日ごとの新刊ページ。書影は付けない（楽天の書影はサイトの中だけで使う）。
+画像は、日付・点数と看板キャラクター（こはる）の絵を組み合わせたもの（ximage.py）。
+画像のアップロードに失敗したときは、文面だけで投稿する。
 認証情報は環境変数 X_API_KEY・X_API_SECRET・X_ACCESS_TOKEN・X_ACCESS_SECRET（GitHub の Secrets）から読む。
 """
 import argparse
 import base64
+import tempfile
 import hashlib
 import hmac
 import os
@@ -15,14 +18,16 @@ import secrets
 import sys
 import time
 from datetime import date, datetime
+from pathlib import Path
 from urllib.parse import quote
 
 import requests
 
-from . import db
+from . import db, ximage
 from .build import Site, dow, md, title_parts
 
 POST_URL = "https://api.x.com/2/tweets"
+MEDIA_URL = "https://api.x.com/2/media/upload"
 LIMIT = 280      # X の文字数の上限（全角は2、URL は23として数える）
 URL_WEIGHT = 23
 HASHTAGS = "#漫画 #新刊"
@@ -89,8 +94,24 @@ def oauth_header(method, url, keys):
     return "OAuth " + ", ".join(f'{enc(k)}="{enc(v)}"' for k, v in sorted(params.items()))
 
 
-def post(text, keys):
-    r = requests.post(POST_URL, json={"text": text}, headers={"Authorization": oauth_header("POST", POST_URL, keys)}, timeout=30)
+def upload(path, keys):
+    """画像をアップロードして、投稿に付ける番号（media id）を返す。"""
+    media = base64.b64encode(open(path, "rb").read()).decode()
+    r = requests.post(MEDIA_URL, json={"media": media, "media_category": "tweet_image"},
+                      headers={"Authorization": oauth_header("POST", MEDIA_URL, keys)}, timeout=60)
+    if r.status_code not in (200, 201):
+        raise RuntimeError(f"HTTP {r.status_code}：{r.text[:300]}")
+    media_id = (r.json().get("data") or {}).get("id")
+    if not media_id:
+        raise RuntimeError(f"番号が返ってきませんでした：{r.text[:300]}")
+    return media_id
+
+
+def post(text, keys, media_id=None):
+    body = {"text": text}
+    if media_id:
+        body["media"] = {"media_ids": [media_id]}
+    r = requests.post(POST_URL, json=body, headers={"Authorization": oauth_header("POST", POST_URL, keys)}, timeout=30)
     if r.status_code not in (200, 201):
         raise SystemExit(f"X への投稿に失敗しました（HTTP {r.status_code}）：{r.text[:300]}")
     return (r.json().get("data") or {}).get("id")
@@ -111,6 +132,8 @@ def main(argv=None):
     ap.add_argument("--dry-run", action="store_true", help="投稿せずに文面だけを表示する")
     ap.add_argument("--check", action="store_true", help="認証情報と投稿先のアカウントだけを確かめる")
     ap.add_argument("--text", help="新刊の代わりに、この文面を投稿する（お知らせ用）")
+    ap.add_argument("--no-image", action="store_true", help="画像を付けずに投稿する")
+    ap.add_argument("--image-out", help="作った画像をこの場所に保存する（確認用）")
     args = ap.parse_args(argv)
     keys = {"api_key": os.environ.get("X_API_KEY"), "api_secret": os.environ.get("X_API_SECRET"),
             "token": os.environ.get("X_ACCESS_TOKEN"), "token_secret": os.environ.get("X_ACCESS_SECRET")}
@@ -141,13 +164,28 @@ def main(argv=None):
         return 0
     print(text)
     print(f"（文字数の目安 {weight(text)}／{LIMIT}）")
+    image = None
+    if not args.no_image:
+        image = args.image_out or str(Path(tempfile.mkdtemp()) / "x.png")
+        try:
+            ximage.make(day, len(site.by_date[day]), image)
+            print("画像を作りました：", image)
+        except Exception as e:  # 画像が作れなくても、文面だけで投稿する
+            print(f"画像を作れませんでした（文面だけで投稿します）：{e}")
+            image = None
     if args.dry_run:
         print("（確認だけのため投稿していません）")
         return 0
     if not all(keys.values()):
         print("X の認証情報が登録されていないため投稿していません")
         return 0
-    print("投稿しました：", post(text, keys))
+    media_id = None
+    if image:
+        try:
+            media_id = upload(image, keys)
+        except Exception as e:  # アップロードに失敗しても、文面だけで投稿する
+            print(f"画像をアップロードできませんでした（文面だけで投稿します）：{e}")
+    print("投稿しました：", post(text, keys, media_id), "（画像あり）" if media_id else "（画像なし）")
     return 0
 
 

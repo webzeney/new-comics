@@ -4,3 +4,4 @@ lxml==5.3.0
 holidays==0.58
 Jinja2==3.1.6
 google-auth==2.35.0
+Pillow==11.0.0
