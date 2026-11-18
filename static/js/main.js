@@ -671,14 +671,20 @@ var textBottom = last ? last.getBoundingClientRect().bottom : box.getBoundingCli
 return box.getBoundingClientRect().bottom + 12 - textBottom;
 }
 function fit() {
+var tries = [[], ['kumiko--fit_small'], ['kumiko--fit_row'], ['kumiko--fit_row', 'kumiko--fit_small']];
 boxes.forEach(function (box) {
-box.classList.remove('kumiko--fit_small', 'kumiko--fit_block');
+box.classList.remove('kumiko--fit_small', 'kumiko--fit_row');
 if (!pc.matches) return;
-if (blankBelow(box) <= 24) return;
-box.classList.add('kumiko--fit_small');
-if (blankBelow(box) <= 24) return;
-box.classList.remove('kumiko--fit_small');
-box.classList.add('kumiko--fit_block');
+var best = null, bestBlank = Infinity;
+for (var i = 0; i < tries.length; i += 1) {
+box.classList.remove('kumiko--fit_small', 'kumiko--fit_row');
+tries[i].forEach(function (c) { box.classList.add(c); });
+var blank = blankBelow(box);
+if (blank <= 24) return;
+if (blank < bestBlank) { bestBlank = blank; best = tries[i]; }
+}
+box.classList.remove('kumiko--fit_small', 'kumiko--fit_row');
+best.forEach(function (c) { box.classList.add(c); });
 });
 }
 var imgs = boxes.map(function (box) { return box.querySelector('img'); });

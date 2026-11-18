@@ -72,8 +72,8 @@ add_shortcode('nemu', function ($atts, $content = ''): string {
     return str_replace(' loading="lazy"', '', nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), 'article kumiko--' . $side));
 });
 
-/* あとに続く文章とリストが短く、すぐ表・見出しなどになるときは回り込ませない。
-   PC で実際に余白ができるかは main.js（initNemuFloat）が表示したあとに測って、小さくするか回り込みをやめる */
+/* あとに文章もリストもなく、すぐ表・見出しなどになるときは回り込ませない。
+   PC では main.js（initNemuFloat）が表示したあとに余白を測って、吹き出しを上にした形・横に並べた形と大きさを選ぶ（2026-11-18 運営者の判断） */
 function nc_nemu_float_fit(string $html): string
 {
     return preg_replace_callback('/<div class="kumiko kumiko--article kumiko--(?:left|right)">.*?<\/div>/s', function (array $m) use ($html): string {
@@ -89,7 +89,7 @@ function nc_nemu_float_fit(string $html): string
             }
             $rest = substr($rest, strlen($p[0]));
         }
-        return $lines >= 3 ? $m[0] : str_replace('kumiko--article', 'kumiko--article kumiko--nowrap', $m[0]);
+        return $lines > 0 ? $m[0] : str_replace('kumiko--article', 'kumiko--article kumiko--nowrap', $m[0]);
     }, $html);
 }
 add_filter('the_content', 'nc_nemu_float_fit', 12);
