@@ -42,7 +42,6 @@ return list.filter(function (x) { return Array.isArray(x) && /^\d+$/.test(String
 document.addEventListener('DOMContentLoaded', function () {
 var listBox = $('[data-fav-list]');
 var booksBox = $('[data-fav-books]');
-var empty = $('[data-fav-empty]');
 var count = $('[data-fav-count]');
 var tpl = $('#fav-row-template');
 var root = document.querySelector('link[rel="stylesheet"][href*="assets/css"]').getAttribute('href').replace(/assets\/css\/.*$/, '');
@@ -71,6 +70,34 @@ var pick = $('[data-cart-pick]', li);
 var asin = ((item.s && item.s.amazon) || '').match(/\/dp\/([0-9A-Z]{10})/);
 if (asin) { pick.value = asin[1]; pick.setAttribute('aria-label', (item.ia || item.t) + 'をカートに入れる本に選ぶ'); } else { pick.parentNode.remove(); }
 return li;
+}
+
+function nemuSay(favs, found, today) {
+var box = $('[data-fav-nemu]');
+if (!box) return;
+var pose = 'point', text;
+if (!favs.length) {
+text = 'お気に入りに登録した作品は、まだないみたい。気になる作品で「お気に入りに追加」を押すと、ここに新刊が集まるよ！';
+} else if (!found.length) {
+pose = 'fumu';
+text = 'お気に入りに' + favs.length + '作品を登録中！ 今のところ新刊の予定はないけど、発売日が決まったらここに出るよ。';
+} else {
+var next = found.filter(function (it) { return it.d && it.d >= today; })[0];
+if (next) {
+var days = Math.round((Date.parse(next.d) - Date.parse(today)) / 86400000);
+pose = days <= 3 ? 'clock' : 'shinkan';
+text = 'お気に入りの' + favs.length + '作品から、' + found.length + '点の新刊を見つけたよ！ ' + (days === 0 ? '今日は『' + next.t + '』の発売日だよ！' : 'いちばん近いのは『' + next.t + '』で、あと' + days + '日！');
+} else {
+pose = 'books';
+text = 'お気に入りの' + favs.length + '作品から、最近出た新刊が' + found.length + '点あるよ。読み逃してない？';
+}
+}
+var day = new Date().getDay();
+var img = box.querySelector('[data-kumiko-image]');
+img.src = box.getAttribute('data-base') + pose + (day === 0 || day === 6 ? '_c' : '_u') + '.webp';
+img.srcset = img.src + ' 2x';
+box.querySelector('[data-kumiko-image]').removeAttribute('data-kumiko-weekend');
+$('[data-fav-nemu-text]').textContent = text;
 }
 
 function render() {
@@ -130,8 +157,7 @@ changesBox.hidden = !changesList.children.length;
 count.textContent = found.length + '点';
 $('[data-fav-cart]').hidden = !$('[data-cart-pick]', booksBox);
 document.dispatchEvent(new Event('cart:refresh'));
-empty.hidden = found.length > 0;
-$('[data-fav-empty-text]').textContent = favs.length ? 'お気に入りの作品の新刊は、今のところありません。発売日が決まったら、ここに出るよ！' : 'お気に入りに登録した作品は、まだありません。気になる作品で「お気に入りに追加」を押すと、ここに新刊が集まるよ！';
+nemuSay(favs, found, today);
 }
 
 window.addEventListener('hashchange', function () { if (/^#import=/.test(location.hash)) location.reload(); });

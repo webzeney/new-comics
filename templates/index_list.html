@@ -1,13 +1,23 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb %}
+{% from "_parts.html" import ad, breadcrumb, kumiko %}
 {% block content %}
 <section aria-labelledby="page-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
+{% if heading.get("kumiko") %}
+<div class="page_head page_head--nemu">
+<div class="heading">
+<span class="heading__en">{{ heading.en }}</span>
+<h1 id="page-title" class="heading__title">{{ heading.title }}</h1>
+</div>
+{{ kumiko(root, heading.kumiko[0], heading.kumiko[1], mod="side") }}
+</div>
+{% else %}
 <div class="heading">
 <span class="heading__en">{{ heading.en }}</span>
 <h1 id="page-title" class="heading__title">{{ heading.title }}</h1>
 <p class="heading__lead">{{ heading.lead }}</p>
 </div>
+{% endif %}
 </section>
 {% for g in groups %}
 <section class="panel">

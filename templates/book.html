@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble, cover_photo, alarm_dialog, rss_icon %}
+{% from "_parts.html" import ad, breadcrumb, store_buttons, release_bubble, cover_photo, alarm_dialog, rss_icon, kumiko %}
 {% block content %}
 <section aria-labelledby="book-title" class="panel panel--head">
 {{ breadcrumb(crumbs, 'breadcrumb--wide') }}
@@ -90,7 +90,7 @@
 <span class="heading__en">ABOUT</span>
 <h2 id="about-title" class="section_head__title">この本について</h2>
 </div>
-<p class="book_about">{{ summary }}</p>
+{{ kumiko(root, summary_pose, summary, mod="intro") }}
 </section>
 {% endif %}{% if series %}
 <section aria-labelledby="series-title" class="panel">

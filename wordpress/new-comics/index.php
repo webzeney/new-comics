@@ -2,9 +2,12 @@
 <article aria-labelledby="page-title" class="panel">
 <?php nc_breadcrumb([['トップ', nc_site_url() . '/'], [is_category() ? single_cat_title('', false) : '特集', null]]); ?>
 <div class="doc doc--wide">
+<div class="page_head page_head--nemu">
 <div class="heading">
-<span class="heading__en">FEATURE</span>
+<span class="heading__en"><?php echo is_category('news') ? 'NEWS' : 'FEATURE'; ?></span>
 <h1 id="page-title" class="heading__title"><?php echo is_category() ? esc_html(single_cat_title('', false)) : '特集'; ?></h1>
+</div>
+<?php echo nc_nemu_head(); ?>
 </div>
 <?php if (have_posts()): ?>
 <ul class="feature_list">

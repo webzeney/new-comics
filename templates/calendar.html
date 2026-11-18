@@ -9,7 +9,6 @@
 <h1 id="cal-title" class="heading__title">{{ month.title }}</h1>
 <p class="heading__lead">{{ month.lead }}</p>
 </div>
-{{ kumiko(root, "calendar", "日付を押すと、その日の新刊が下に出るよ！ 気になる日に丸をつけておこう", mod="head") }}
 <nav aria-label="表示する月" class="pill_nav">
 {% for m in month_nav %}
 <a href="{{ m.url }}" class="pill_nav__item{% if m.current %} pill_nav__item--current{% endif %}"{% if m.current %} aria-current="page"{% endif %}><span class="en">{{ m.no }}</span>月</a>
@@ -27,7 +26,7 @@
 <span class="stat__value stat__value--loose"><span class="stat__num">{{ stats.peak_date }}</span><span class="stat__unit">{{ stats.peak_suffix }}</span></span>
 </div>
 </div>
-{% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
+{% if intro %}{{ kumiko(root, "calendar", intro, mod="intro") }}{% endif %}
 <div class="filter">
 <span class="filter__label">出版社で絞り込む</span>
 <button type="button" aria-pressed="true" class="chip" data-pub="">すべて</button>

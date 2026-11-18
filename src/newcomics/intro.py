@@ -69,19 +69,37 @@ def _ebook(books):
     return f"電子版の同時配信が予定されている本は{n}点あります。" if n else ""
 
 
+# 今日発売・日ごと・今週発売・カレンダーのページでは、看板キャラクター（ねむ）が話す形にする（2026-11-18 運営者の判断）
+def _nemu_first_final(books, prefix=""):
+    out = []
+    firsts = [b for b in books if b.is_first]
+    finals = [b for b in books if b.is_final]
+    if firsts:
+        out.append(f"{prefix}新シリーズの1巻は{_count(_names(firsts, False), len(firsts))}！ 新しい推しが見つかるかも。")
+    if finals:
+        out.append(f"完結巻は{_count(_names(finals), len(finals))}…。最後まで見届けようね。")
+    return "".join(out)
+
+
+def _nemu_ebook(books):
+    n = sum(1 for b in books if b.has_ebook and not b.ebook_only)
+    return f"電子版も同じ日に出る本が{n}点あるよ。" if n else ""
+
+
 def day(d, books, today):
     """日ごと・今日発売のページ。books はその日の本（並び順のまま）。"""
     if not books:
         return ""
     pubs = Counter(b.publisher for b in books)
-    # 点数は見出しの下に出ているので、ここでは出版社から書き始める
+    when = "今日" if d == today else "この日"
+    verb = "出るよ" if d >= today else "出たよ"
     s = []
     if len(pubs) > 1:
-        s.append(f"この日は{len(pubs)}社から{len(books)}点が発売され、点数が多いのは{_top(pubs)}です。")
+        s.append(f"{when}は{len(pubs)}社から{len(books)}点の新刊が{verb}！ 多いのは{_top(pubs)}だね。")
     else:
-        s.append(f"この日の新刊は、すべて{next(iter(pubs))}の本です。")
-    s.append(_first_final(books))
-    s.append(_ebook(books))
+        s.append(f"{when}の新刊は、ぜんぶ{next(iter(pubs))}の本だよ。")
+    s.append(_nemu_first_final(books))
+    s.append(_nemu_ebook(books))
     return "".join(x for x in s if x)
 
 
@@ -89,13 +107,13 @@ def week(start, end, days_books):
     """今週発売のページ。days_books は [(日付, その日の本)]。"""
     total = sum(len(v) for _, v in days_books)
     if not total:
-        return f"{start.month}月{start.day}日から{end.month}月{end.day}日までの1週間に発売される漫画の新刊は、まだ登録されていません。"
+        return f"{start.month}月{start.day}日から{end.month}月{end.day}日までの1週間に出る新刊は、まだ登録されていないみたい。"
     peak_d, peak = max(days_books, key=lambda x: len(x[1]))
     all_books = [b for _, v in days_books for b in v]
     pubs = Counter(b.publisher for b in all_books)
-    s = [f"{start.month}月{start.day}日から{end.month}月{end.day}日までの1週間に発売される漫画・コミックの新刊は{total}点です。",
-         f"いちばん多いのは{_md(peak_d)}の{len(peak)}点で、出版社別では{_top(pubs)}が多くなっています。",
-         _first_final(all_books, "今週の")]
+    s = [f"{start.month}月{start.day}日から{end.month}月{end.day}日までの1週間に出る漫画の新刊は{total}点！",
+         f"いちばん多いのは{_md(peak_d)}の{len(peak)}点で、出版社だと{_top(pubs)}が多いよ。",
+         _nemu_first_final(all_books, "今週の")]
     return "".join(x for x in s if x)
 
 
@@ -106,11 +124,10 @@ def month(y, m, books):
     by_day = Counter(b.release for b in books)
     peak_d, peak_n = by_day.most_common(1)[0]
     pubs = Counter(b.publisher for b in books)
-    s = [f"{y}年{m}月に発売される漫画・コミックの新刊は{len(books)}点で、発売日は{len(by_day)}日あります。",
-         f"いちばん多いのは{_md(peak_d)}の{peak_n}点です。",
-         f"出版社別では{_top(pubs)}が多くなっています。",
-         _first_final(books)]
-    return "".join(x for x in s if x) + "日付を選ぶと、その日の新刊が見られます。"
+    s = [f"{y}年{m}月に出る漫画の新刊は{len(books)}点、発売日は{len(by_day)}日あるよ！",
+         f"いちばん多いのは{_md(peak_d)}の{peak_n}点。出版社だと{_top(pubs)}が多めだね。",
+         _nemu_first_final(books)]
+    return "".join(x for x in s if x) + "日付を押すと、その日の新刊が下に出るよ。"
 
 
 def listing(subject, books, today, kind):

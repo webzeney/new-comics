@@ -443,27 +443,41 @@ def wp_get(url, params):
 
 
 _news_id = {}
+FEATURE_SLUG = "column"
+
+
+def category_id(api, slug):
+    """WordPress のカテゴリーの番号。カテゴリーがなければ None。"""
+    key = (api, slug)
+    if key not in _news_id:
+        cats = wp_get(api.rsplit("/posts", 1)[0] + "/categories", {"slug": slug, "_fields": "id"})
+        _news_id[key] = cats[0]["id"] if cats else None
+    return _news_id[key]
 
 
 def news_category_id(api):
     """お知らせのカテゴリーの番号。カテゴリーがなければ None。"""
-    if api not in _news_id:
-        cats = wp_get(api.rsplit("/posts", 1)[0] + "/categories", {"slug": NEWS_SLUG, "_fields": "id"})
-        _news_id[api] = cats[0]["id"] if cats else None
-    return _news_id[api]
+    return category_id(api, NEWS_SLUG)
 
 
 def fetch_features(api, limit):
     """WordPress の REST API から特集の新しい記事を取る（お知らせのカテゴリーの記事は除く）。"""
     params = {"per_page": limit, "_embed": "wp:term", "_fields": "title,link,_embedded,_links"}
     try:
-        cid = news_category_id(api)
+        cid = category_id(api, FEATURE_SLUG)
     except Exception as exc:
-        # お知らせのカテゴリーが分からなくても、特集の記事は取る
-        print(f"お知らせのカテゴリーを取得できませんでした：{exc}")
+        print(f"コラムのカテゴリーを取得できませんでした：{exc}")
         cid = None
     if cid:
-        params["categories_exclude"] = cid
+        # 特集の欄はコラムだけ（2026-11-18 運営者の判断）
+        params["categories"] = cid
+    else:
+        try:
+            nid = news_category_id(api)
+        except Exception:
+            nid = None
+        if nid:
+            params["categories_exclude"] = nid
     return wp_get(api, params)
 
 
@@ -761,7 +775,7 @@ def build_top(site, w):
         return {"word": word, "date": md(d), "books": cards, "more_url": more, "empty": empty, "base": TOP_BOOKS_BASE}
 
     ticker = [b.title for b in site.by_date.get(today, [])]
-    updates = latest_updates(site, root, 8)
+    updates = latest_updates(site, root, 5)
     ctx = {
         "ticker": ticker + ticker if ticker else ["本日発売の新刊はありません"] * 2,
         "ticker_static": not ticker,
@@ -1117,48 +1131,50 @@ def jp_date(d):
 
 
 def book_summary(site, b, main, vol, volumes):
-    """書籍ページの「この本について」。表示している事実情報だけを文章にまとめる（あらすじなどは書かない）。"""
+    """書籍ページの「この本について」。表示している事実情報だけを、看板キャラクター（ねむ）のセリフとしてまとめる
+    （あらすじなどは書かない。2026-11-18 運営者の判断で話し言葉にした）。"""
     name = f"『{main}』{vol}巻" if vol else f"『{b.title}』"
     where = f"{b.publisher}の「{b.label}」から" if b.label else f"{b.publisher}から"
+
+    def verb(d, future, today, past):
+        return future if d > site.today else (today if d == site.today else past)
     out = []
     if b.release:
-        diff = (b.release - site.today).days
-        verb = "発売される予定です" if diff > 0 else ("発売されます" if diff == 0 else "発売されました")
-        out.append(f"{name}は、{where}{jp_date(b.release)}に{verb}。")
+        out.append(f"{name}は、{where}{jp_date(b.release)}に{verb(b.release, '出る予定だよ！', '発売！ 今日が発売日だよ！', '出たよ。')}")
     else:
-        out.append(f"{name}は、{where}発売される予定です。発売日はまだ決まっていません。")
+        out.append(f"{name}は、{where}出る予定だけど、発売日はまだ決まっていないみたい。")
     if b.price:
-        out.append(f"定価は{b.price:,}円（税込）です。")
+        out.append(f"定価は{b.price:,}円（税込）。")
     if b.has_ebook:
-        out.append("電子書籍版もあります。")
+        out.append("電子書籍版もあるよ。")
     if vol == 1:
-        out.append("シリーズの1巻目です。")
+        out.append("シリーズの1巻目だから、ここから読み始められるね。")
     prev = next((x for x in volumes if x.volume == (vol or 0) - 1 and x.release), None) if vol else None
     if prev and b.release and b.release > prev.release:
         days = (b.release - prev.release).days
         gap = f"約{round(days / 30.44)}か月" if days >= 28 else f"{days}日"
-        out.append(f"前の巻（{prev.volume}巻）は{jp_date(prev.release)}の発売で、{gap}ぶりの新刊です。")
+        out.append(f"前の巻（{prev.volume}巻）は{jp_date(prev.release)}に出たから、{gap}ぶりの新刊だね。")
     if b.is_final:
-        out.append("この巻で完結します。" if b.release and b.release > site.today else "この巻で完結しています。")
+        out.append("この巻で完結するんだって…！ 最後まで見届けようね。" if b.release and b.release > site.today else "この巻で完結したよ。")
     nxt = next((x for x in volumes if x.volume == (vol or 0) + 1 and x.release), None) if vol else None
     if nxt and b.release and nxt.release == b.release:
-        out.append(f"次の巻（{nxt.volume}巻）も同じ日に{'発売される予定です' if nxt.release > site.today else ('発売されます' if nxt.release == site.today else '発売されました')}。")
+        out.append(f"次の巻（{nxt.volume}巻）も同じ日に{verb(nxt.release, '出る予定だよ。', '出るよ！', '出たよ。')}")
     elif nxt:
-        out.append(f"次の巻（{nxt.volume}巻）は{jp_date(nxt.release)}に{'発売される予定です' if nxt.release > site.today else ('発売されます' if nxt.release == site.today else '発売されました')}。")
+        out.append(f"次の巻（{nxt.volume}巻）は{jp_date(nxt.release)}に{verb(nxt.release, '出る予定だよ。', '出るよ！', '出たよ。')}")
     elif vol and not b.is_final and volumes and volumes[-1].id == b.id:
         fc = forecast_for(volumes)
         if fc:
-            out.append(f"これまでの発売の間隔（約{fc['interval']}か月おき）から、次の巻（{fc['volume']}巻）は{fc['year']}年{fc['month']}月ごろの発売と見込まれます。")
+            out.append(f"これまで約{fc['interval']}か月おきに出ているから、次の巻（{fc['volume']}巻）は{fc['year']}年{fc['month']}月ごろかな？ あくまで見込みだけどね。")
     if b.release:
-        verb = "発売される予定です" if b.release > site.today else ("発売されます" if b.release == site.today else "発売されました")
+        v = verb(b.release, "出る予定だよ。", "出るよ。", "出たよ。")
         if b.label_id:
             same = sum(1 for x in site.by_date.get(b.release, []) if x.label_id == b.label_id)
             if same >= 2:
-                out.append(f"同じ日に「{b.label}」から、この本を含めて{same}点の新刊が{verb}。")
+                out.append(f"同じ日に「{b.label}」から、この本も入れて{same}点の新刊が{v}")
         month_n = sum(1 for x in site.dated if x.publisher == b.publisher and x.release and x.release.year == b.release.year and x.release.month == b.release.month) \
             if not hasattr(site, "pub_month") else site.pub_month.get((b.publisher, b.release.year, b.release.month), 0)
         if month_n >= 2:
-            out.append(f"{b.publisher}の{b.release.year}年{b.release.month}月の漫画の新刊は、全部で{month_n}点です。")
+            out.append(f"{b.publisher}の{b.release.year}年{b.release.month}月の漫画の新刊は、全部で{month_n}点だよ。")
     return "".join(out)
 
 
@@ -1253,6 +1269,7 @@ def build_books(site, w):
             "series": series,
             "sameday": sameday,
             "summary": book_summary(site, b, main, vol, volumes),
+            "summary_pose": "fumu" if not b.release else ("shinkan" if b.release > site.today else ("clock" if b.release == site.today else "books")),
             "buy_title": ("予約する" if b.release > site.today else "購入する") if b.release else "予約・購入する",
             "works": author_works(site, root, b),
         }
@@ -1518,7 +1535,7 @@ def build_listings(site, w):
     for p in sorted(site.publishers, key=lambda p: yomi.sort_key(p["name"])):
         pub_groups[yomi.row_of(p["name"])].append({"name": f"{p['name']}（{p['count']}）", "url": f"{root1}publisher/{p['slug']}/"})
     w.write("publisher/index.html", "index_list.html", page_defaults(title=f"出版社から探す｜{SITE_NAME}", description="出版社ごとの漫画新刊発売予定。", menu="publisher"),
-            crumbs=crumbs(root1, ("出版社から探す", None)), heading={"en": "PUBLISHER", "title": "出版社から探す", "lead": "出版社を選ぶと、その出版社の新刊発売予定を一覧で見られます。"},
+            crumbs=crumbs(root1, ("出版社から探す", None)), heading={"en": "PUBLISHER", "title": "出版社から探す", "lead": "出版社を選ぶと、その出版社の新刊発売予定を一覧で見られます。", "kumiko": ("point", "出版社を選ぶと、その出版社から出る新刊の予定をまとめて見られるよ！ 好きな出版社から探してみてね。")},
             groups=[{"title": k, "links": v} for k, v in pub_groups.items() if v])
     label_groups = OrderedDict()
     counts = defaultdict(int)
@@ -1529,11 +1546,11 @@ def build_listings(site, w):
         if counts[l["id"]]:
             label_groups.setdefault(l["pub"], []).append({"name": f"{l['name']}（{counts[l['id']]}）", "url": f"{root1}label/{l['id']}/"})
     w.write("label/index.html", "index_list.html", page_defaults(title=f"レーベルから探す｜{SITE_NAME}", description="レーベルごとの漫画新刊発売予定。", menu="label"),
-            crumbs=crumbs(root1, ("レーベルから探す", None)), heading={"en": "LABEL", "title": "レーベルから探す", "lead": "レーベルを選ぶと、そのレーベルの新刊発売予定を一覧で見られます。"},
+            crumbs=crumbs(root1, ("レーベルから探す", None)), heading={"en": "LABEL", "title": "レーベルから探す", "lead": "レーベルを選ぶと、そのレーベルの新刊発売予定を一覧で見られます。", "kumiko": ("loupe", "レーベルを選ぶと、そのレーベルから出る新刊の予定をまとめて見られるよ！ いつも買うレーベル、あるかな？")},
             groups=[{"title": k, "links": v} for k, v in label_groups.items()])
     tag_links = [{"name": f"#{TAG_INFO[s][0]}", "url": f"{root1}tag/{s}/"} for s in TAG_INFO if any(s in b.tags for b in site.dated)]
     w.write("tag/index.html", "index_list.html", page_defaults(title=f"タグから探す｜{SITE_NAME}", description="タグごとの漫画新刊発売予定。"),
-            crumbs=crumbs(root1, ("タグ", None)), heading={"en": "TAG", "title": "タグから探す", "lead": "タグを選ぶと、そのタグが付いた新刊発売予定を一覧で見られます。"},
+            crumbs=crumbs(root1, ("タグ", None)), heading={"en": "TAG", "title": "タグから探す", "lead": "タグを選ぶと、そのタグが付いた新刊発売予定を一覧で見られます。", "kumiko": ("fumu", "タグを選ぶと、そのタグが付いた新刊の予定をまとめて見られるよ。新シリーズの1巻や完結巻もここから探せるね。")},
             groups=[{"title": "タグ", "links": tag_links}])
 
 
@@ -1778,7 +1795,7 @@ def build_genres(site, w):
         w.write(f"genre/{slug}/index.html", "listing.html", page, **ctx)
         build_month_pages(site, w, "genre", f"genre/{slug}/", name, books, [("ジャンルから探す", "genre/"), (name, f"genre/{slug}/")])
     w.write("genre/index.html", "index_list.html", page_defaults(title=f"ジャンルから探す｜{SITE_NAME}", description="少年・少女・青年・女性・BL・TL のジャンルごとの漫画新刊発売予定。", menu="genre"),
-            crumbs=crumbs("../", ("ジャンルから探す", None)), heading={"en": "GENRE", "title": "ジャンルから探す", "lead": "ジャンルを選ぶと、そのジャンルの新刊発売予定を一覧で見られます。ジャンルはレーベルごとに分けています。"},
+            crumbs=crumbs("../", ("ジャンルから探す", None)), heading={"en": "GENRE", "title": "ジャンルから探す", "lead": "ジャンルを選ぶと、そのジャンルの新刊発売予定を一覧で見られます。ジャンルはレーベルごとに分けています。", "kumiko": ("cheer", "ジャンルを選ぶと、そのジャンルの新刊の予定をまとめて見られるよ！ ジャンルはレーベルごとに分けているんだ。")},
             groups=[{"title": "ジャンル", "links": links}])
 
 

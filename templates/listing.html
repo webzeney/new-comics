@@ -19,13 +19,13 @@
 {% block content %}
 <section aria-labelledby="pub-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
-{% if listing.get("kumiko") %}<div class="page_head">
+{% if listing.get("kumiko") %}<div class="page_head page_head--nemu">
 {% endif %}<div class="heading">
 <span class="heading__en">{{ listing.en }}</span>
 <h1 id="pub-title" class="heading__title">{{ listing.title }}</h1>
 {% if listing.lead %}<p class="heading__lead">{{ listing.lead }}</p>{% endif %}
 </div>
-{% if listing.get("kumiko") %}{{ kumiko(root, listing.kumiko[0], listing.kumiko[1], mod="head") }}
+{% if listing.get("kumiko") %}{{ kumiko(root, listing.kumiko[0], listing.kumiko[1], mod="side") }}
 </div>
 {% endif %}
 <div class="stats stats--wide">

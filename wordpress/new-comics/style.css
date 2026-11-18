@@ -44,6 +44,8 @@ Text Domain: new-comics
 .article__body h2{margin:40px 0 14px;padding-bottom:6px;border-bottom:3px solid #FFD15C;font-size:21px;font-weight:900;line-height:1.5}
 .article__body h3{margin:28px 0 10px;padding-left:12px;border-left:5px solid #D9483B;font-size:18px;font-weight:900;line-height:1.5}
 .article__body p{margin:0 0 1.2em}
+.article__body .kumiko--article{margin:28px 0}
+.article__body .kumiko__bubble{margin:0;font-size:14px;font-weight:700;line-height:1.7}
 .article__body ul,.article__body ol{margin:0 0 1.2em;padding-left:1.4em}
 .article__body li{margin-bottom:4px}
 .article__body a{color:#B5302A;font-weight:700}
