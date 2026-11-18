@@ -61,24 +61,22 @@ function nc_nemu(string $pose, string $text, string $mod = ''): string
 }
 
 /* 記事の本文に [nemu pose="cheer"]セリフ[/nemu] と書くと、ねむが吹き出しで話す。
-   置き方は 左 → 右 → 文章の横 の順に入れ替わる。side="left" / "right" / "float" で指定もできる */
+   PC では、ねむ（吹き出しはねむの上）のよこに、あとに続く文章が回り込む。
+   ねむの位置は 左 → 右 の順に入れ替わる。side="left" / "right" で指定もできる（2026-11-18 運営者の判断） */
 add_shortcode('nemu', function ($atts, $content = ''): string {
     static $count = [];
     $atts = shortcode_atts(['pose' => 'point', 'side' => ''], $atts, 'nemu');
     $id = (int) get_the_ID();
     $count[$id] = ($count[$id] ?? 0) + 1;
-    $sides = ['left', 'right', 'float'];
-    $side = in_array($atts['side'], $sides, true) ? $atts['side'] : $sides[($count[$id] - 1) % 3];
-    $mod = 'article' . ($side === 'left' ? '' : ' kumiko--' . $side);
-    return str_replace(' loading="lazy"', '', nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), $mod));
+    $side = in_array($atts['side'], ['left', 'right'], true) ? $atts['side'] : ($count[$id] % 2 ? 'left' : 'right');
+    return str_replace(' loading="lazy"', '', nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), 'article kumiko--' . $side));
 });
 
-/* 文章の横（float）のねむは、すぐあとに文章が続くところだけにする。
-   あとの文章とリストが短く、すぐ表・見出しなどになるときは、右に置く形に変える（2026-11-18 運営者の判断）。
-   PC で実際に余白ができるかは main.js（initNemuFloat）が表示したあとに測って、小さくするか右に置く形に変える */
+/* あとに続く文章とリストが短く、すぐ表・見出しなどになるときは回り込ませない。
+   PC で実際に余白ができるかは main.js（initNemuFloat）が表示したあとに測って、小さくするか回り込みをやめる */
 function nc_nemu_float_fit(string $html): string
 {
-    return preg_replace_callback('/<div class="kumiko kumiko--article kumiko--float">.*?<\/div>/s', function (array $m) use ($html): string {
+    return preg_replace_callback('/<div class="kumiko kumiko--article kumiko--(?:left|right)">.*?<\/div>/s', function (array $m) use ($html): string {
         static $offset = 0;
         $pos = strpos($html, $m[0], $offset);
         $offset = $pos + strlen($m[0]);
@@ -91,7 +89,7 @@ function nc_nemu_float_fit(string $html): string
             }
             $rest = substr($rest, strlen($p[0]));
         }
-        return $lines >= 3 ? $m[0] : str_replace('kumiko--float', 'kumiko--right', $m[0]);
+        return $lines >= 3 ? $m[0] : str_replace('kumiko--article', 'kumiko--article kumiko--nowrap', $m[0]);
     }, $html);
 }
 add_filter('the_content', 'nc_nemu_float_fit', 12);

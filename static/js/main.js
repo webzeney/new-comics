@@ -661,7 +661,7 @@ document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) { img.
 }
 
 function initNemuFloat() {
-var boxes = Array.prototype.slice.call(document.querySelectorAll('.kumiko--float'));
+var boxes = Array.prototype.slice.call(document.querySelectorAll('.kumiko--article:not(.kumiko--nowrap)'));
 if (!boxes.length) return;
 var pc = window.matchMedia('(min-width: 721px)');
 function blankBelow(box) {
