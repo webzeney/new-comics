@@ -117,9 +117,10 @@
 {% macro rss_icon() -%}
 <svg class="rss_icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect width="16" height="16" rx="3" fill="#E8742C"/><circle cx="4.5" cy="11.5" r="1.5" fill="#FFFFFF"/><path d="M3 7.2a5.8 5.8 0 0 1 5.8 5.8M3 3.6a9.4 9.4 0 0 1 9.4 9.4" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/></svg>
 {%- endmacro %}
-{% macro kumiko(root, name, text, attr='', mod='') %}
-<div class="kumiko{% if mod %} kumiko--{{ mod }}{% endif %}">
-<img src="{{ root }}assets/img/kumiko/{{ name }}_u.webp" srcset="{{ root }}assets/img/kumiko/{{ name }}_u.webp 2x" data-kumiko-weekend="{{ root }}assets/img/kumiko/{{ name }}_c.webp" alt="" class="kumiko__image" loading="lazy">
+{% macro kumiko(root, name, text, attr='', mod='', large=false) %}
+{%- set sfx = "_l" if large else "" %}
+<div class="kumiko{% if mod %} kumiko--{{ mod }}{% endif %}{% if large %} kumiko--large{% endif %}">
+<img src="{{ root }}assets/img/kumiko/{{ name }}_u{{ sfx }}.webp" srcset="{{ root }}assets/img/kumiko/{{ name }}_u{{ sfx }}.webp 2x" data-kumiko-weekend="{{ root }}assets/img/kumiko/{{ name }}_c{{ sfx }}.webp" alt="" class="kumiko__image" loading="lazy">
 <p class="kumiko__bubble"{{ attr|safe }}>{{ text }}</p>
 </div>
 {%- endmacro %}
