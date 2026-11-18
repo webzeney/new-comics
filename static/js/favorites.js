@@ -75,7 +75,7 @@ return li;
 function nemuSay(favs, found, today) {
 var box = $('[data-fav-nemu]');
 if (!box) return;
-var pose = 'pug', text;
+var pose = 'point', text;
 if (!favs.length) {
 text = 'お気に入りに登録した作品は、まだないみたい。気になる作品で「お気に入りに追加」を押すと、ここに新刊が集まるよ！';
 } else if (!found.length) {

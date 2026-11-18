@@ -160,7 +160,29 @@
 </div>
 </section>
 {{ ad() -}}
-<section aria-labelledby="feat-title" class="panel feature_panel feature_panel--wide">
+<div class="top_three">
+<section aria-labelledby="upd-title" class="panel updates_panel">
+<div class="updates_panel__head">
+<div class="heading">
+<span class="heading__en">UPDATE</span>
+<h2 id="upd-title" class="updates_panel__title">発売日の変更・決定</h2>
+</div>
+<a href="{{ root }}updates/" class="updates_panel__all">すべて見る</a>
+</div>
+<ul class="updates_panel__list">
+{% for u in updates %}
+<li class="updates_panel__item">
+<span class="updates_panel__date">{{ u.date }}</span>
+{{ kind_badge(u.kind) }}
+<a href="{{ u.url }}" class="updates_panel__link">{{ u.title }}</a>
+<span class="updates_panel__detail">{{ u.detail }}</span>
+</li>
+{% else %}
+<li class="updates_panel__item updates_panel__empty">発売日の変更・決定は、今のところありません。</li>
+{% endfor %}
+</ul>
+</section>
+<section aria-labelledby="feat-title" class="panel feature_panel">
 <div class="feature_panel__head feature_panel__head--row">
 <div class="heading">
 <span class="heading__en">FEATURE</span>
@@ -185,29 +207,6 @@
 {% endfor %}
 </ul>
 </section>
-<div class="top_row top_row--start">
-<section aria-labelledby="upd-title" class="panel updates_panel">
-<div class="updates_panel__head">
-<div class="heading">
-<span class="heading__en">UPDATE</span>
-<h2 id="upd-title" class="updates_panel__title">発売日の変更・決定</h2>
-</div>
-<a href="{{ root }}updates/" class="updates_panel__all">すべて見る</a>
-</div>
-<ul class="updates_panel__list">
-{% for u in updates %}
-<li class="updates_panel__item">
-<span class="updates_panel__date">{{ u.date }}</span>
-{{ kind_badge(u.kind) }}
-<a href="{{ u.url }}" class="updates_panel__link">{{ u.title }}</a>
-<span class="updates_panel__detail">{{ u.detail }}</span>
-</li>
-{% else %}
-<li class="updates_panel__item updates_panel__empty">発売日の変更・決定は、今のところありません。</li>
-{% endfor %}
-</ul>
-</section>
-<div class="top_side top_side--start">
 {% if news %}
 <section aria-labelledby="news-title" class="panel news_panel">
 <div class="feature_panel__head">
@@ -227,7 +226,6 @@
 <a href="{{ news_url }}" class="news_panel__more">お知らせの一覧へ</a>
 </section>
 {% endif %}
+</div>
 {{ ad(rect=True) -}}
-</div>
-</div>
 {% endblock %}

@@ -775,7 +775,7 @@ def build_top(site, w):
         return {"word": word, "date": md(d), "books": cards, "more_url": more, "empty": empty, "base": TOP_BOOKS_BASE}
 
     ticker = [b.title for b in site.by_date.get(today, [])]
-    updates = latest_updates(site, root, 8)
+    updates = latest_updates(site, root, 5)
     ctx = {
         "ticker": ticker + ticker if ticker else ["本日発売の新刊はありません"] * 2,
         "ticker_static": not ticker,
