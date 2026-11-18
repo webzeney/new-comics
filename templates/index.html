@@ -199,7 +199,7 @@
 <a href="{{ f.url }}" class="feature_panel__link">
 {% if f.icon %}<img src="{{ f.icon }}" width="64" height="64" alt="" class="feature_panel__icon" loading="lazy">{% else %}<span class="feature_panel__no">{{ f.no }}</span>{% endif %}
 <span class="feature_panel__body">
-<span class="feature_panel__tag">{{ f.tag }}</span>
+<span class="feature_panel__meta">{% if f.date %}<time datetime="{{ f.iso }}" class="feature_panel__date">{{ f.date }}</time>{% endif %}<span class="feature_panel__tag">{{ f.tag }}</span></span>
 <span class="feature_panel__text">{{ f.title }}</span>
 </span>
 </a>

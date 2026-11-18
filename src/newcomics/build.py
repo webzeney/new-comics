@@ -462,7 +462,7 @@ def news_category_id(api):
 
 def fetch_features(api, limit):
     """WordPress の REST API から特集の新しい記事を取る（お知らせのカテゴリーの記事は除く）。"""
-    params = {"per_page": limit, "_embed": "wp:term", "_fields": "title,link,nc_icon_url,_embedded,_links"}
+    params = {"per_page": limit, "_embed": "wp:term", "_fields": "title,link,date,nc_icon_url,_embedded,_links"}
     try:
         cid = category_id(api, FEATURE_SLUG)
     except Exception as exc:
@@ -535,7 +535,13 @@ def load_features(env, limit=4, base=None):
     out = []
     for i, post in enumerate(posts[:limit], 1):
         terms = [t for group in (post.get("_embedded") or {}).get("wp:term", []) for t in group if t.get("taxonomy") == "category"]
+        try:
+            d = date.fromisoformat((post.get("date") or "")[:10])
+        except ValueError:
+            d = None
         out.append({
+            "date": d.strftime("%Y.%m.%d") if d else "",
+            "iso": d.isoformat() if d else "",
             "no": f"{i:02d}",
             "tag": terms[0]["name"] if terms else "特集",
             "title": html.unescape((post.get("title") or {}).get("rendered", "")),
