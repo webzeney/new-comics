@@ -70,11 +70,12 @@ add_shortcode('nemu', function ($atts, $content = ''): string {
     $sides = ['left', 'right', 'float'];
     $side = in_array($atts['side'], $sides, true) ? $atts['side'] : $sides[($count[$id] - 1) % 3];
     $mod = 'article' . ($side === 'left' ? '' : ' kumiko--' . $side);
-    return nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), $mod);
+    return str_replace(' loading="lazy"', '', nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), $mod));
 });
 
 /* 文章の横（float）のねむは、すぐあとに文章が続くところだけにする。
-   あとの文章とリストが短く、すぐ表・見出しなどになるときは、右に置く形に変える（2026-11-18 運営者の判断） */
+   あとの文章とリストが短く、すぐ表・見出しなどになるときは、右に置く形に変える（2026-11-18 運営者の判断）。
+   PC で実際に余白ができるかは main.js（initNemuFloat）が表示したあとに測って、小さくするか右に置く形に変える */
 function nc_nemu_float_fit(string $html): string
 {
     return preg_replace_callback('/<div class="kumiko kumiko--article kumiko--float">.*?<\/div>/s', function (array $m) use ($html): string {
@@ -90,7 +91,7 @@ function nc_nemu_float_fit(string $html): string
             }
             $rest = substr($rest, strlen($p[0]));
         }
-        return $lines >= 6 ? $m[0] : str_replace('kumiko--float', 'kumiko--right', $m[0]);
+        return $lines >= 3 ? $m[0] : str_replace('kumiko--float', 'kumiko--right', $m[0]);
     }, $html);
 }
 add_filter('the_content', 'nc_nemu_float_fit', 12);

@@ -660,6 +660,41 @@ document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) { img.
 }
 }
 
+function initNemuFloat() {
+var boxes = Array.prototype.slice.call(document.querySelectorAll('.kumiko--float'));
+if (!boxes.length) return;
+var pc = window.matchMedia('(min-width: 721px)');
+function blankBelow(box) {
+var el = box.nextElementSibling, last = null;
+while (el && /^(P|UL|OL)$/.test(el.tagName)) { last = el; el = el.nextElementSibling; }
+var textBottom = last ? last.getBoundingClientRect().bottom : box.getBoundingClientRect().top;
+return box.getBoundingClientRect().bottom + 12 - textBottom;
+}
+function fit() {
+boxes.forEach(function (box) {
+box.classList.remove('kumiko--fit_small', 'kumiko--fit_block');
+if (!pc.matches) return;
+if (blankBelow(box) <= 24) return;
+box.classList.add('kumiko--fit_small');
+if (blankBelow(box) <= 24) return;
+box.classList.remove('kumiko--fit_small');
+box.classList.add('kumiko--fit_block');
+});
+}
+var imgs = boxes.map(function (box) { return box.querySelector('img'); });
+var wait = imgs.filter(function (img) { return img && !img.complete; });
+var left = wait.length;
+if (!left) fit();
+wait.forEach(function (img) {
+var done = function () { left -= 1; if (!left) fit(); };
+img.addEventListener('load', done, { once: true });
+img.addEventListener('error', done, { once: true });
+});
+var timer;
+window.addEventListener('load', fit);
+window.addEventListener('resize', function () { clearTimeout(timer); timer = setTimeout(fit, 150); });
+}
+
 function initToTop() {
 var btns = document.querySelectorAll('[data-totop]');
 if (!btns.length) return;
@@ -682,6 +717,7 @@ update();
 document.addEventListener('DOMContentLoaded', function () {
 initSidemenu();
 initKumiko();
+initNemuFloat();
 initToTop();
 initPick();
 initFormNarrow();
