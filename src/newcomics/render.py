@@ -3,6 +3,7 @@ import re
 import shutil
 from pathlib import Path
 
+from markupsafe import Markup
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -51,7 +52,27 @@ def environment():
     )
     # アドセンスの審査中は仮の広告枠を出さない（審査に通ったら広告ユニットに置き換える）
     env.globals["show_ad_slots"] = False
+    env.globals["kumiko_size"] = kumiko_size
     return env
+
+
+def webp_size(path):
+    """webp の画像の幅と高さ（ファイルの頭の部分だけを読む）"""
+    head = Path(path).read_bytes()[:30]
+    kind = head[12:16]
+    if kind == b"VP8X":
+        return 1 + int.from_bytes(head[24:27], "little"), 1 + int.from_bytes(head[27:30], "little")
+    if kind == b"VP8L":
+        b = int.from_bytes(head[21:25], "little")
+        return (b & 0x3FFF) + 1, ((b >> 14) & 0x3FFF) + 1
+    return int.from_bytes(head[26:28], "little") & 0x3FFF, int.from_bytes(head[28:30], "little") & 0x3FFF
+
+
+def kumiko_size(name, folder="kumiko"):
+    """看板キャラクターの画像は2倍の大きさで作っているので、表示する幅と高さ（半分）を属性で書く。
+    srcset の 2x だけでは、画素の細かくない画面で2倍の大きさに出てしまうため"""
+    w, h = webp_size(STATIC / "img" / folder / f"{name}.webp")
+    return Markup(f'width="{w // 2}" height="{h // 2}"')
 
 
 X_ACCOUNT = {"handle": "@newcomics_jp", "url": "https://x.com/newcomics_jp"}

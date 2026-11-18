@@ -50,13 +50,22 @@ add_shortcode('books', function ($atts): string {
     return '<ul class="article__books">' . "\n" . implode("\n", $rows) . "\n" . '</ul>';
 });
 
-/* 看板キャラクター（桜塚こはる）。平日は制服、土日は私服（main.js が data-kumiko-weekend で差し替える） */
+/* 看板キャラクターなどの画像は2倍の大きさで作っているので、表示する幅と高さ（半分）を属性で書く。
+   srcset の 2x だけでは、画素の細かくない画面で2倍の大きさに出てしまうため */
+function nc_half_size(string $file): string
+{
+    $size = @getimagesize(dirname(rtrim(ABSPATH, '/')) . '/assets/img/' . $file);
+    return $size ? ' width="' . intdiv($size[0], 2) . '" height="' . intdiv($size[1], 2) . '"' : '';
+}
+
+/* 看板キャラクター（櫻塚こはる）。平日は制服、土日は私服（main.js が data-kumiko-weekend で差し替える） */
 function nc_nemu(string $pose, string $text, string $mod = ''): string
 {
     $pose = preg_match('/^[a-z0-9]+$/', $pose) ? $pose : 'point';
     $base = nc_site_url() . '/assets/img/kumiko/' . $pose;
+    $size = nc_half_size('kumiko/' . $pose . '_u.webp');
     return '<div class="kumiko' . ($mod ? ' kumiko--' . implode(' kumiko--', array_map('esc_attr', explode(' kumiko--', $mod))) : '') . '">'
-        . '<img src="' . esc_url($base . '_u.webp') . '" srcset="' . esc_url($base . '_u.webp') . ' 2x" data-kumiko-weekend="' . esc_url($base . '_c.webp') . '" alt="" class="kumiko__image" loading="lazy">'
+        . '<img src="' . esc_url($base . '_u.webp') . '" srcset="' . esc_url($base . '_u.webp') . ' 2x"' . $size . ' data-kumiko-weekend="' . esc_url($base . '_c.webp') . '" alt="" class="kumiko__image" loading="lazy">'
         . '<p class="kumiko__bubble">' . $text . '</p></div>';
 }
 
@@ -95,6 +104,15 @@ function nc_nemu_float_fit(string $html): string
     }, $html);
 }
 add_filter('the_content', 'nc_nemu_float_fit', 12);
+
+/* 記事の本文に [beta pose="happy"]セリフ[/beta] と書くと、こはるの飼い犬のパグ「ベタ」が吹き出しで話す */
+add_shortcode('beta', function ($atts, $content = ''): string {
+    $atts = shortcode_atts(['pose' => 'normal'], $atts, 'beta');
+    $pose = in_array($atts['pose'], ['normal', 'happy', 'surprise', 'sleepy', 'tilt', 'proud', 'sad', 'wink'], true) ? $atts['pose'] : 'normal';
+    $src = nc_site_url() . '/assets/img/beta/' . $pose . '.webp';
+    return '<div class="beta"><img src="' . esc_url($src) . '" srcset="' . esc_url($src) . ' 2x"' . nc_half_size('beta/' . $pose . '.webp') . ' alt="" class="beta__image">'
+        . '<p class="beta__bubble">' . wp_kses(trim((string) $content), ['br' => [], 'strong' => []]) . '</p></div>';
+});
 
 /* 記事の本文に [box title="作品情報"]…[/box] と書くと、見出し付きの枠で囲む */
 add_shortcode('box', function ($atts, $content = ''): string {

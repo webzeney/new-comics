@@ -94,8 +94,12 @@ text = 'お気に入りの' + favs.length + '作品から、最近出た新刊�
 }
 var day = new Date().getDay();
 var img = box.querySelector('[data-kumiko-image]');
-img.src = box.getAttribute('data-base') + pose + (day === 0 || day === 6 ? '_c' : '_u') + '.webp';
-img.srcset = img.src + ' 2x';
+var src = box.getAttribute('data-base') + pose + (day === 0 || day === 6 ? '_c' : '_u') + '.webp';
+var probe = new Image();
+probe.onload = function () { img.width = Math.round(probe.naturalWidth / 2); img.height = Math.round(probe.naturalHeight / 2); };
+probe.src = src;
+img.src = src;
+img.srcset = src + ' 2x';
 box.querySelector('[data-kumiko-image]').removeAttribute('data-kumiko-weekend');
 $('[data-fav-nemu-text]').textContent = text;
 }

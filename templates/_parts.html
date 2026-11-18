@@ -119,7 +119,7 @@
 {%- endmacro %}
 {% macro kumiko(root, name, text, attr='', mod='') %}
 <div class="kumiko{% if mod %} kumiko--{{ mod }}{% endif %}">
-<img src="{{ root }}assets/img/kumiko/{{ name }}_u.webp" srcset="{{ root }}assets/img/kumiko/{{ name }}_u.webp 2x" data-kumiko-weekend="{{ root }}assets/img/kumiko/{{ name }}_c.webp" alt="" class="kumiko__image" loading="lazy">
+<img src="{{ root }}assets/img/kumiko/{{ name }}_u.webp" srcset="{{ root }}assets/img/kumiko/{{ name }}_u.webp 2x" {{ kumiko_size(name ~ "_u") }} data-kumiko-weekend="{{ root }}assets/img/kumiko/{{ name }}_c.webp" alt="" class="kumiko__image" loading="lazy">
 <p class="kumiko__bubble"{{ attr|safe }}>{{ text }}</p>
 </div>
 {%- endmacro %}

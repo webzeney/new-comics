@@ -624,6 +624,14 @@ var day = new Date().getDay();
 return day === 0 || day === 6;
 }
 
+function kumikoSrc(img, src) {
+var probe = new Image();
+probe.onload = function () { img.width = Math.round(probe.naturalWidth / 2); img.height = Math.round(probe.naturalHeight / 2); };
+probe.src = src;
+img.src = src;
+img.srcset = src + ' 2x';
+}
+
 function initKumiko() {
 var box = document.querySelector('[data-kumiko-random]');
 if (box) {
@@ -649,14 +657,13 @@ if (pool.length) {
 var pick = pool[Math.floor(Math.random() * pool.length)];
 var base = box.getAttribute('data-base');
 var img = box.querySelector('[data-kumiko-image]');
-img.src = base + pick.p + (kumikoWeekend() ? '_c' : '_u') + '.webp';
-img.srcset = img.src + ' 2x';
+kumikoSrc(img, base + pick.p + (kumikoWeekend() ? '_c' : '_u') + '.webp');
 img.removeAttribute('data-kumiko-weekend');
 box.querySelector('[data-kumiko-text]').textContent = pick.t.replace('{n}', today).replace('{m}', tomorrow);
 }
 }
 if (kumikoWeekend()) {
-document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) { img.src = img.getAttribute('data-kumiko-weekend'); img.srcset = img.src + ' 2x'; });
+document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) { kumikoSrc(img, img.getAttribute('data-kumiko-weekend')); });
 }
 }
 

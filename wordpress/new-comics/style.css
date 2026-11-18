@@ -40,7 +40,6 @@ Text Domain: new-comics
 .article__eyecatch--banner .article__eyecatch_img{max-width:1100px;margin:0 auto}
 .article__date{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:13px;color:#5A5148;letter-spacing:0.1em}
 .article__tag{font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;background:#FFF0EC;color:#B5302A;text-decoration:none}
-.article__layout{display:grid;grid-template-columns:minmax(0,1fr);gap:48px}
 .article__body{display:flow-root;min-width:0;font-size:16px;line-height:2;letter-spacing:0.04em;color:#3A3530}
 .article__body h2{margin:64px 0 24px;padding:0 0 10px;border-bottom:2px solid #FFD15C;font-size:22px;font-weight:900;line-height:1.5;color:#222222;scroll-margin-top:24px}
 .article__body h3{margin:40px 0 16px;padding:2px 0 2px 14px;border-left:5px solid #D9483B;font-size:18px;font-weight:900;line-height:1.5;color:#222222;scroll-margin-top:24px}
@@ -75,6 +74,14 @@ Text Domain: new-comics
 .article__note{margin:0;padding:14px 18px;border-radius:12px;background:#FFF6EC;font-size:13px;line-height:1.8;color:#5A5148}
 .article__back{display:inline-flex;align-items:center;justify-content:center;align-self:center;min-width:220px;min-height:52px;padding:0 28px;border-radius:999px;background:#222222;color:#FFFFFF;font-weight:700;text-decoration:none}
 /* ==========================================================================
+ベタ（こはるの飼い犬）のひとこと
+========================================================================== */
+.article__body .beta{clear:both;display:flex;flex-direction:row-reverse;align-items:center;gap:14px;margin:28px 0}
+.article__body .beta__image{flex:0 0 auto}
+.article__body .beta__bubble{position:relative;box-sizing:border-box;flex:0 1 260px;margin:0;padding:14px 18px;border:2px solid #222222;border-radius:18px;background:#FFFFFF;font-size:14px;font-weight:700;line-height:1.7}
+.article__body .beta__bubble::before{content:"";position:absolute;right:-12px;top:50%;margin-top:-9px;border-style:solid;border-width:9px 0 9px 12px;border-color:transparent transparent transparent #222222}
+.article__body .beta__bubble::after{content:"";position:absolute;right:-8px;top:50%;margin-top:-7px;border-style:solid;border-width:7px 0 7px 9px;border-color:transparent transparent transparent #FFFFFF}
+/* ==========================================================================
 もくじ
 ========================================================================== */
 .article_toc{margin:40px 0;padding:28px 32px;border:2px solid #F3C6BE;border-radius:16px;background:#FFFFFF}
@@ -88,8 +95,9 @@ Text Domain: new-comics
 .article__body .article_toc__link{color:#222222}
 .article_toc__item--sub .article_toc__link{position:relative;padding-left:14px;font-size:14px;font-weight:500}
 .article_toc__item--sub .article_toc__link::before{content:"";position:absolute;left:0;top:0.75em;width:6px;height:6px;border-radius:50%;background:#F3C6BE}
-.article__side{display:none}
-.article_toc--side{position:sticky;top:24px;margin:0;padding:20px 22px}
+.article_wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+.article_wrap__side{display:none;align-self:stretch}
+.article_toc--side{position:sticky;top:12px;margin:0;padding:24px 22px;border:0;border-radius:20px}
 .article_toc--side .article_toc__title{text-align:left;font-size:16px}
 .article_toc--side .article_toc__link{font-size:13px;color:#8A7F74}
 .article_toc--side .article_toc__sub{padding-left:34px}
@@ -104,9 +112,9 @@ Text Domain: new-comics
 .article__box_label::after{content:"";position:absolute;left:16px;bottom:-6px;border-style:solid;border-width:6px 6px 0 6px;border-color:#D9483B transparent transparent transparent}
 .article__box_body p{margin:0 0 1em}
 .article__box_body ul{margin:0 0 1em}
-@media (min-width: 1100px) {
-.article__layout{grid-template-columns:minmax(0,760px) 240px;justify-content:center}
-.article__side{display:block}
+@media (min-width: 1600px) {
+.article_wrap{grid-template-columns:minmax(0,1fr) 280px}
+.article_wrap__side{display:block}
 }
 @media (min-width: 721px) {
 .article__body .kumiko--article:not(.kumiko--nowrap){float:left;width:220px;margin:4px 28px 12px 0;flex-direction:column-reverse;align-items:center;gap:14px}

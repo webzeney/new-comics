@@ -251,7 +251,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 看板キャラクター（吹き出し）
 ========================================================================== */
 .kumiko{margin:16px 0 0;display:flex;align-items:center;gap:18px}
-.kumiko__image{flex:0 0 auto;width:auto;height:auto}
+.kumiko__image{flex:0 0 auto}
 .kumiko__bubble{position:relative;margin:0;padding:14px 18px;border:2px solid #222222;border-radius:18px;background:#FFFFFF;font-size:14px;font-weight:700;line-height:1.7}
 .kumiko__bubble::before{content:"";position:absolute;left:-12px;top:50%;margin-top:-9px;border-style:solid;border-width:9px 12px 9px 0;border-color:transparent #222222 transparent transparent}
 .kumiko__bubble::after{content:"";position:absolute;left:-8px;top:50%;margin-top:-7px;border-style:solid;border-width:7px 9px 7px 0;border-color:transparent #FFFFFF transparent transparent}
@@ -264,7 +264,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 ========================================================================== */
 .totop{display:none;position:sticky;bottom:16px;margin-top:auto;padding:0;border:0;background:none;font-family:inherit;color:#222222;cursor:pointer;flex-direction:column;align-items:center;gap:6px;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
 .totop[data-shown]{opacity:1;visibility:visible}
-.totop__image{width:auto;height:auto}
+.totop__image{display:block}
 .totop__bubble{position:relative;order:-1;padding:8px 14px;border:2px solid #222222;border-radius:14px;background:#FFFFFF;font-size:13px;font-weight:700;line-height:1.5}
 .totop__bubble::before{content:"";position:absolute;left:50%;bottom:-11px;margin-left:-8px;border-style:solid;border-width:10px 8px 0 8px;border-color:#222222 transparent transparent transparent}
 .totop__bubble::after{content:"";position:absolute;left:50%;bottom:-7px;margin-left:-6px;border-style:solid;border-width:8px 6px 0 6px;border-color:#FFFFFF transparent transparent transparent}
