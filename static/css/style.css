@@ -344,6 +344,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .updates_panel__date{flex:0 0 auto;width:44px;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:14px;color:#5A5148;letter-spacing:0.1em}
 .updates_panel__link{flex:1 1 200px;min-width:0;text-decoration:none;font-weight:700}
 .updates_panel__detail{flex:0 0 auto;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:14px;color:#5A5148;letter-spacing:0.1em}
+.updates_panel__new{font-weight:400;font-size:20px;color:#D9483B}
 .updates_panel__empty{font-size:13px;color:#5A5148}
 .feature_panel__head{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
 .feature_panel__title{margin:0;font-size:22px;font-weight:900}
@@ -364,7 +365,6 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .news_panel__link{display:flex;flex-direction:column;gap:2px;padding:12px 0;text-decoration:none}
 .news_panel__date{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:13px;letter-spacing:0.1em;color:#B5302A}
 .news_panel__text{font-size:14px;font-weight:700;line-height:1.45}
-.news_panel__more{display:block;padding-top:10px;border-top:1px dashed #EBCFC9;font-size:13px;font-weight:700;text-align:right}
 /* ==========================================================================
 カレンダー
 ========================================================================== */
@@ -573,6 +573,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .updates__link{flex:1 1 220px;min-width:0;font-weight:700;text-decoration:none}
 .updates__pub{flex:0 0 auto;font-size:12px;color:#5A5148}
 .updates__detail{flex:0 0 auto;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:14px;letter-spacing:0.1em}
+.updates__new{font-weight:400;font-size:20px;color:#D9483B}
 .pager__item--plain{padding:1px 6px;line-height:normal}
 .pager__item--text{padding:0 16px;font-family:inherit;font-size:14px}
 /* ==========================================================================

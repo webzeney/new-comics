@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, arrow, store_tiles, kind_badge, cover_photo, kumiko %}
+{% from "_parts.html" import ad, arrow, store_tiles, kind_badge, cover_photo, kumiko, update_detail %}
 {% block content %}
 <div aria-label="本日発売" class="ticker">
 <span class="ticker__label">TODAY</span>
@@ -175,7 +175,7 @@
 <span class="updates_panel__date">{{ u.date }}</span>
 {{ kind_badge(u.kind) }}
 <a href="{{ u.url }}" class="updates_panel__link">{{ u.title }}</a>
-<span class="updates_panel__detail">{{ u.detail }}</span>
+<span class="updates_panel__detail">{{ update_detail(u.detail, "updates_panel") }}</span>
 </li>
 {% else %}
 <li class="updates_panel__item updates_panel__empty">発売日の変更・決定は、今のところありません。</li>
@@ -209,9 +209,12 @@
 </section>
 {% if news %}
 <section aria-labelledby="news-title" class="panel news_panel">
-<div class="feature_panel__head">
+<div class="feature_panel__head feature_panel__head--row">
+<div class="heading">
 <span class="heading__en">NEWS</span>
 <h2 id="news-title" class="feature_panel__title">お知らせ</h2>
+</div>
+<a href="{{ news_url }}" class="updates_panel__all">お知らせの一覧へ</a>
 </div>
 <ul class="news_panel__list">
 {% for n in news %}
@@ -223,7 +226,6 @@
 </li>
 {% endfor %}
 </ul>
-<a href="{{ news_url }}" class="news_panel__more">お知らせの一覧へ</a>
 </section>
 {% endif %}
 </div>

@@ -123,3 +123,7 @@
 <p class="kumiko__bubble"{{ attr|safe }}>{{ text }}</p>
 </div>
 {%- endmacro %}
+
+{% macro update_detail(d, cls) -%}
+{% if ' → ' in d %}{% set p = d.split(' → ') %}<span class="{{ cls }}__old">{{ p[0] }}</span> → <b class="{{ cls }}__new">{{ p[1] }}</b>{% elif d.endswith('に決定') %}<b class="{{ cls }}__new">{{ d[:-3] }}</b>に決定{% elif d.endswith(' 発売') %}<b class="{{ cls }}__new">{{ d[:-3] }}</b> 発売{% else %}{{ d }}{% endif %}
+{%- endmacro %}
