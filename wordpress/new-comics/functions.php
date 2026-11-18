@@ -55,15 +55,22 @@ function nc_nemu(string $pose, string $text, string $mod = ''): string
 {
     $pose = preg_match('/^[a-z0-9]+$/', $pose) ? $pose : 'point';
     $base = nc_site_url() . '/assets/img/kumiko/' . $pose;
-    return '<div class="kumiko' . ($mod ? ' kumiko--' . esc_attr($mod) : '') . '">'
+    return '<div class="kumiko' . ($mod ? ' kumiko--' . implode(' kumiko--', array_map('esc_attr', explode(' kumiko--', $mod))) : '') . '">'
         . '<img src="' . esc_url($base . '_u.webp') . '" srcset="' . esc_url($base . '_u.webp') . ' 2x" data-kumiko-weekend="' . esc_url($base . '_c.webp') . '" alt="" class="kumiko__image" loading="lazy">'
         . '<p class="kumiko__bubble">' . $text . '</p></div>';
 }
 
-/* 記事の本文に [nemu pose="cheer"]セリフ[/nemu] と書くと、ねむが吹き出しで話す */
+/* 記事の本文に [nemu pose="cheer"]セリフ[/nemu] と書くと、ねむが吹き出しで話す。
+   置き方は 左 → 右 → 文章の横 の順に入れ替わる。side="left" / "right" / "float" で指定もできる */
 add_shortcode('nemu', function ($atts, $content = ''): string {
-    $atts = shortcode_atts(['pose' => 'point'], $atts, 'nemu');
-    return nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), 'article');
+    static $count = [];
+    $atts = shortcode_atts(['pose' => 'point', 'side' => ''], $atts, 'nemu');
+    $id = (int) get_the_ID();
+    $count[$id] = ($count[$id] ?? 0) + 1;
+    $sides = ['left', 'right', 'float'];
+    $side = in_array($atts['side'], $sides, true) ? $atts['side'] : $sides[($count[$id] - 1) % 3];
+    $mod = 'article' . ($side === 'left' ? '' : ' kumiko--' . $side);
+    return nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), $mod);
 });
 
 /* 特集の一覧はコラムだけにする（2026-11-18 運営者の判断） */

@@ -26,7 +26,7 @@
 <span class="stat__value"><span class="stat__num">{{ stats.publishers }}</span><span class="stat__unit">社</span></span>
 </div>
 </div>
-{% if intro %}{{ kumiko(root, "clock", intro, mod="intro", large=true) }}{% else %}{{ kumiko(root, "fumu", "今日は新刊の発売がない日みたい。明日の新刊をチェックしておこう！", mod="intro", large=true) }}{% endif %}
+{% if intro %}{{ kumiko(root, "clock", intro, mod="intro") }}{% else %}{{ kumiko(root, "fumu", "今日は新刊の発売がない日みたい。明日の新刊をチェックしておこう！", mod="intro") }}{% endif %}
 <div class="filter">
 <span class="filter__label">出版社で絞り込む</span>
 <button type="button" aria-pressed="true" class="chip" data-pub="">すべて<span class="chip__count">{{ stats.total }}</span></button>
