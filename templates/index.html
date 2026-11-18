@@ -197,7 +197,7 @@
 {% for f in features %}
 <li class="feature_panel__item">
 <a href="{{ f.url }}" class="feature_panel__link">
-<span class="feature_panel__no">{{ f.no }}</span>
+{% if f.icon %}<img src="{{ f.icon }}" width="64" height="64" alt="" class="feature_panel__icon" loading="lazy">{% else %}<span class="feature_panel__no">{{ f.no }}</span>{% endif %}
 <span class="feature_panel__body">
 <span class="feature_panel__tag">{{ f.tag }}</span>
 <span class="feature_panel__text">{{ f.title }}</span>

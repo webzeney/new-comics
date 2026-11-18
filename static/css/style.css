@@ -352,9 +352,11 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .feature_panel__item{border-top:1px dashed #EBCFC9}
 .feature_panel__link{display:flex;align-items:center;gap:14px;padding:12px 0;text-decoration:none}
 .feature_panel__no{flex:0 0 auto;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:30px;line-height:1;color:#D9483B;letter-spacing:0.1em}
+.feature_panel__icon{flex:0 0 64px;width:64px;height:64px;border:2px solid #222222;border-radius:12px;object-fit:cover;background:#FFF6EC}
 .feature_panel__body{display:flex;flex-direction:column;gap:2px;min-width:0}
 .feature_panel__tag{font-size:11px;font-weight:700;color:#B5302A}
 .feature_panel__text{font-size:14px;font-weight:700;line-height:1.45}
+.feature_panel__icon + .feature_panel__body .feature_panel__text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .feature_panel__empty{padding:12px 0;font-size:13px;color:#5A5148}
 .feature_panel__head--row{flex-direction:row;align-items:flex-end;justify-content:space-between;gap:12px}
 /* ==========================================================================

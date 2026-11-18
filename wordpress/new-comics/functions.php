@@ -24,6 +24,27 @@ add_action('init', function (): void {
     ]);
 });
 
+/* トップページの特集の欄に出す、こはるだけの小さい画像（記事ごとに作る。2026-11-19 運営者の判断） */
+add_action('init', function (): void {
+    register_post_meta('post', 'nc_icon', [
+        'type' => 'integer',
+        'single' => true,
+        'default' => 0,
+        'show_in_rest' => true,
+        'auth_callback' => fn() => current_user_can('edit_posts'),
+    ]);
+});
+
+add_action('rest_api_init', function (): void {
+    register_rest_field('post', 'nc_icon_url', [
+        'get_callback' => function (array $post): string {
+            $id = (int) get_post_meta($post['id'], 'nc_icon', true);
+            return $id ? (string) wp_get_attachment_image_url($id, 'medium') : '';
+        },
+        'schema' => ['type' => 'string', 'context' => ['view', 'edit']],
+    ]);
+});
+
 function nc_banner_url(): string
 {
     $id = (int) get_post_meta(get_the_ID(), 'nc_banner', true);
