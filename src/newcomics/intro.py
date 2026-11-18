@@ -69,7 +69,7 @@ def _ebook(books):
     return f"電子版の同時配信が予定されている本は{n}点あります。" if n else ""
 
 
-# 今日発売・日ごと・今週発売・カレンダーのページでは、看板キャラクター（ねむ）が話す形にする（2026-11-18 運営者の判断）
+# 今日発売・日ごと・今週発売・カレンダーのページでは、看板キャラクター（こはる）が話す形にする（2026-11-18 運営者の判断）
 def _nemu_first_final(books, prefix=""):
     out = []
     firsts = [b for b in books if b.is_first]

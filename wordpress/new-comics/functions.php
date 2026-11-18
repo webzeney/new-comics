@@ -50,7 +50,7 @@ add_shortcode('books', function ($atts): string {
     return '<ul class="article__books">' . "\n" . implode("\n", $rows) . "\n" . '</ul>';
 });
 
-/* 看板キャラクター（ねむ）。平日は制服、土日は私服（main.js が data-kumiko-weekend で差し替える） */
+/* 看板キャラクター（桜塚こはる）。平日は制服、土日は私服（main.js が data-kumiko-weekend で差し替える） */
 function nc_nemu(string $pose, string $text, string $mod = ''): string
 {
     $pose = preg_match('/^[a-z0-9]+$/', $pose) ? $pose : 'point';
@@ -60,17 +60,19 @@ function nc_nemu(string $pose, string $text, string $mod = ''): string
         . '<p class="kumiko__bubble">' . $text . '</p></div>';
 }
 
-/* 記事の本文に [nemu pose="cheer"]セリフ[/nemu] と書くと、ねむが吹き出しで話す。
-   PC では、ねむ（吹き出しはねむの上）のよこに、あとに続く文章が回り込む。
-   ねむの位置は 左 → 右 の順に入れ替わる。side="left" / "right" で指定もできる（2026-11-18 運営者の判断） */
-add_shortcode('nemu', function ($atts, $content = ''): string {
+/* 記事の本文に [koharu pose="cheer"]セリフ[/koharu] と書くと、こはるが吹き出しで話す（前の名前の [nemu] も使える）。
+   PC では、こはる（吹き出しはこはるの上か横）のよこに、あとに続く文章が回り込む。
+   こはるの位置は 左 → 右 の順に入れ替わる。side="left" / "right" で指定もできる（2026-11-18 運営者の判断） */
+$nc_koharu_shortcode = function ($atts, $content = ''): string {
     static $count = [];
-    $atts = shortcode_atts(['pose' => 'point', 'side' => ''], $atts, 'nemu');
+    $atts = shortcode_atts(['pose' => 'point', 'side' => ''], $atts, 'koharu');
     $id = (int) get_the_ID();
     $count[$id] = ($count[$id] ?? 0) + 1;
     $side = in_array($atts['side'], ['left', 'right'], true) ? $atts['side'] : ($count[$id] % 2 ? 'left' : 'right');
     return str_replace(' loading="lazy"', '', nc_nemu((string) $atts['pose'], wp_kses(trim((string) $content), ['br' => [], 'strong' => [], 'a' => ['href' => []]]), 'article kumiko--' . $side));
-});
+};
+add_shortcode('koharu', $nc_koharu_shortcode);
+add_shortcode('nemu', $nc_koharu_shortcode);
 
 /* あとに文章もリストもなく、すぐ表・見出しなどになるときは回り込ませない。
    PC では main.js（initNemuFloat）が表示したあとに余白を測って、吹き出しを上にした形・横に並べた形と大きさを選ぶ（2026-11-18 運営者の判断） */
@@ -154,7 +156,7 @@ add_action('pre_get_posts', function (WP_Query $q): void {
     }
 });
 
-/* 一覧と記事のページで、ねむが話すこと */
+/* 一覧と記事のページで、こはるが話すこと */
 function nc_nemu_head(): string
 {
     if (is_category('news')) {

@@ -1131,7 +1131,7 @@ def jp_date(d):
 
 
 def book_summary(site, b, main, vol, volumes):
-    """書籍ページの「この本について」。表示している事実情報だけを、看板キャラクター（ねむ）のセリフとしてまとめる
+    """書籍ページの「この本について」。表示している事実情報だけを、看板キャラクター（こはる）のセリフとしてまとめる
     （あらすじなどは書かない。2026-11-18 運営者の判断で話し言葉にした）。"""
     name = f"『{main}』{vol}巻" if vol else f"『{b.title}』"
     where = f"{b.publisher}の「{b.label}」から" if b.label else f"{b.publisher}から"
