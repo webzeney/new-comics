@@ -174,7 +174,7 @@ add_action('pre_get_posts', function (WP_Query $q): void {
     }
 });
 
-/* 一覧と記事のページで、こはるが話すこと */
+/* 一覧と記事のページで、こはるが話すこと。コラムの記事では、タイトルの横に出さない（サムネイルにこはるを入れるため。2026-11-18 運営者の判断） */
 function nc_nemu_head(): string
 {
     if (is_category('news')) {
@@ -184,7 +184,7 @@ function nc_nemu_head(): string
         return nc_nemu('surprise', 'お知らせだよ！ 新しくなったところ、ぜひ使ってみてね。', 'side');
     }
     if (is_single()) {
-        return nc_nemu('laptop', 'このコラムは、わたしが書いたよ！ 最後まで読んでくれるとうれしいな。', 'side');
+        return '';
     }
     return nc_nemu('laptop', 'わたしが書いた漫画のコラムを集めているよ！ 気になる記事から読んでみてね。', 'side');
 }
