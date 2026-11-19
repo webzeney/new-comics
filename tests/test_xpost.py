@@ -18,7 +18,7 @@ class TagTest(unittest.TestCase):
         return SimpleNamespace(title=title, volume=volume)
 
     def test_work_tag(self):
-        self.assertEqual(xpost.work_tag(self.book("ONE PIECE 112", 112)), "#ONEPIECE")
+        self.assertEqual(xpost.work_tag(self.book("ONE PIECE 112", 112)), "#ONEPIECE #ワンピース")
         self.assertEqual(xpost.work_tag(self.book("呪術廻戦 30", 30)), "#呪術廻戦")
         self.assertEqual(xpost.work_tag(self.book("SPY×FAMILY 15", 15)), "#SPYFAMILY")
         self.assertEqual(xpost.work_tag(self.book("転生したらスライムだった件 31", 31)), "#転スラ")
@@ -31,7 +31,7 @@ class TagTest(unittest.TestCase):
 
     def test_hashtags_top_two_distinct(self):
         bs = [self.book("呪術廻戦 30", 30), self.book("呪術廻戦 30 特装版", 30), self.book("ONE PIECE 112", 112), self.book("ハイキュー!! 46", 46)]
-        self.assertEqual(xpost.hashtags(bs), "#新刊 #呪術廻戦 #ONEPIECE")
+        self.assertEqual(xpost.hashtags(bs), "#新刊 #呪術廻戦 #ONEPIECE #ワンピース")
 
 
 class ImageTest(unittest.TestCase):
