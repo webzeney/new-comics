@@ -181,6 +181,8 @@ def pick_prev(items, series, volume):
             continue
         if key(series) not in key(t) or not has_volume(t, volume):
             continue
+        if not re.fullmatch(r"\d{9}[\dX]", it.get("asin") or ""):
+            continue  # 紙の本は ASIN が ISBN-10。それ以外（セット本・雑誌など）は選ばない
         return it
     return None
 
@@ -196,9 +198,10 @@ def find_prev(conn, api, rows, deadline):
         name = series_name(r)
         v = r["volume"] - 1
         hit, failed = None, False
+        # 書名で探すと Kindle版やセット本が先に並ぶので、「コミック」の分類に絞って探す（2026-11-20）
         for words in (f"{name} {v}", f"{name} {v}巻"):
             try:
-                items = api.search(words, index="Books", availability="IncludeOutOfStock")
+                items = api.search(words, index="Books", availability="IncludeOutOfStock", browseNodeId=COMIC_NODE)
             except (requests.RequestException, AmazonError, ValueError):
                 failed = True
                 continue
