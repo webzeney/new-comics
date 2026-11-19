@@ -1,0 +1,55 @@
+name: 特集の記事をトップに反映（朝7:05）
+
+# 特集の記事は毎朝 7:00 に公開される（WordPress の予約投稿）。トップページの「特集」の欄はサイトを作るときに書き出すため、
+# 7:05 にサイトの転送（deploy.yml の deploy）を1回起動して、その日の記事をトップページに出す。
+# GitHub の予約実行は遅れることがあるため、早めに起動して 7:05 まで待つ。2つ目の予約は1つ目が起動しなかったときの予備。
+# その日に公開された記事がないとき、7:00 よりあとに手動などでサイトの転送がすでに起動されているときは、何もしない。
+
+on:
+  schedule:
+    - cron: "17 19 * * *"
+    - cron: "17 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: feature-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - name: 7:05 まで待つ
+        run: |
+          left=$(( $(TZ=Asia/Tokyo date -d "$(TZ=Asia/Tokyo date +%F) 07:05" +%s) - $(date +%s) ))
+          if [ "$left" -gt 0 ]; then echo "$(( left / 60 )) 分待ちます"; sleep "$left"; fi
+      - name: サイトの転送がすでに起動されていないかの確認
+        id: done
+        run: |
+          since=$(date -u -d "@$(TZ=Asia/Tokyo date -d "$(TZ=Asia/Tokyo date +%F) 07:00" +%s)" +%FT%TZ)
+          n=$(gh api "repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?event=workflow_dispatch&created=>=$since" --jq '.total_count')
+          if [ "$n" -gt 0 ]; then echo "7:00 よりあとにサイトの転送が起動されているため、何もしません"; echo "skip=1" >> "$GITHUB_OUTPUT"; fi
+      # 予約投稿は WordPress へのアクセスをきっかけに公開されるため、先に1回アクセスしてから確かめる
+      - name: 今日の記事が公開されているかの確認
+        id: post
+        if: steps.done.outputs.skip != '1'
+        run: |
+          after=$(TZ=Asia/Tokyo date +%F)T00:00:00
+          for i in 1 2 3 4 5; do
+            curl -s -o /dev/null "$SITE_URL/feature/" || true
+            sleep 60
+            n=$(curl -s "$SITE_URL/feature/wp-json/wp/v2/posts?after=$after&_fields=id&per_page=5" | jq 'length' 2>/dev/null || echo 0)
+            if [ "${n:-0}" -gt 0 ]; then echo "今日の記事が公開されています（${n}件）"; echo "ok=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          done
+          echo "今日公開された記事がないため、何もしません"
+      - name: サイトの転送を起動
+        if: steps.post.outputs.ok == '1'
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}" --ref main -f mode=deploy
