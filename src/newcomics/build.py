@@ -102,7 +102,7 @@ LABEL_PAGE_ORDER = list(PUBLISHER_ORDER) + [
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
-        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at", "caption", "amazon_rank", "ebook_only",
+        "release", "price", "has_ebook", "edition", "is_final", "asin", "rakuten_url", "origin", "image", "cover_url", "seven_ok", "first_seen", "tags", "key", "title_kana", "kobo_url", "updated", "kindle_asin", "amazon_isbn_ok", "amazon_image", "amazon_image_at", "caption", "amazon_rank", "ebook_only", "prev_rank",
     )
 
     def __init__(self, row, tags):
@@ -127,6 +127,7 @@ class Book:
         self.amazon_image_at = row["amazon_image_at"] if "amazon_image_at" in row.keys() else None
         self.caption = row["rakuten_caption"] if "rakuten_caption" in row.keys() else None
         self.amazon_rank = row["amazon_rank"] if "amazon_rank" in row.keys() else None
+        self.prev_rank = row["prev_rank"] if "prev_rank" in row.keys() else None
         self.rakuten_url = row["rakuten_url"] if "rakuten_url" in row.keys() else None
         self.origin = row["origin"] if "origin" in row.keys() else "publisher"
         self.ebook_only = bool(row["ebook_only"]) if "ebook_only" in row.keys() and row["ebook_only"] else False
@@ -211,11 +212,12 @@ class Site:
         return pub + (sales is None, sales or 0, -self.views.get(b.key, 0), not b.is_first, -(b.volume or 0), b.title, b.id)
 
     def prev_rank(self, b):
-        """順位のない本は、同じ作品の前の巻（巻数がいちばん近いもの）の売れ筋順位を使う。"""
+        """順位のない本は、同じ作品の前の巻（巻数がいちばん近いもの）の売れ筋順位を使う。
+        前の巻がデータベースにないときは、Amazon で探した前の巻の順位（books.prev_rank。24時間以内のもの）を使う（2026-11-20 運営者の判断）。"""
         if not (b.series_id and b.volume):
-            return None
+            return b.prev_rank
         prev = [(v, r) for v, r in self.series_ranks.get(b.series_id, []) if v < b.volume]
-        return max(prev)[1] if prev else None
+        return max(prev)[1] if prev else b.prev_rank
 
     def _publishers(self):
         counts = defaultdict(int)

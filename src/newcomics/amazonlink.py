@@ -6,6 +6,9 @@
 3. ISBN の分かる本：ISBN-10 の商品ページ（/dp/ISBN-10）が Amazon にあるかを確かめる（books.amazon_isbn_ok）。
    ない本（Amazon が ISBN-10 ではない ASIN で登録している本）は、ISBN-13 で探して EAN が同じ紙の本を同じ本とみなす（books.asin）。
    商品ページがあった本は確かめ直さない。見つからなかった本は ISBN_RECHECK_DAYS 日たったら確かめ直す。
+5. 前の巻の売れ筋順位：発売前で売れ筋順位のない2巻以降の本のうち、前の巻がデータベースにない本は、
+   Amazon で「作品名 前の巻数」の紙の本を探し、その ASIN（books.prev_asin）を残す。順位（books.prev_rank）は書影と同じく毎晩取り直し、
+   24時間以内のものだけを、その日の新刊の並び順にだけ使う（2026-11-20 運営者の判断）。
 4. 書影と売れ筋順位：紙の本の ASIN が分かる本は、Amazon の書影のアドレスと「コミック」の売れ筋順位を毎晩取り直す
    （books.amazon_image_url・books.amazon_rank。売れ筋順位は、その日の新刊の並び順にだけ使い、画面には出さない。2026-11-09 運営者の判断）。
    書籍詳細ページのメインの書影にだけ使い、Amazon の商品ページにリンクする。画像は保存せず、アドレスも24時間以内のものだけを使う
@@ -37,6 +40,9 @@ MAX_ISBN = 3000   # 1晩に確かめる ISBN の数（10冊ずつまとめて問
 ISBN_RECHECK_DAYS = 1
 ISBN_TIME = 6 * 60  # ISBN の確認に使う時間の上限（Kindle版などの照らし合わせの時間を残す）
 IMAGE_TIME = 15 * 60  # 書影の取り直しに使う時間の上限
+MAX_PREV = 300    # 1晩に前の巻を探す本の数
+PREV_DAYS = 60    # 発売日がこの日数先までの本の、前の巻を探す
+PREV_RECHECK_DAYS = 7  # 前の巻が見つからなかった本は、この日数たったら探し直す
 PAPER_DAYS = 14   # 紙の本：発売日の差がこの日数以内なら同じ本とみなす
 KINDLE_EARLY = 14  # Kindle版：紙の本の発売日よりこの日数より前に出ているものは、昔の版とみなして選ばない
 
@@ -145,6 +151,96 @@ def run(conn, api, kind, rows, deadline):
         conn.execute(f"UPDATE books SET {col} = ?, {checked} = ? WHERE id = ?", (hit.get("asin") if hit else None, db.now_iso(), r["id"]))
         if i % 50 == 0:
             conn.commit()
+    conn.commit()
+    return counts
+
+
+def prev_targets(conn, now, limit):
+    """前の巻を探す本：発売前（PREV_DAYS 日先まで）で売れ筋順位がなく、2巻以降で、前の巻がデータベースにない本。"""
+    today = now.date()
+    since = (now - timedelta(days=PREV_RECHECK_DAYS)).isoformat(timespec="seconds")
+    return conn.execute(
+        """SELECT b.id, b.title, b.volume, b.release_date, s.name AS series FROM books b JOIN series s ON s.id = b.series_id
+        WHERE b.volume > 1 AND b.amazon_rank IS NULL AND b.prev_asin IS NULL AND b.ebook_only IS NULL
+          AND b.release_date >= ? AND b.release_date <= ?
+          AND (b.prev_checked_at IS NULL OR b.prev_checked_at < ?)
+          AND NOT EXISTS (SELECT 1 FROM books p WHERE p.series_id = b.series_id AND p.volume < b.volume AND p.amazon_rank IS NOT NULL)
+        ORDER BY b.prev_checked_at IS NOT NULL, b.release_date, b.id LIMIT ?""",
+        (today.isoformat(), (today + timedelta(days=PREV_DAYS)).isoformat(), since, limit),
+    ).fetchall()
+
+
+def pick_prev(items, series, volume):
+    """前の巻（紙の本）を選ぶ。発売日は問わない。成人向け・Kindle版・単話などは選ばない。"""
+    for it in items:
+        if adult(it) or binding(it) == "Kindle版":
+            continue
+        t = title_of(it)
+        nk = unicodedata.normalize("NFKC", t)
+        if any(w in nk for w in SKIP_WORDS):
+            continue
+        if key(series) not in key(t) or not has_volume(t, volume):
+            continue
+        return it
+    return None
+
+
+def find_prev(conn, api, rows, deadline):
+    counts = {"found": 0, "missing": 0, "error": 0}
+    for i, r in enumerate(rows, start=1):
+        if time.monotonic() > deadline:
+            break
+        name = series_name(r)
+        v = r["volume"] - 1
+        hit, failed = None, False
+        for words in (f"{name} {v}", f"{name} {v}巻"):
+            try:
+                items = api.search(words, index="Books", availability="IncludeOutOfStock")
+            except (requests.RequestException, AmazonError, ValueError):
+                failed = True
+                continue
+            hit = pick_prev(items, name, v)
+            if hit:
+                break
+        if failed and not hit:
+            counts["error"] += 1
+            continue
+        counts["found" if hit else "missing"] += 1
+        conn.execute("UPDATE books SET prev_asin = ?, prev_checked_at = ? WHERE id = ?", (hit.get("asin") if hit else None, db.now_iso(), r["id"]))
+        if i % 50 == 0:
+            conn.commit()
+    conn.commit()
+    return counts
+
+
+def refresh_prev_ranks(conn, api, deadline):
+    """前の巻の売れ筋順位を取り直す（発売前で、自分の順位がまだない本だけ）。取り直せなかったものは消す。"""
+    today = datetime.now(db.JST).date().isoformat()
+    rows = conn.execute("SELECT id, prev_asin FROM books WHERE prev_asin IS NOT NULL AND amazon_rank IS NULL AND release_date >= ?", (today,)).fetchall()
+    counts = {"rank": 0, "none": 0, "error": 0, "left": 0}
+    asins = sorted({r["prev_asin"] for r in rows})
+    ranks = {}
+    for i in range(0, len(asins), 10):
+        if time.monotonic() > deadline:
+            counts["left"] += len(asins) - i
+            break
+        chunk = asins[i:i + 10]
+        try:
+            items = {it.get("asin"): it for it in api.get(chunk, resources=["browseNodeInfo.browseNodes.salesRank"])}
+        except (requests.RequestException, AmazonError, ValueError):
+            counts["error"] += len(chunk)
+            continue
+        for a in chunk:
+            ranks[a] = sales_rank(items[a]) if a in items else None
+    now = db.now_iso()
+    for r in rows:
+        if r["prev_asin"] in ranks:
+            rank = ranks[r["prev_asin"]]
+            counts["rank" if rank else "none"] += 1
+            conn.execute("UPDATE books SET prev_rank = ?, prev_rank_at = ? WHERE id = ?", (rank, now if rank else None, r["id"]))
+    # 24時間以内に取り直せなかった順位は使わない
+    conn.execute("UPDATE books SET prev_rank = NULL, prev_rank_at = NULL WHERE prev_rank_at IS NOT NULL AND prev_rank_at < ?",
+                 ((datetime.now(db.JST) - timedelta(hours=23)).isoformat(timespec="seconds"),))
     conn.commit()
     return counts
 
@@ -270,6 +366,8 @@ def main(argv=None):
     ap.add_argument("--max-kindle", type=int, default=MAX_KINDLE)
     ap.add_argument("--max-paper", type=int, default=MAX_PAPER)
     ap.add_argument("--max-isbn", type=int, default=MAX_ISBN)
+    ap.add_argument("--max-prev", type=int, default=MAX_PREV)
+    ap.add_argument("--prev-only", action="store_true", help="前の巻の照らし合わせと、その売れ筋順位の取り直しだけを行う")
     ap.add_argument("--isbn-only", action="store_true", help="ISBN-10 の商品ページの確認だけを行う（全件の確認用）")
     ap.add_argument("--minutes", type=int, help="使う時間の上限（分）")
     ap.add_argument("--recheck", action="store_true", help="見つからなかった本を、日数にかかわらず探し直す")
@@ -284,9 +382,17 @@ def main(argv=None):
     now = datetime.now(db.JST)
     limit = args.minutes * 60 if args.minutes else TIME_LIMIT
     start = time.monotonic()
+    if args.prev_only:
+        prev = find_prev(conn, api, prev_targets(conn, now, args.max_prev), start + limit)
+        pr = refresh_prev_ranks(conn, api, start + limit + 5 * 60)
+        print(f"前の巻の照らし合わせ：見つかった {prev['found']}／見つからない {prev['missing']}／エラー {prev['error']}、"
+              f"前の巻の売れ筋順位：あり {pr['rank']}／なし {pr['none']}／エラー {pr['error']}（API {api.calls} 回）")
+        return 1 if prev["error"] and not (prev["found"] + prev["missing"]) else 0
     if args.images_only:
         img = refresh_images(conn, api, start + limit)
+        pr = refresh_prev_ranks(conn, api, start + limit)
         print(f"Amazon の書影：あり {img['image']}／なし {img['none']}（売れ筋順位あり {img['rank']}）／エラー {img['error']}／時間切れで取り直せなかった {img['left']}（API {api.calls} 回）")
+        print(f"前の巻の売れ筋順位：あり {pr['rank']}／なし {pr['none']}／エラー {pr['error']}／時間切れ {pr['left']}")
         return 1 if img["error"] and not (img["image"] + img["none"]) else 0
     isbn = check_isbn(conn, api, isbn_targets(conn, now, args.max_isbn, args.recheck), start + (limit if args.isbn_only else ISBN_TIME))
     rest = conn.execute("SELECT COUNT(*) FROM books WHERE COALESCE(isbn13, '') <> '' AND amazon_isbn_ok IS NULL").fetchone()[0]
@@ -303,6 +409,10 @@ def main(argv=None):
     deadline = start + limit
     paper = run(conn, api, "paper", targets(conn, now, "paper", args.max_paper), deadline)
     kindle = run(conn, api, "kindle", targets(conn, now, "kindle", args.max_kindle), deadline)
+    prev = find_prev(conn, api, prev_targets(conn, now, args.max_prev), deadline)
+    pr = refresh_prev_ranks(conn, api, deadline)
+    print(f"前の巻の照らし合わせ：見つかった {prev['found']}／見つからない {prev['missing']}／エラー {prev['error']}、"
+          f"前の巻の売れ筋順位：あり {pr['rank']}／なし {pr['none']}／エラー {pr['error']}")
     left = conn.execute("SELECT COUNT(*) FROM books WHERE (has_ebook = 1 OR has_ebook IS NULL) AND kindle_asin IS NULL AND kindle_checked_at IS NULL").fetchone()[0]
     print(f"Amazon の照らし合わせ：ISBN の分からない本 見つかった {paper['found']}／見つからない {paper['missing']}／エラー {paper['error']}、"
           f"Kindle版 見つかった {kindle['found']}／見つからない {kindle['missing']}／エラー {kindle['error']}"

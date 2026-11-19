@@ -15,6 +15,10 @@ on:
         description: 書影のアドレスも取り直す
         type: boolean
         default: false
+      prev:
+        description: 発売前で順位のない本の、前の巻の照らし合わせだけを行う
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -49,7 +53,10 @@ jobs:
           MINUTES: ${{ inputs.minutes }}
           RECHECK: ${{ inputs.recheck }}
           IMAGES: ${{ inputs.images }}
-        run: python -m newcomics.amazonlink --isbn-only --max-isbn 100000 --minutes "$MINUTES" $( [ "$RECHECK" = "true" ] && echo --recheck ) $( [ "$IMAGES" = "true" ] && echo --images )
+          PREV: ${{ inputs.prev }}
+        run: |
+          if [ "$PREV" = "true" ]; then python -m newcomics.amazonlink --prev-only --max-prev 3000 --minutes "$MINUTES"; exit $?; fi
+          python -m newcomics.amazonlink --isbn-only --max-isbn 100000 --minutes "$MINUTES" $( [ "$RECHECK" = "true" ] && echo --recheck ) $( [ "$IMAGES" = "true" ] && echo --images )
       - name: データベースを保存（非公開リポジトリ）
         working-directory: data
         run: |

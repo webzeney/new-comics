@@ -116,6 +116,10 @@ MIGRATIONS = [
     ("books", "caption_checked_at", "TEXT"),
     ("books", "amazon_rank", "INTEGER"),
     ("books", "ebook_only", "INTEGER"),
+    ("books", "prev_asin", "TEXT"),
+    ("books", "prev_checked_at", "TEXT"),
+    ("books", "prev_rank", "INTEGER"),
+    ("books", "prev_rank_at", "TEXT"),
 ]
 
 EBOOK_ONLY_LABEL = "電子版のみ"  # 白泉社のサイトで、紙の本のない電子版のみの本に付いているシリーズ名
