@@ -1805,7 +1805,7 @@ def build_genres(site, w):
         w.write(f"genre/{slug}/index.html", "listing.html", page, **ctx)
         build_month_pages(site, w, "genre", f"genre/{slug}/", name, books, [("ジャンルから探す", "genre/"), (name, f"genre/{slug}/")])
     w.write("genre/index.html", "index_list.html", page_defaults(title=f"ジャンルから探す｜{SITE_NAME}", description="少年・少女・青年・女性・BL・TL のジャンルごとの漫画新刊発売予定。", menu="genre"),
-            crumbs=crumbs("../", ("ジャンルから探す", None)), heading={"en": "GENRE", "title": "ジャンルから探す", "lead": "ジャンルを選ぶと、そのジャンルの新刊発売予定を一覧で見られます。ジャンルはレーベルごとに分けています。", "kumiko": ("cheer", "ジャンルを選ぶと、そのジャンルの新刊の予定をまとめて見られるよ！ ジャンルはレーベルごとに分けているんだ。")},
+            crumbs=crumbs("../", ("ジャンルから探す", None)), heading={"en": "GENRE", "title": "ジャンルから探す", "lead": "ジャンルを選ぶと、そのジャンルの新刊発売予定を一覧で見られます。ジャンルはレーベルごとに分けています。", "kumiko": ("reach", "ジャンルを選ぶと、そのジャンルの新刊の予定をまとめて見られるよ！ ジャンルはレーベルごとに分けているんだ。")},
             groups=[{"title": "ジャンル", "links": links}])
 
 
