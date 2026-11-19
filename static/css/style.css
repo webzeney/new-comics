@@ -628,9 +628,12 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .navi__kana{margin-left:12px;font-size:13px;font-weight:700;color:#8A7F74}
 .navi--pet{margin-top:32px}
 .navi__heading{margin:36px 0 0;font-size:18px;font-weight:900}
-.kumiko--right{flex-direction:row-reverse}
-.kumiko--right .kumiko__bubble::before{left:auto;right:-12px;border-width:9px 0 9px 12px;border-color:transparent transparent transparent #222222}
-.kumiko--right .kumiko__bubble::after{left:auto;right:-8px;border-width:7px 0 7px 9px;border-color:transparent transparent transparent #FFFFFF}
+.qa{margin:16px 0 0}
+.qa__q{display:flex;align-items:baseline;gap:10px;margin:28px 0 0;padding:0 0 8px;border-bottom:1px dashed #EBCFC9;font-size:16px;font-weight:900;line-height:1.6}
+.qa__q:first-child{margin-top:0}
+.qa__mark{flex:0 0 auto;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:20px;letter-spacing:0.1em;color:#D9483B}
+.qa__a{margin:0}
+.qa__a .kumiko{margin-top:12px}
 /* ==========================================================================
 お問い合わせ
 ========================================================================== */

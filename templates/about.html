@@ -39,13 +39,18 @@
 </div>
 </div>
 <h3 class="navi__heading">こはるってどんな子？</h3>
-{{ kumiko(root, "laptop", "友だちが「漫画の発売日が一度に分かるサイトがあればいいのにな」って話してるのを聞いて、パソコンが得意なわたしが思い切ってつくってみたの。毎日の更新に追われてるけど、みんなに便利に使ってもらえるように、ちょっとずつ工夫してアップデートしてるんだ。", mod="intro") }}
-{{ kumiko(root, "cheer", "小学生のとき、お兄ちゃんの本棚にあったバトル漫画を読んで夢中になったの！ それからずっと、少年漫画のバトルものが大好きなんだ。", mod="intro kumiko--right") }}
-{{ kumiko(root, "bag", "好きな作品は、発売日に本屋さんで紙の本を買う派なの。帯も捨てずに、ちゃんと取ってあるよ。", mod="intro") }}
-{{ kumiko(root, "calendar", "毎朝のルーティンは、今日発売の新刊をチェックして、X でお知らせすること。目覚まし3つで、なんとか起きてるの…。", mod="intro kumiko--right") }}
-{{ kumiko(root, "fumu", "学校から帰ったら、サイトの更新と、新しく決まった発売日の確認。ふむふむ…って、のんびり見ていくよ。", mod="intro") }}
-{{ kumiko(root, "read", "夜は、買った新刊を読む時間。おもしろいと止まらなくて、気づくと夜中になってるの。", mod="intro kumiko--right") }}
-{{ kumiko(root, "pug", "ベタはね、わたしが漫画を読んでると、すぐひざに乗ってくるの。開いたページの上で寝ちゃうこともあって困ってるんだけど…かわいいから許しちゃう。", mod="intro") }}
+<dl class="qa">
+<dt class="qa__q"><span class="qa__mark">Q.</span>漫画新刊JPをつくったきっかけは？</dt>
+<dd class="qa__a">{{ kumiko(root, "laptop", "友だちが「漫画の発売日が一度に分かるサイトがあればいいのにな」って話してるのを聞いて、パソコンが得意なわたしが思い切ってつくってみたの。毎日の更新に追われてるけど、みんなに便利に使ってもらえるように、ちょっとずつ工夫してアップデートしてるんだ。", mod="intro") }}</dd>
+<dt class="qa__q"><span class="qa__mark">Q.</span>漫画を好きになったきっかけは？</dt>
+<dd class="qa__a">{{ kumiko(root, "cheer", "小学生のとき、お兄ちゃんの本棚にあったバトル漫画を読んで夢中になったの！ それからずっと、少年漫画のバトルものが大好きなんだ。", mod="intro") }}</dd>
+<dt class="qa__q"><span class="qa__mark">Q.</span>新刊を買うときのこだわりは？</dt>
+<dd class="qa__a">{{ kumiko(root, "bag", "好きな作品は、発売日に本屋さんで紙の本を買う派なの。帯も捨てずに、ちゃんと取ってあるよ。", mod="intro") }}</dd>
+<dt class="qa__q"><span class="qa__mark">Q.</span>毎日のルーティンを教えて！</dt>
+<dd class="qa__a">{{ kumiko(root, "calendar", "朝は今日発売の新刊をチェックして、X でお知らせ。学校から帰ったら、サイトの更新と新しく決まった発売日の確認。夜は買った新刊を読む時間なんだけど、おもしろいと止まらなくて、気づくと夜中になってるの…。", mod="intro") }}</dd>
+<dt class="qa__q"><span class="qa__mark">Q.</span>ベタってどんな子？</dt>
+<dd class="qa__a">{{ kumiko(root, "pug", "わたしが漫画を読んでると、すぐひざに乗ってくる甘えんぼうなの。開いたページの上で寝ちゃうこともあって困ってるんだけど…かわいいから許しちゃう。", mod="intro") }}</dd>
+</dl>
 <div class="navi navi--pet">
 <img src="{{ root }}assets/img/beta/profile.webp" srcset="{{ root }}assets/img/beta/profile.webp 2x" {{ kumiko_size("profile", "beta") }} alt="ベタ" class="navi__image" loading="lazy">
 <div class="navi__body">
