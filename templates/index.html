@@ -103,7 +103,7 @@
 {% else %}
 <div class="tomorrow_card">
 <span class="tomorrow_card__en">TOMORROW</span>
-<span class="tomorrow_card__text">明日 <span class="tomorrow_card__date">{{ tomorrow.md }}<span class="tomorrow_card__dow">{{ tomorrow.dow }}</span></span>は<br>新刊の発売がありません</span>
+<span class="tomorrow_card__text">明日 <span class="tomorrow_card__date">{{ tomorrow.md }}<span class="tomorrow_card__dow">{{ tomorrow.dow }}</span></span>は新刊の発売がありません</span>
 {% if tomorrow.next %}<a href="{{ tomorrow.next.url }}" class="tomorrow_card__next">次の発売日 {{ tomorrow.next.label }}の新刊を見る{{ arrow('#222222', 14) }}</a>{% endif %}
 </div>
 {% endif %}
