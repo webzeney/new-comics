@@ -91,6 +91,14 @@ PUBLISHER_ORDER = {name: i for i, name in enumerate([
 ])}
 
 
+# 「レーベルから探す」のページの出版社の順（漫画の売上の大きい順の目安。2026-11-19 運営者の判断）。
+# PUBLISHER_ORDER の後ろに続ける。ここにない出版社は、この後ろに出版社名の読みの順で並べる
+LABEL_PAGE_ORDER = list(PUBLISHER_ORDER) + [
+    "一迅社", "少年画報社", "マッグガーデン", "徳間書店", "日本文芸社", "コアミックス", "幻冬舎コミックス", "祥伝社",
+    "朝日新聞出版", "実業之日本社", "リイド社", "ハーパーコリンズ・ジャパン",
+]
+
+
 class Book:
     __slots__ = (
         "id", "isbn13", "title", "volume", "series_id", "publisher", "publisher_slug", "label", "label_id", "authors",
@@ -1557,7 +1565,7 @@ def build_listings(site, w):
             label_groups.setdefault(l["pub"], []).append({"name": f"{l['name']}（{counts[l['id']]}）", "url": f"{root1}label/{l['id']}/"})
     w.write("label/index.html", "index_list.html", page_defaults(title=f"レーベルから探す｜{SITE_NAME}", description="レーベルごとの漫画新刊発売予定。", menu="label"),
             crumbs=crumbs(root1, ("レーベルから探す", None)), heading={"en": "LABEL", "title": "レーベルから探す", "lead": "レーベルを選ぶと、そのレーベルの新刊発売予定を一覧で見られます。", "kumiko": ("loupe", "レーベルを選ぶと、そのレーベルから出る新刊の予定をまとめて見られるよ！ いつも買うレーベル、あるかな？")},
-            groups=[{"title": k, "links": v} for k, v in label_groups.items()])
+            groups=[{"title": k, "links": label_groups[k]} for k in sorted(label_groups, key=lambda k: (LABEL_PAGE_ORDER.index(k) if k in LABEL_PAGE_ORDER else len(LABEL_PAGE_ORDER), yomi.sort_key(k)))])
     tag_links = [{"name": f"#{TAG_INFO[s][0]}", "url": f"{root1}tag/{s}/"} for s in TAG_INFO if any(s in b.tags for b in site.dated)]
     w.write("tag/index.html", "index_list.html", page_defaults(title=f"タグから探す｜{SITE_NAME}", description="タグごとの漫画新刊発売予定。"),
             crumbs=crumbs(root1, ("タグ", None)), heading={"en": "TAG", "title": "タグから探す", "lead": "タグを選ぶと、そのタグが付いた新刊発売予定を一覧で見られます。", "kumiko": ("fumu", "タグを選ぶと、そのタグが付いた新刊の予定をまとめて見られるよ。新シリーズの1巻や完結巻もここから探せるね。")},
