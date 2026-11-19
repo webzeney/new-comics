@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import breadcrumb %}
+{% from "_parts.html" import breadcrumb, kumiko %}
 {% block content %}
 <article aria-labelledby="page-title" class="panel">
 {{ breadcrumb(crumbs, 'breadcrumb--wide') }}
@@ -14,6 +14,40 @@
 <dt class="profile__term">運営者</dt><dd class="profile__desc">漫画新刊JP</dd>
 <dt class="profile__term">お問い合わせ</dt><dd class="profile__desc"><a href="{{ root }}contact/" class="doc__link">お問い合わせフォーム</a>よりご連絡ください</dd>
 </dl>
+<section id="koharu" class="doc__section">
+<h2 class="doc__title">ナビゲーター</h2>
+{{ kumiko(root, "wink", "漫画新刊JPへようこそ！ このサイトのナビゲーターの櫻塚こはるです。毎日の新刊や特集を案内しているよ。新刊、チェックした？", mod="intro") }}
+<div class="navi">
+<img src="{{ root }}assets/img/kumiko/profile_u.webp" srcset="{{ root }}assets/img/kumiko/profile_u.webp 2x" {{ kumiko_size("profile_u") }} data-kumiko-weekend="{{ root }}assets/img/kumiko/profile_c.webp" alt="櫻塚こはる" class="navi__image" loading="lazy">
+<div class="navi__body">
+<p class="navi__name">櫻塚こはる<span class="navi__kana">さくらづか こはる</span></p>
+<dl class="profile">
+<dt class="profile__term">役目</dt><dd class="profile__desc">漫画新刊JPのナビゲーター（毎日の新刊と特集の案内役）</dd>
+<dt class="profile__term">年齢</dt><dd class="profile__desc">16歳・高校1年生</dd>
+<dt class="profile__term">誕生日</dt><dd class="profile__desc">11月3日（まんがの日）</dd>
+<dt class="profile__term">好きな漫画</dt><dd class="profile__desc">少年漫画のバトルもの（ほのぼの系はあまり読まない）</dd>
+<dt class="profile__term">好きなもの</dt><dd class="profile__desc">買った新刊を本棚に1冊ずつ足していく時間</dd>
+<dt class="profile__term">苦手なもの</dt><dd class="profile__desc">SNSで流れてくるネタバレ</dd>
+<dt class="profile__term">特技</dt><dd class="profile__desc">気になる作品の発売日を、ほぼ全部覚えている</dd>
+<dt class="profile__term">口ぐせ</dt><dd class="profile__desc">「新刊、チェックした？」</dd>
+</dl>
+</div>
+</div>
+<div class="navi navi--pet">
+<img src="{{ root }}assets/img/beta/profile.webp" srcset="{{ root }}assets/img/beta/profile.webp 2x" {{ kumiko_size("profile", "beta") }} alt="ベタ" class="navi__image" loading="lazy">
+<div class="navi__body">
+<p class="navi__name">ベタ<span class="navi__kana">こはるの飼い犬</span></p>
+<dl class="profile">
+<dt class="profile__term">犬種</dt><dd class="profile__desc">パグ（男の子・3歳）</dd>
+<dt class="profile__term">名前の由来</dt><dd class="profile__desc">顔が黒いので、漫画の「ベタ塗り」（黒くぬりつぶすこと）から、こはるが名付けた</dd>
+<dt class="profile__term">性格</dt><dd class="profile__desc">甘えんぼうで、こはるが漫画を読んでいるとひざに乗ってくる</dd>
+<dt class="profile__term">好きなもの</dt><dd class="profile__desc">こはるのブランケット</dd>
+<dt class="profile__term">特技</dt><dd class="profile__desc">開いた漫画の上で寝る（こはるは困っている）</dd>
+<dt class="profile__term">鳴き声</dt><dd class="profile__desc">「ワフッ」（しゃべらないので、こはるが通訳する）</dd>
+</dl>
+</div>
+</div>
+</section>
 <section class="doc__section">
 <h2 class="doc__title">このサイトをつくった理由</h2>
 <p class="doc__text">漫画の新刊の発売日は、出版社ごとに別々のサイトで発表されています。読んでいる作品が何社にもまたがると、それぞれのサイトを見て回らないと次の巻がいつ出るのか分からず、気づいたときには発売日を過ぎていた、ということが何度もありました。</p>
@@ -32,7 +66,7 @@
 </section>
 <section class="doc__section">
 <h2 class="doc__title">特集記事について</h2>
-<p class="doc__text">新刊の一覧だけでは伝わらない、完結する作品のまとめや、昔の漫画と今の漫画の値段の比べてみた話など、漫画を読む・買うときに役立ちそうなことを<a href="{{ root }}feature/" class="doc__link">特集</a>として書いています。</p>
+<p class="doc__text">新刊の一覧だけでは伝わらない、完結する作品のまとめや、昔の漫画と今の漫画の値段の比べてみた話など、漫画を読む・買うときに役立ちそうなことを<a href="{{ root }}feature/" class="doc__link">特集</a>として書いています。特集は、ナビゲーターの<a href="#koharu" class="doc__link">櫻塚こはる</a>が案内しています。</p>
 </section>
 <section class="doc__section">
 <h2 class="doc__title">書影・紹介文・リンクについて</h2>

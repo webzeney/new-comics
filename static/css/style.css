@@ -620,6 +620,14 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .profile__desc{margin:0;padding:14px 16px;border-bottom:1px dashed #EBCFC9}
 .profile__desc--en{font-family:'Yusei Magic',sans-serif;font-weight:400;letter-spacing:0.1em}
 /* ==========================================================================
+ナビゲーターの紹介
+========================================================================== */
+.navi{margin:24px 0 0;display:grid;grid-template-columns:140px minmax(0,1fr);align-items:start;gap:28px}
+.navi__image{display:block;justify-self:center}
+.navi__name{margin:0 0 12px;font-size:22px;font-weight:900;line-height:1.4}
+.navi__kana{margin-left:12px;font-size:13px;font-weight:700;color:#8A7F74}
+.navi--pet{margin-top:32px}
+/* ==========================================================================
 お問い合わせ
 ========================================================================== */
 .contact{display:flex;flex-direction:column;gap:20px}
@@ -772,6 +780,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 スマホ（幅720px以下）
 ========================================================================== */
 @media (max-width: 720px){
+.navi{grid-template-columns:minmax(0,1fr);gap:16px}
 .kumiko{gap:14px}
 .kumiko__bubble{padding:12px 14px;font-size:13px}
 .page_head--nemu,.release__head--nemu{flex-wrap:wrap}
