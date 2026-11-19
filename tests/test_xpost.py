@@ -21,7 +21,13 @@ class TagTest(unittest.TestCase):
         self.assertEqual(xpost.work_tag(self.book("ONE PIECE 112", 112)), "#ONEPIECE")
         self.assertEqual(xpost.work_tag(self.book("呪術廻戦 30", 30)), "#呪術廻戦")
         self.assertEqual(xpost.work_tag(self.book("SPY×FAMILY 15", 15)), "#SPYFAMILY")
-        self.assertIsNone(xpost.work_tag(self.book("転生したらスライムだった件 ～魔物の国の歩き方～ 長い長い題名", None)))
+        self.assertEqual(xpost.work_tag(self.book("転生したらスライムだった件 31", 31)), "#転スラ")
+        self.assertEqual(xpost.work_tag(self.book("ちいかわ なんか小さくてかわいいやつ 9", 9)), "#ちいかわ")
+        self.assertEqual(xpost.work_tag(self.book("電撃デイジー 新装版 3", 3)), "#電撃デイジー")
+        self.assertEqual(xpost.work_tag(self.book("テムパル5", None)), "#テムパル")
+        self.assertEqual(xpost.work_tag(self.book("濁る瞳で何を願う 6 ハイセルク戦記", None)), "#濁る瞳で何を願う")
+        self.assertEqual(xpost.work_tag(self.book("24時間界隈", None)), "#24時間界隈")
+        self.assertIsNone(xpost.work_tag(self.book("出ていけ、と言われたので出ていきます(コミック)", None)) if len("出ていけと言われたので出ていきます") > xpost.TAG_MAX else None)
 
     def test_hashtags_top_two_distinct(self):
         bs = [self.book("呪術廻戦 30", 30), self.book("呪術廻戦 30 特装版", 30), self.book("ONE PIECE 112", 112), self.book("ハイキュー!! 46", 46)]

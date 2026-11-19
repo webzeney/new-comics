@@ -60,12 +60,35 @@ def short(b):
     return f"{name} {vol}巻" if vol else name
 
 
+EDITION = re.compile(r"(永久愛蔵版|愛蔵版|新装版|完全版|文庫版|ワイド版|特装版|限定版|通常版|豪華版|上巻|中巻|下巻|コミック)")
+
+
+def load_xtags():
+    """ハッシュタグの対応表（xtags.tsv）。書名に含まれる文字 → ハッシュタグ。"""
+    out = []
+    path = Path(__file__).with_name("xtags.tsv")
+    for line in path.read_text(encoding="utf-8").splitlines()[1:]:
+        cols = line.split("\t")
+        if len(cols) >= 2 and cols[0].strip() and cols[1].strip().startswith("#"):
+            out.append((cols[0].strip(), cols[1].strip()))
+    return out
+
+
+XTAGS = load_xtags()
+
+
 def work_tag(b):
-    """作品名のハッシュタグ。巻数・~副題~・空白・記号を外す。作れないとき・長すぎるときは None。"""
+    """作品名のハッシュタグ。対応表（xtags.tsv）にあればそれを使う。なければ巻数・~副題~・版の名前・空白・記号を外して作る。
+    作れないとき・長すぎるときは None。"""
+    for key, tag in XTAGS:
+        if key in b.title:
+            return tag
     main, _ = title_parts(b)
     name = re.sub(r"\s*[~〜～][^~〜～]+[~〜～]\s*", " ", main or b.title)
     name = re.sub(r"[（(【\[].*?[）)】\]]", "", name)
-    tag = "".join(re.findall(r"\w", unicodedata.normalize("NFKC", name)))
+    name = unicodedata.normalize("NFKC", name)
+    name = re.split(r"(?<=\D)\s*\d+(?:\s|$)", name)[0]  # 巻数より後ろ（副題など）は外す
+    tag = re.sub(r"(?<=\D)\d+$", "", "".join(re.findall(r"\w", EDITION.sub("", name))))
     if not tag or tag.isdigit() or len(tag) > TAG_MAX:
         return None
     return "#" + tag
