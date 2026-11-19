@@ -95,7 +95,7 @@ text = 'お気に入りの' + favs.length + '作品から、最近出た新刊�
 var day = new Date().getDay();
 var holiday = typeof kumikoWeekend === 'function' ? kumikoWeekend() : (day === 0 || day === 6);
 var img = box.querySelector('[data-kumiko-image]');
-var src = box.getAttribute('data-base') + pose + (holiday ? '_c' : '_u') + '.webp';
+var src = box.getAttribute('data-base') + pose + (typeof kumikoSuffix === 'function' ? kumikoSuffix() : (holiday ? '_c1' : '_u')) + '.webp';
 var probe = new Image();
 probe.onload = function () { img.width = Math.round(probe.naturalWidth / 2); img.height = Math.round(probe.naturalHeight / 2); };
 probe.src = src;

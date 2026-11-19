@@ -644,9 +644,24 @@ if (p.getDay() === 0) return true;
 return false;
 }
 
+function kumikoHoliday(date) {
+var day = date.getDay();
+return day === 0 || day === 6 || jpHoliday(date);
+}
+
 function kumikoWeekend() {
-var now = new Date(), day = now.getDay();
-return day === 0 || day === 6 || jpHoliday(now);
+return kumikoHoliday(new Date());
+}
+
+function kumikoSuffix() {
+var now = new Date();
+if (!kumikoHoliday(now)) return '_u';
+var d = new Date(2026, 0, 1), end = new Date(now.getFullYear(), now.getMonth(), now.getDate()), n = 0;
+while (d < end) {
+if (kumikoHoliday(d)) n++;
+d.setDate(d.getDate() + 1);
+}
+return '_c' + (n % 5 + 1);
 }
 
 function kumikoSrc(img, src) {
@@ -682,13 +697,17 @@ if (pool.length) {
 var pick = pool[Math.floor(Math.random() * pool.length)];
 var base = box.getAttribute('data-base');
 var img = box.querySelector('[data-kumiko-image]');
-kumikoSrc(img, base + pick.p + (kumikoWeekend() ? '_c' : '_u') + '.webp');
+kumikoSrc(img, base + pick.p + kumikoSuffix() + '.webp');
 img.removeAttribute('data-kumiko-weekend');
 box.querySelector('[data-kumiko-text]').textContent = pick.t.replace('{n}', today).replace('{m}', tomorrow);
 }
 }
 if (kumikoWeekend()) {
-document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) { kumikoSrc(img, img.getAttribute('data-kumiko-weekend')); });
+var suffix = kumikoSuffix();
+document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) {
+var src = img.getAttribute('data-kumiko-weekend');
+kumikoSrc(img, img.hasAttribute('data-kumiko-fixed') ? src : src.replace(/_c\.webp$/, suffix + '.webp'));
+});
 }
 }
 
