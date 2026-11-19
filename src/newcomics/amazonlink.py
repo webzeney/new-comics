@@ -157,6 +157,8 @@ def run(conn, api, kind, rows, deadline):
 
 def prev_targets(conn, now, limit, recheck=False):
     """前の巻を探す本：発売前（PREV_DAYS 日先まで）で売れ筋順位がなく、2巻以降で、前の巻がデータベースにない本。"""
+    # 紙の本ではない ASIN（B0… で始まるセット本など）を選んでいたものは探し直す
+    conn.execute("UPDATE books SET prev_asin = NULL, prev_checked_at = NULL, prev_rank = NULL, prev_rank_at = NULL WHERE prev_asin GLOB '[A-Z]*'")
     today = now.date()
     since = (now if recheck else now - timedelta(days=PREV_RECHECK_DAYS)).isoformat(timespec="seconds")
     return conn.execute(
