@@ -744,6 +744,8 @@ def load_pickup(site):
 
 
 KUMIKO_LINES = Path(__file__).with_name("kumiko_lines.tsv")
+# 全身で描かれているポーズ。トップでは、ほかのポーズとそろえて上半身だけに切り抜いた絵（{ポーズ}_t_u.webp）を使う（2026-11-19 運営者の判断）
+KUMIKO_FULL = {"bag", "books", "bow", "loupe", "point", "pug2", "surprise", "wave"}
 KUMIKO_WHEN = {"すべて": "all", "朝": "morning", "昼": "noon", "夕方": "evening", "夜": "night", "深夜": "late", "週末": "weekend", "金曜": "friday",
                "今日あり": "today", "今日なし": "notoday", "明日あり": "tomorrow"}
 
@@ -754,7 +756,8 @@ def load_kumiko_lines():
     for line in KUMIKO_LINES.read_text(encoding="utf-8").splitlines()[1:]:
         cols = line.split("\t")
         if len(cols) >= 3 and cols[0].strip() and cols[1].strip() in KUMIKO_WHEN:
-            out.append({"p": cols[0].strip(), "w": KUMIKO_WHEN[cols[1].strip()], "t": cols[2].strip()})
+            pose = cols[0].strip()
+            out.append({"p": pose + "_t" if pose in KUMIKO_FULL else pose, "w": KUMIKO_WHEN[cols[1].strip()], "t": cols[2].strip()})
     return out
 
 
