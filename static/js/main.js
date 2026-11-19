@@ -663,6 +663,7 @@ d.setDate(d.getDate() + 1);
 }
 return '_c' + (n % 5 + 1);
 }
+window.kumikoSuffix = kumikoSuffix;
 
 function kumikoSrc(img, src) {
 var probe = new Image();
