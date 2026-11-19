@@ -93,6 +93,7 @@ Text Domain: new-comics
 .article_toc__link{display:flex;gap:12px;font-size:15px;font-weight:700;line-height:1.6;color:#222222;text-decoration:none}
 .article_toc__num{flex:0 0 1.6em;box-sizing:content-box;padding-right:12px;border-right:1px solid #F3C6BE;font-family:'Yusei Magic',sans-serif;font-weight:400;letter-spacing:0.1em;color:#D9483B}
 .article_toc__sub{list-style:none;margin:6px 0 0;padding:0 0 0 49px}
+.article__body .article_toc__sub{padding-left:49px}
 .article_toc__item--sub{margin:0 0 4px}
 .article__body .article_toc__link{color:#222222}
 .article_toc__item--sub .article_toc__link{position:relative;padding-left:14px;font-size:14px;font-weight:500}

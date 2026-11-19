@@ -42,7 +42,8 @@
 <span class="stat__value"><span class="stat__num stat__num--34">{{ upcoming.count }}</span><span class="stat__unit">点</span></span>
 </div>
 </div>
-{% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
+{% set intro_pose = {"publisher": "point", "label": "loupe", "genre": "cheer"}.get(listing.kind) %}
+{% if intro and intro_pose %}{{ kumiko(root, intro_pose, intro, mod="intro") }}{% elif intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
 {% if rss is defined %}
 <p class="rss_follow"><a href="{{ rss.url }}" class="chip_link chip_link--rss">{{ rss_icon() }}RSSで受け取る</a><span class="rss_follow__text">{{ rss.name }}がサイトに載ると、RSSリーダーに届きます</span></p>
 {% endif %}
