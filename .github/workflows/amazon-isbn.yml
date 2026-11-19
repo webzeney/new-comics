@@ -19,6 +19,10 @@ on:
         description: 発売前で順位のない本の、前の巻の照らし合わせだけを行う
         type: boolean
         default: false
+      max_prev:
+        description: 前の巻を探す本の数の上限
+        required: false
+        default: "3000"
 
 permissions:
   contents: read
@@ -54,8 +58,9 @@ jobs:
           RECHECK: ${{ inputs.recheck }}
           IMAGES: ${{ inputs.images }}
           PREV: ${{ inputs.prev }}
+          MAXPREV: ${{ inputs.max_prev }}
         run: |
-          if [ "$PREV" = "true" ]; then python -m newcomics.amazonlink --prev-only --max-prev 3000 --minutes "$MINUTES"; exit $?; fi
+          if [ "$PREV" = "true" ]; then python -m newcomics.amazonlink --prev-only --prev-recheck --max-prev "${MAXPREV:-3000}" --minutes "$MINUTES" --prev-debug data/prev-debug.json; exit $?; fi
           python -m newcomics.amazonlink --isbn-only --max-isbn 100000 --minutes "$MINUTES" $( [ "$RECHECK" = "true" ] && echo --recheck ) $( [ "$IMAGES" = "true" ] && echo --images )
       - name: データベースを保存（非公開リポジトリ）
         working-directory: data
@@ -64,6 +69,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -q -B main
           git add newcomics.sqlite
+          [ -f prev-debug.json ] && git add prev-debug.json || true
           if git diff --cached --quiet; then
             echo "変更なし"
           else

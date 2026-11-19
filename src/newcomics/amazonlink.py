@@ -155,10 +155,10 @@ def run(conn, api, kind, rows, deadline):
     return counts
 
 
-def prev_targets(conn, now, limit):
+def prev_targets(conn, now, limit, recheck=False):
     """前の巻を探す本：発売前（PREV_DAYS 日先まで）で売れ筋順位がなく、2巻以降で、前の巻がデータベースにない本。"""
     today = now.date()
-    since = (now - timedelta(days=PREV_RECHECK_DAYS)).isoformat(timespec="seconds")
+    since = (now if recheck else now - timedelta(days=PREV_RECHECK_DAYS)).isoformat(timespec="seconds")
     return conn.execute(
         """SELECT b.id, b.title, b.volume, b.release_date, s.name AS series FROM books b JOIN series s ON s.id = b.series_id
         WHERE b.volume > 1 AND b.amazon_rank IS NULL AND b.prev_asin IS NULL AND b.ebook_only IS NULL
@@ -185,6 +185,9 @@ def pick_prev(items, series, volume):
     return None
 
 
+DEBUG = []  # 確認用：探した言葉と、Amazon から返ってきた候補（--prev-debug のときだけ非公開リポジトリに書き出す）
+
+
 def find_prev(conn, api, rows, deadline):
     counts = {"found": 0, "missing": 0, "error": 0}
     for i, r in enumerate(rows, start=1):
@@ -200,6 +203,8 @@ def find_prev(conn, api, rows, deadline):
                 failed = True
                 continue
             hit = pick_prev(items, name, v)
+            DEBUG.append({"words": words, "hit": hit.get("asin") if hit else None,
+                          "items": [[it.get("asin"), binding(it), title_of(it)] for it in items]})
             if hit:
                 break
         if failed and not hit:
@@ -368,6 +373,8 @@ def main(argv=None):
     ap.add_argument("--max-isbn", type=int, default=MAX_ISBN)
     ap.add_argument("--max-prev", type=int, default=MAX_PREV)
     ap.add_argument("--prev-only", action="store_true", help="前の巻の照らし合わせと、その売れ筋順位の取り直しだけを行う")
+    ap.add_argument("--prev-debug", help="確認用：前の巻を探した言葉と候補を、このファイルに書き出す（非公開リポジトリの中に置く）")
+    ap.add_argument("--prev-recheck", action="store_true", help="前の巻が見つからなかった本を、日数にかかわらず探し直す")
     ap.add_argument("--isbn-only", action="store_true", help="ISBN-10 の商品ページの確認だけを行う（全件の確認用）")
     ap.add_argument("--minutes", type=int, help="使う時間の上限（分）")
     ap.add_argument("--recheck", action="store_true", help="見つからなかった本を、日数にかかわらず探し直す")
@@ -383,8 +390,12 @@ def main(argv=None):
     limit = args.minutes * 60 if args.minutes else TIME_LIMIT
     start = time.monotonic()
     if args.prev_only:
-        prev = find_prev(conn, api, prev_targets(conn, now, args.max_prev), start + limit)
+        prev = find_prev(conn, api, prev_targets(conn, now, args.max_prev, args.prev_recheck), start + limit)
         pr = refresh_prev_ranks(conn, api, start + limit + 5 * 60)
+        if args.prev_debug:
+            import json
+            with open(args.prev_debug, "w", encoding="utf-8") as f:
+                json.dump(DEBUG, f, ensure_ascii=False, indent=0)
         print(f"前の巻の照らし合わせ：見つかった {prev['found']}／見つからない {prev['missing']}／エラー {prev['error']}、"
               f"前の巻の売れ筋順位：あり {pr['rank']}／なし {pr['none']}／エラー {pr['error']}（API {api.calls} 回）")
         return 1 if prev["error"] and not (prev["found"] + prev["missing"]) else 0
