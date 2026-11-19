@@ -17,6 +17,7 @@ import re
 import secrets
 import sys
 import time
+import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import quote
@@ -30,7 +31,9 @@ POST_URL = "https://api.x.com/2/tweets"
 MEDIA_URL = "https://api.x.com/2/media/upload"
 LIMIT = 280      # X の文字数の上限（全角は2、URL は23として数える）
 URL_WEIGHT = 23
-HASHTAGS = "#漫画 #新刊"
+HASHTAGS = "#新刊"
+TAG_WORKS = 2    # その日の人気の作品（投稿の並びの上から）を、作品名のハッシュタグにする数（2026-11-20 運営者の判断）
+TAG_MAX = 16     # 作品名のハッシュタグがこれより長いときは付けない
 NAME_MAX = 24   # 書名がこれより長いときは「…」で切る（1件で枠を使い切らないように）
 
 
@@ -57,12 +60,36 @@ def short(b):
     return f"{name} {vol}巻" if vol else name
 
 
+def work_tag(b):
+    """作品名のハッシュタグ。巻数・~副題~・空白・記号を外す。作れないとき・長すぎるときは None。"""
+    main, _ = title_parts(b)
+    name = re.sub(r"\s*[~〜～][^~〜～]+[~〜～]\s*", " ", main or b.title)
+    name = re.sub(r"[（(【\[].*?[）)】\]]", "", name)
+    tag = "".join(re.findall(r"\w", unicodedata.normalize("NFKC", name)))
+    if not tag or tag.isdigit() or len(tag) > TAG_MAX:
+        return None
+    return "#" + tag
+
+
+def hashtags(books):
+    """「#新刊」と、その日の人気の作品（投稿の並びの上から）の作品名のハッシュタグ。"""
+    tags = []
+    for b in books:
+        t = work_tag(b)
+        if t and t not in tags and t != "#新刊":
+            tags.append(t)
+        if len(tags) >= TAG_WORKS:
+            break
+    return " ".join([HASHTAGS] + tags)
+
+
 def compose(site, day, base):
     books = site.by_date.get(day) or []
     if not books:
         return None
     head = f"【今日{md(day)}（{dow(day)}）発売の漫画新刊】{len(books)}点"
     url = f"{base}/date/{day.isoformat()}/"
+    tags = hashtags(books)
     lines = []
     seen = set()
     for b in books:  # サイトと同じ並び（出版社の順 → 売れている順）
@@ -72,13 +99,13 @@ def compose(site, day, base):
         rest = len(books) - len(lines) - 1
         trial = lines + [f"・{name}"]
         tail = [f"ほか{rest}点"] if rest > 0 else []
-        text = "\n".join([head, ""] + trial + tail + ["", url, HASHTAGS])
+        text = "\n".join([head, ""] + trial + tail + ["", url, tags])
         if weight(text) > LIMIT:
             continue
         lines = trial
         seen.add(name)
     rest = len(books) - len(lines)
-    return "\n".join([head, ""] + lines + ([f"ほか{rest}点"] if rest > 0 else []) + ["", url, HASHTAGS])
+    return "\n".join([head, ""] + lines + ([f"ほか{rest}点"] if rest > 0 else []) + ["", url, tags])
 
 
 def oauth_header(method, url, keys):
