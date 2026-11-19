@@ -170,6 +170,17 @@ def prev_targets(conn, now, limit, recheck=False):
     ).fetchall()
 
 
+ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"]
+
+
+def has_roman(title, volume):
+    """書名に、巻数がローマ数字（Ⅸ・IX など）で入っているか。"""
+    if not 0 < volume < len(ROMAN):
+        return False
+    t = unicodedata.normalize("NFKC", title)
+    return re.search(r"(?<![A-Za-z])" + ROMAN[volume] + r"(?![A-Za-z])", t) is not None
+
+
 def pick_prev(items, series, volume):
     """前の巻（紙の本）を選ぶ。発売日は問わない。成人向け・Kindle版・単話などは選ばない。"""
     for it in items:
@@ -179,7 +190,7 @@ def pick_prev(items, series, volume):
         nk = unicodedata.normalize("NFKC", t)
         if any(w in nk for w in SKIP_WORDS):
             continue
-        if key(series) not in key(t) or not has_volume(t, volume):
+        if key(series) not in key(t) or not (has_volume(t, volume) or has_roman(t, volume)):
             continue
         if not re.fullmatch(r"\d{9}[\dX]", it.get("asin") or ""):
             continue  # 紙の本は ASIN が ISBN-10。それ以外（セット本・雑誌など）は選ばない
