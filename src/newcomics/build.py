@@ -744,8 +744,8 @@ def load_pickup(site):
 
 
 KUMIKO_LINES = Path(__file__).with_name("kumiko_lines.tsv")
-# 全身で描かれているポーズ。トップでは、ほかのポーズとそろえて上半身だけに切り抜いた絵（{ポーズ}_t_u.webp）を使う（2026-11-19 運営者の判断）
-KUMIKO_FULL = {"bag", "books", "bow", "loupe", "point", "pug2", "surprise", "wave"}
+# 全身で描かれているポーズ（制服・私服のどちらか）。トップでは、ほかのポーズとそろえて上半身だけに切り抜いた絵（{ポーズ}_t_u.webp）を使う（2026-11-19 運営者の判断）
+KUMIKO_FULL = {"angry", "bag", "books", "bow", "jump", "lean", "loupe", "peace", "point", "pug2", "reach", "surprise", "wave", "wink"}
 KUMIKO_WHEN = {"すべて": "all", "朝": "morning", "昼": "noon", "夕方": "evening", "夜": "night", "深夜": "late", "週末": "weekend", "金曜": "friday",
                "今日あり": "today", "今日なし": "notoday", "明日あり": "tomorrow"}
 

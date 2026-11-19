@@ -619,9 +619,34 @@ box.addEventListener('focusout', start);
 start();
 }
 
+function jpHolidayBase(y, m, d) {
+var dow = new Date(y, m - 1, d).getDay();
+var nth = Math.floor((d - 1) / 7) + 1;
+var fixed = ['1-1', '2-11', '2-23', '4-29', '5-3', '5-4', '5-5', '8-11', '11-3', '11-23'];
+if (fixed.indexOf(m + '-' + d) >= 0) return true;
+if (dow === 1 && ((m === 1 && nth === 2) || (m === 7 && nth === 3) || (m === 9 && nth === 3) || (m === 10 && nth === 2))) return true;
+var t = y - 1980;
+if (m === 3 && d === Math.floor(20.8431 + 0.242194 * t - Math.floor(t / 4))) return true;
+if (m === 9 && d === Math.floor(23.2488 + 0.242194 * t - Math.floor(t / 4))) return true;
+return false;
+}
+
+function jpHoliday(date) {
+var y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
+if (jpHolidayBase(y, m, d)) return true;
+var prev = new Date(y, m - 1, d - 1), next = new Date(y, m - 1, d + 1);
+if (date.getDay() !== 0 && jpHolidayBase(prev.getFullYear(), prev.getMonth() + 1, prev.getDate()) && jpHolidayBase(next.getFullYear(), next.getMonth() + 1, next.getDate())) return true;
+for (var i = 1; i < 7; i++) {
+var p = new Date(y, m - 1, d - i);
+if (!jpHolidayBase(p.getFullYear(), p.getMonth() + 1, p.getDate())) return false;
+if (p.getDay() === 0) return true;
+}
+return false;
+}
+
 function kumikoWeekend() {
-var day = new Date().getDay();
-return day === 0 || day === 6;
+var now = new Date(), day = now.getDay();
+return day === 0 || day === 6 || jpHoliday(now);
 }
 
 function kumikoSrc(img, src) {

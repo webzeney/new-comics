@@ -79,7 +79,7 @@ function nc_half_size(string $file): string
     return $size ? ' width="' . intdiv($size[0], 2) . '" height="' . intdiv($size[1], 2) . '"' : '';
 }
 
-/* 看板キャラクター（櫻塚こはる）。平日は制服、土日は私服（main.js が data-kumiko-weekend で差し替える） */
+/* 看板キャラクター（櫻塚こはる）。平日は制服、土日と祝日は私服（main.js が data-kumiko-weekend で差し替える） */
 function nc_nemu(string $pose, string $text, string $mod = ''): string
 {
     $pose = preg_match('/^[a-z0-9]+$/', $pose) ? $pose : 'point';
