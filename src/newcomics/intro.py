@@ -131,7 +131,11 @@ def month(y, m, books):
 
 
 def listing(subject, books, today, kind):
-    """出版社・レーベル・タグ・著者のページ。subject は「集英社」「ジャンプコミックス」など。"""
+    """出版社・レーベル・タグ・著者のページ。subject は「集英社」「ジャンプコミックス」など。
+
+    出版社・レーベル・ジャンルのページは、看板キャラクター（こはる）が話す形にする（2026-11-19 運営者の判断）。
+    """
+    talk = kind in ("publisher", "label", "genre")
     noun = subject if kind == "tag" else (f"{subject}の新刊" if kind == "genre" else f"{subject}の漫画の新刊")
     upcoming = sorted((b for b in books if b.release and b.release >= today), key=lambda b: b.release)
     past = [b for b in books if b.release and b.release < today]
@@ -140,52 +144,59 @@ def listing(subject, books, today, kind):
         nxt = upcoming[0].release
         n_next = sum(1 for b in upcoming if b.release == nxt)
         last = upcoming[-1].release
-        s.append(f"これから発売が予定されている{noun}は、{last.year}年{last.month}月までに{len(upcoming)}点です。")
-        s.append(f"次の発売日は{_md(nxt)}で、{_count(_names([b for b in upcoming if b.release == nxt]), n_next)}が出ます。")
+        names = _count(_names([b for b in upcoming if b.release == nxt]), n_next)
+        if talk:
+            s.append(f"これから出る{noun}は、{last.year}年{last.month}月までに{len(upcoming)}点あるよ！")
+            s.append(f"次の発売日は{_md(nxt)}で、{names}が出るよ。")
+        else:
+            s.append(f"これから発売が予定されている{noun}は、{last.year}年{last.month}月までに{len(upcoming)}点です。")
+            s.append(f"次の発売日は{_md(nxt)}で、{names}が出ます。")
     elif past:
-        s.append(f"これから発売される{noun}は、今のところ登録されていません。")
+        s.append(f"これから出る{noun}は、今のところまだ登録されていないみたい。" if talk else f"これから発売される{noun}は、今のところ登録されていません。")
     if kind == "publisher":
         labels = Counter(b.label for b in upcoming if b.label)
         if len(labels) > 1:
-            s.append(f"レーベル別では{_top(labels)}が多くなっています。")
+            s.append(f"レーベルだと{_top(labels)}が多いね。")
     elif kind in ("tag", "author", "genre"):
         pubs = Counter(b.publisher for b in upcoming)
         if len(pubs) > 1:
-            s.append(f"出版社別では{_top(pubs)}が多くなっています。")
+            s.append(f"出版社だと{_top(pubs)}が多いね。" if talk else f"出版社別では{_top(pubs)}が多くなっています。")
         elif len(pubs) == 1:
-            s.append(f"出版社は{next(iter(pubs))}です。")
-    if kind != "tag":
+            s.append(f"出版社は{next(iter(pubs))}だよ。" if talk else f"出版社は{next(iter(pubs))}です。")
+    if talk:
+        s.append(_nemu_first_final(upcoming, "これから出る"))
+    elif kind != "tag":
         s.append(_first_final(upcoming, "これから発売される"))
     if past:
-        s.append("これまでに発売された本も、下にまとめています。")
+        s.append("これまでに出た本も、下にまとめているよ。" if talk else "これまでに発売された本も、下にまとめています。")
     return "".join(x for x in s if x)
 
 
 def listing_month(subject, y, m, books, today, kind):
-    """出版社・レーベルの月別ページ。books はその月に発売される本（発売日の順）。"""
+    """出版社・レーベル・ジャンルの月別ページ。books はその月に発売される本（発売日の順）。こはるが話す形（2026-11-19 運営者の判断）。"""
     if not books:
         return ""
     by_day = Counter(b.release for b in books)
     peak_d, peak_n = max(by_day.items(), key=lambda x: (x[1], -x[0].toordinal()))
     on_sale = sum(1 for b in books if b.release <= today)
-    s = [f"{y}年{m}月に発売される{subject}の新刊は{len(books)}点で、発売日は{len(by_day)}日あります。" if kind == "genre"
-         else f"{subject}から{y}年{m}月に発売される漫画の新刊は{len(books)}点で、発売日は{len(by_day)}日あります。"]
+    s = [f"{y}年{m}月に出る{subject}の新刊は{len(books)}点、発売日は{len(by_day)}日あるよ！" if kind == "genre"
+         else f"{subject}から{y}年{m}月に出る漫画の新刊は{len(books)}点、発売日は{len(by_day)}日あるよ！"]
     if len(by_day) > 1:
-        s.append(f"いちばん多いのは{_md(peak_d)}の{peak_n}点です。")
+        s.append(f"いちばん多いのは{_md(peak_d)}の{peak_n}点。")
     if kind == "publisher":
         labels = Counter(b.label for b in books if b.label)
         if len(labels) > 1:
-            s.append(f"レーベル別では{_top(labels)}が多くなっています。")
+            s.append(f"レーベルだと{_top(labels)}が多めだね。")
     elif kind == "genre":
         pubs = Counter(b.publisher for b in books)
         if len(pubs) > 1:
-            s.append(f"出版社別では{_top(pubs)}が多くなっています。")
-    s.append(_first_final(books))
-    s.append(_ebook(books))
+            s.append(f"出版社だと{_top(pubs)}が多めだね。")
+    s.append(_nemu_first_final(books))
+    s.append(_nemu_ebook(books))
     if 0 < on_sale < len(books):
-        s.append(f"このうち{on_sale}点はすでに発売されています。")
+        s.append(f"このうち{on_sale}点は、もう発売されているよ。")
     elif on_sale == len(books):
-        s.append("この月の新刊は、すべて発売されています。")
+        s.append("この月の新刊は、もう全部発売されているよ。")
     return "".join(x for x in s if x)
 
 

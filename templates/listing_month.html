@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, stat, bookrow %}
+{% from "_parts.html" import ad, breadcrumb, stat, bookrow, kumiko %}
 {% block content %}
 <section aria-labelledby="month-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -26,7 +26,8 @@
 <span class="stat__value stat__value--loose"><span class="stat__num">{{ stats.peak_date }}</span><span class="stat__unit">{{ stats.peak_suffix }}</span></span>
 </div>
 </div>
-{% if intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
+{% set intro_pose = {"publisher": "point", "label": "loupe", "genre": "cheer"}.get(kind) %}
+{% if intro and intro_pose %}{{ kumiko(root, intro_pose, intro, mod="intro") }}{% elif intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
 {% if label_links %}
 <div class="filter">
 <span class="filter__label">レーベル別に見る</span>
