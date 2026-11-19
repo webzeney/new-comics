@@ -584,7 +584,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 /* ==========================================================================
 固定ページ
 ========================================================================== */
-.doc{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+.doc{display:flex;flex-direction:column;gap:28px}
 .doc--form{gap:24px}
 .doc--guide{gap:48px}
 .doc--guide .doc__section{gap:16px}
@@ -622,7 +622,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 /* ==========================================================================
 ナビゲーターの紹介
 ========================================================================== */
-.navi{margin:24px 0 0;display:grid;grid-template-columns:140px minmax(0,1fr);align-items:start;gap:28px}
+.navi{margin:24px 0 0;display:grid;grid-template-columns:160px minmax(0,1fr);align-items:start;gap:28px}
 .navi__image{display:block;justify-self:center}
 .navi__name{margin:0 0 12px;font-size:22px;font-weight:900;line-height:1.4}
 .navi__kana{margin-left:12px;font-size:13px;font-weight:700;color:#8A7F74}
