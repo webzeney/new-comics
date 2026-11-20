@@ -665,6 +665,16 @@ return '_c' + (n % 5 + 1);
 }
 window.kumikoSuffix = kumikoSuffix;
 
+function kumikoJstHour() {
+return (new Date().getUTCHours() + 9) % 24;
+}
+
+function kumikoNight() {
+var h = kumikoJstHour();
+return h >= 22 || h < 6;
+}
+window.kumikoNight = kumikoNight;
+
 function kumikoSrc(img, src) {
 var probe = new Image();
 probe.onload = function () { img.width = Math.round(probe.naturalWidth / 2); img.height = Math.round(probe.naturalHeight / 2); };
@@ -693,19 +703,35 @@ today: today > 0,
 notoday: today === 0,
 tomorrow: tomorrow > 0
 };
-var pool = lines.filter(function (l) { return ok[l.w]; });
+var night = kumikoNight(), jh = kumikoJstHour();
+ok.p_all = true;
+ok.p_late = jh < 5;
+ok.p_dawn = jh >= 5 && jh < 6;
+ok.p_tomorrow = tomorrow > 0;
+ok.p_notoday = today === 0;
+var pool = lines.filter(function (l) { return (l.w.indexOf('p_') === 0) === night && ok[l.w]; });
 if (pool.length) {
 var pick = pool[Math.floor(Math.random() * pool.length)];
 var base = box.getAttribute('data-base');
 var img = box.querySelector('[data-kumiko-image]');
-kumikoSrc(img, base + pick.p + kumikoSuffix() + '.webp');
+kumikoSrc(img, base + pick.p + (night ? '_p' : kumikoSuffix()) + '.webp');
 img.removeAttribute('data-kumiko-weekend');
 box.querySelector('[data-kumiko-text]').textContent = pick.t.replace('{n}', today).replace('{m}', tomorrow);
 }
 }
+var isNight = kumikoNight();
+if (isNight) {
+document.querySelectorAll('[data-kumiko-night]').forEach(function (img) {
+kumikoSrc(img, img.getAttribute('data-kumiko-night'));
+});
+document.querySelectorAll('[data-kumiko-night-text]').forEach(function (el) {
+el.textContent = el.getAttribute('data-kumiko-night-text');
+});
+}
 if (kumikoWeekend()) {
 var suffix = kumikoSuffix();
 document.querySelectorAll('[data-kumiko-weekend]').forEach(function (img) {
+if (isNight && img.hasAttribute('data-kumiko-night')) return;
 var src = img.getAttribute('data-kumiko-weekend');
 kumikoSrc(img, img.hasAttribute('data-kumiko-fixed') ? src : src.replace(/_c\.webp$/, suffix + '.webp'));
 });

@@ -763,7 +763,9 @@ def load_pickup(site):
 
 KUMIKO_LINES = Path(__file__).with_name("kumiko_lines.tsv")
 KUMIKO_WHEN = {"すべて": "all", "朝": "morning", "昼": "noon", "夕方": "evening", "夜": "night", "深夜": "late", "週末": "weekend", "金曜": "friday",
-               "今日あり": "today", "今日なし": "notoday", "明日あり": "tomorrow"}
+               "今日あり": "today", "今日なし": "notoday", "明日あり": "tomorrow",
+               # 夜10時〜朝6時（日本時間）のパジャマのセリフ。この時間は、これだけから選ぶ（2026-11-21 運営者の判断）
+               "パジャマ": "p_all", "パジャマ・0〜5時": "p_late", "パジャマ・5〜6時": "p_dawn", "パジャマ・明日あり": "p_tomorrow", "パジャマ・今日なし": "p_notoday"}
 
 
 def load_kumiko_lines():
@@ -1296,6 +1298,8 @@ def build_books(site, w):
             "sameday": sameday,
             "summary": book_summary(site, b, main, vol, volumes),
             "summary_pose": "fumu" if not b.release else ("shinkan" if b.release > site.today else ("clock" if b.release == site.today else "books")),
+            # 夜のポーズ（発売済みの本は、ふとんで読書。ほかは render.NIGHT_POSE のとおり）
+            "summary_night": "bed-read" if b.release and b.release < site.today else None,
             "buy_title": ("予約する" if b.release > site.today else "購入する") if b.release else "予約・購入する",
             "works": author_works(site, root, b),
         }

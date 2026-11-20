@@ -94,13 +94,17 @@ text = 'お気に入りの' + favs.length + '作品から、最近出た新刊�
 }
 var day = new Date().getDay();
 var img = box.querySelector('[data-kumiko-image]');
-var src = box.getAttribute('data-base') + pose + (typeof window.kumikoSuffix === 'function' ? window.kumikoSuffix() : (day === 0 || day === 6 ? '_c1' : '_u')) + '.webp';
+var nightPose = { point: 'phone', fumu: 'mug', clock: 'alarms', shinkan: 'shinkan', books: 'books' };
+var src = typeof window.kumikoNight === 'function' && window.kumikoNight()
+? box.getAttribute('data-base') + nightPose[pose] + '_p.webp'
+: box.getAttribute('data-base') + pose + (typeof window.kumikoSuffix === 'function' ? window.kumikoSuffix() : (day === 0 || day === 6 ? '_c1' : '_u')) + '.webp';
 var probe = new Image();
 probe.onload = function () { img.width = Math.round(probe.naturalWidth / 2); img.height = Math.round(probe.naturalHeight / 2); };
 probe.src = src;
 img.src = src;
 img.srcset = src + ' 2x';
 box.querySelector('[data-kumiko-image]').removeAttribute('data-kumiko-weekend');
+box.querySelector('[data-kumiko-image]').removeAttribute('data-kumiko-night');
 $('[data-fav-nemu-text]').textContent = text;
 }
 

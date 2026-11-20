@@ -53,6 +53,7 @@ def environment():
     # アドセンスの審査中は仮の広告枠を出さない（審査に通ったら広告ユニットに置き換える）
     env.globals["show_ad_slots"] = False
     env.globals["kumiko_size"] = kumiko_size
+    env.globals["kumiko_night"] = kumiko_night
     return env
 
 
@@ -66,6 +67,19 @@ def webp_size(path):
         b = int.from_bytes(head[21:25], "little")
         return (b & 0x3FFF) + 1, ((b >> 14) & 0x3FFF) + 1
     return int.from_bytes(head[26:28], "little") & 0x3FFF, int.from_bytes(head[28:30], "little") & 0x3FFF
+
+
+# 夜10時〜朝6時（日本時間）に替えるパジャマのポーズ（昼のポーズ → 夜のポーズ。2026-11-21 運営者の判断）。
+# 夜の絵は assets/img/kumiko/{夜のポーズ}_p.webp。ここにないポーズは、夜も昼の絵のまま
+NIGHT_POSE = {
+    "wave": "goodnight", "wink": "goodnight", "point": "phone", "fumu": "mug", "clock": "books", "books": "books",
+    "shinkan": "shinkan", "calendar": "calendar", "surprise": "clock", "loupe": "shelf", "reach": "bed-read",
+    "read": "blanket", "cry": "blanket", "laptop": "laptop", "cheer": "stretch", "bag": "books", "pug": "pug",
+}
+
+
+def kumiko_night(name):
+    return NIGHT_POSE.get(name)
 
 
 def kumiko_size(name, folder="kumiko"):

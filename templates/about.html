@@ -16,9 +16,9 @@
 </dl>
 <section id="koharu" class="doc__section">
 <h2 class="doc__title">ナビゲーター</h2>
-{{ kumiko(root, "wink", "漫画新刊JPへようこそ！ このサイトのナビゲーターの櫻塚こはるです。毎日の新刊や特集を案内しているよ。新刊、チェックした？", mod="intro") }}
+{{ kumiko(root, "wink", "漫画新刊JPへようこそ！ このサイトのナビゲーターの櫻塚こはるです。毎日の新刊や特集を案内しているよ。新刊、チェックした？", mod="intro", night_text="こんばんは！ 漫画新刊JPのナビゲーターの櫻塚こはるです。夜ふかしさんも、新刊チェックしていってね") }}
 <div class="navi">
-<img src="{{ root }}assets/img/kumiko/profile_u.webp" srcset="{{ root }}assets/img/kumiko/profile_u.webp 2x" {{ kumiko_size("profile_u") }} data-kumiko-weekend="{{ root }}assets/img/kumiko/profile_c.webp" alt="櫻塚こはる" class="navi__image" loading="lazy">
+<img src="{{ root }}assets/img/kumiko/profile_u.webp" srcset="{{ root }}assets/img/kumiko/profile_u.webp 2x" {{ kumiko_size("profile_u") }} data-kumiko-weekend="{{ root }}assets/img/kumiko/profile_c.webp" data-kumiko-night="{{ root }}assets/img/kumiko/profile_p.webp" alt="櫻塚こはる" class="navi__image" loading="lazy">
 <div class="navi__body">
 <p class="navi__name">櫻塚こはる<span class="navi__kana">さくらづか こはる</span></p>
 <dl class="profile">
@@ -52,7 +52,7 @@
 <dd class="qa__a">{{ kumiko(root, "pug", "わたしが漫画を読んでると、すぐひざに乗ってくる甘えんぼうなの。開いたページの上で寝ちゃうこともあって困ってるんだけど…かわいいから許しちゃう。", mod="intro") }}</dd>
 </dl>
 <div class="navi navi--pet">
-<img src="{{ root }}assets/img/beta/profile.webp" srcset="{{ root }}assets/img/beta/profile.webp 2x" {{ kumiko_size("profile", "beta") }} alt="ベタ" class="navi__image" loading="lazy">
+<img src="{{ root }}assets/img/beta/profile.webp" srcset="{{ root }}assets/img/beta/profile.webp 2x" {{ kumiko_size("profile", "beta") }} data-kumiko-night="{{ root }}assets/img/beta/profile_sleepy.webp" alt="ベタ" class="navi__image" loading="lazy">
 <div class="navi__body">
 <p class="navi__name">ベタ<span class="navi__kana">こはるの飼い犬</span></p>
 <dl class="profile">
