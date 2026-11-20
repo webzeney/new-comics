@@ -317,6 +317,26 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .pickup__dot{width:10px;height:10px;padding:0;border:2px solid #222222;border-radius:50%;background:#FFFFFF;cursor:pointer}
 .pickup__dot[aria-current="true"]{background:#222222}
 /* ==========================================================================
+トップの注目の新刊（PC は横長にして、検索の欄と高さをそろえる）
+========================================================================== */
+@media (min-width: 721px){
+.top_side--pickup{grid-template-rows:auto 1fr;align-content:stretch}
+.top_side--pickup .pickup{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"head dots" "slides slides";align-items:center;gap:10px 12px;padding:12px 16px}
+.top_side--pickup .pickup__head{grid-area:head}
+.top_side--pickup .pickup__title{font-size:16px}
+.top_side--pickup .pickup__dots{grid-area:dots;gap:6px}
+.top_side--pickup .pickup__dot{width:9px;height:9px}
+.top_side--pickup .pickup__slides{grid-area:slides}
+.top_side--pickup .pickup__link{grid-template-columns:64px minmax(0,1fr);gap:14px}
+.top_side--pickup .pickup__cover{box-shadow:3px 3px 0 #222222}
+.top_side--pickup .pickup__body{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"name name" "meta meta" "status date";align-items:center;gap:4px 10px}
+.top_side--pickup .pickup__name{grid-area:name;font-size:15px;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.top_side--pickup .pickup__meta{grid-area:meta;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top_side--pickup .pickup__meta+.pickup__meta{display:none}
+.top_side--pickup .pickup__status{grid-area:status;padding:1px 8px;font-size:11px}
+.top_side--pickup .pickup__date{grid-area:date;font-size:13px}
+}
+/* ==========================================================================
 トップ：今日・明日発売の新刊
 ========================================================================== */
 .release__head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px}
