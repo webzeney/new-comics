@@ -209,11 +209,15 @@ class Site:
         """その日の新刊の並び順。出版社の順 → Amazon の売れ筋順位（紙の本。順位のない本は前の巻の順位）→ このサイトでよく見られている順
         → 新シリーズの1巻 → 巻数の多い作品（2026-11-09 運営者の判断）。
         特別な決まり：TOP_SERIES の作品（ONE PIECE の本編）は、出版社の順より前に、その日のいちばん最初に並べる（2026-11-20 運営者の判断）。"""
-        top = self.series.get(b.series_id, {}).get("normalized_name") in TOP_SERIES
+        top = self.is_top(b)
         rank = PUBLISHER_ORDER.get(b.publisher)
         pub = (not top, 0, rank, "") if rank is not None else (not top, 1, 0, yomi.sort_key(b.publisher))
         sales = b.amazon_rank or self.prev_rank(b)
         return pub + (sales is None, sales or 0, -self.views.get(b.key, 0), not b.is_first, -(b.volume or 0), b.title, b.id)
+
+    def is_top(self, b):
+        """その日のいちばん最初に並べる作品（TOP_SERIES。ONE PIECE の本編）の本か。"""
+        return self.series.get(b.series_id, {}).get("normalized_name") in TOP_SERIES
 
     def prev_rank(self, b):
         """順位のない本は、同じ作品の前の巻（巻数がいちばん近いもの）の売れ筋順位を使う。
@@ -1414,9 +1418,10 @@ PAST_COUNT = 30
 
 
 def listing_past(site, root, books, keys):
-    """今月より前に発売された本を新しい順に並べる（発売日が過ぎてもページが空にならないようにする）。"""
+    """今月より前に発売された本を新しい順に並べる（発売日が過ぎてもページが空にならないようにする）。
+    同じ日の中では ONE PIECE の本編（TOP_SERIES）をいちばん最初にする（2026-11-21 運営者の判断）。"""
     start = date(site.today.year, site.today.month, 1)
-    past = sorted([b for b in books if b.release and b.release < start], key=lambda b: (b.release, b.publisher, b.title), reverse=True)
+    past = sorted([b for b in books if b.release and b.release < start], key=lambda b: (b.release, site.is_top(b), b.publisher, b.title), reverse=True)
     return {"count": len(past), "limited": len(past) > PAST_COUNT, "limit": PAST_COUNT, "dates": date_groups(site, root, past[:PAST_COUNT], keys)}
 
 
@@ -1883,7 +1888,9 @@ def build_search(site, w):
         d = datetime.fromisoformat(r["detected_at"]).date()
         if d >= since and r["book_id"] not in recent:
             recent[r["book_id"]] = {"k": r["kind"], "t": update_detail(r["kind"], r["old_value"], r["new_value"]), "at": md(d)}
-    for b in site.books:
+    # 検索・お気に入りのページは発売日の順に並べ替える（同じ日の中はこの書き出しの順のまま）ので、
+    # ONE PIECE の本編（TOP_SERIES）を先に書き出して、同じ日のいちばん最初にする（2026-11-21 運営者の判断）
+    for b in sorted(site.books, key=lambda b: not site.is_top(b)):
         stores = {s["kind"]: s["url"] for s in site.stores(b)}
         item = {
             "t": b.title, "p": b.publisher, "l": b.label or "", "a": site.author_text(b), "d": b.release.isoformat() if b.release else "",

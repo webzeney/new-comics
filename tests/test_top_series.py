@@ -30,6 +30,10 @@ class TopSeriesTest(unittest.TestCase):
         titles = [b.title for b in site.by_date[date(2026, 12, 4)]]
         self.assertEqual(titles[0], "ONE PIECE 116")
         self.assertEqual(titles[1:3], ["あかね噺 25", "ONE PIECE episode A 3"])
+        from newcomics.build import listing_past
+        later = Site(conn, date(2027, 1, 10), {})
+        past = listing_past(later, "../", [b for b in later.dated if b.publisher == "集英社"], ())
+        self.assertEqual(past["dates"][0]["books"][0]["title"], "ONE PIECE 116")
 
 
 if __name__ == "__main__":
