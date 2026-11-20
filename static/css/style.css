@@ -242,10 +242,10 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .top_side{flex:1 1 260px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .top_side--start{flex:1 1 280px}
 .top_three{display:flex;flex-direction:column;gap:12px}
-.calendar_card{flex:1 1 auto;background:#FFD15C;border-radius:20px;padding:24px;text-decoration:none;color:#222222;display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:180px}
+.calendar_card{flex:1 1 auto;background:#FFD15C;border-radius:20px;padding:18px 24px;text-decoration:none;color:#222222;display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:0}
 .calendar_card__en{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:13px;letter-spacing:0.16em}
 .calendar_card__month{display:flex;align-items:flex-end;gap:8px}
-.calendar_card__num{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:88px;line-height:0.85;letter-spacing:0.1em}
+.calendar_card__num{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:64px;line-height:0.85;letter-spacing:0.1em}
 .calendar_card__text{font-size:18px;font-weight:900;padding-bottom:4px}
 .calendar_card__link{display:flex;align-items:center;justify-content:space-between;border-top:2px solid #222222;padding-top:10px;font-weight:700}
 .tomorrow_card{background:#FFF6EC;border-radius:20px;padding:20px 24px;text-decoration:none;color:#222222;display:flex;flex-direction:column;gap:6px}
@@ -809,6 +809,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .page_head--nemu,.release__head--nemu{flex-wrap:wrap}
 .kumiko--side{flex:1 1 100%}
 .top_search .search_form__filters{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.top_three .updates_panel__link{flex-basis:100%;order:3}
+.top_three .updates_panel__detail{order:2;margin-left:auto;font-size:13px}
 .top_search__frame{gap:16px}
 .search_tags--first{margin-top:0}
 .search_form__more_toggle{align-self:stretch;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border:2px solid #222222;border-radius:12px;background:#FFFFFF;color:#222222;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
