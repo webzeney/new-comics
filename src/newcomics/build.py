@@ -89,6 +89,8 @@ PUBLISHER_ORDER = {name: i for i, name in enumerate([
     "集英社", "講談社", "小学館", "KADOKAWA", "スクウェア・エニックス", "秋田書店",
     "白泉社", "新潮社", "双葉社", "芳文社", "竹書房", "ぶんか社",
 ])}
+# その日の新刊のいちばん最初に並べる作品（series.normalized_name。ONE PIECE の本編だけ。2026-11-20 運営者の判断）
+TOP_SERIES = {"onepiece"}
 
 
 # 「レーベルから探す」のページの出版社の順（漫画の売上の大きい順の目安。2026-11-19 運営者の判断）。
@@ -205,9 +207,11 @@ class Site:
 
     def new_release_key(self, b):
         """その日の新刊の並び順。出版社の順 → Amazon の売れ筋順位（紙の本。順位のない本は前の巻の順位）→ このサイトでよく見られている順
-        → 新シリーズの1巻 → 巻数の多い作品（2026-11-09 運営者の判断）。"""
+        → 新シリーズの1巻 → 巻数の多い作品（2026-11-09 運営者の判断）。
+        特別な決まり：TOP_SERIES の作品（ONE PIECE の本編）は、出版社の順より前に、その日のいちばん最初に並べる（2026-11-20 運営者の判断）。"""
+        top = self.series.get(b.series_id, {}).get("normalized_name") in TOP_SERIES
         rank = PUBLISHER_ORDER.get(b.publisher)
-        pub = (0, rank, "") if rank is not None else (1, 0, yomi.sort_key(b.publisher))
+        pub = (not top, 0, rank, "") if rank is not None else (not top, 1, 0, yomi.sort_key(b.publisher))
         sales = b.amazon_rank or self.prev_rank(b)
         return pub + (sales is None, sales or 0, -self.views.get(b.key, 0), not b.is_first, -(b.volume or 0), b.title, b.id)
 
