@@ -636,6 +636,21 @@ dots.forEach(function (d, j) { if (j === now) d.setAttribute('aria-current', 'tr
 function start() { if (!still && !timer) timer = setInterval(function () { show(now + 1); }, 6000); }
 function stop() { clearInterval(timer); timer = null; }
 dots.forEach(function (d, j) { d.addEventListener('click', function () { show(j); stop(); start(); }); });
+/* スマホでは左右にスワイプして切り替える（2026-11-21 運営者の判断） */
+var sx = null, sy = 0;
+box.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; stop(); }, { passive: true });
+box.addEventListener('touchend', function (e) {
+if (sx === null) return;
+var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+sx = null;
+if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+show(now + (dx < 0 ? 1 : -1));
+box.setAttribute('data-pick-swiped', '');
+setTimeout(function () { box.removeAttribute('data-pick-swiped'); }, 400);
+}
+start();
+}, { passive: true });
+box.addEventListener('click', function (e) { if (box.hasAttribute('data-pick-swiped')) e.preventDefault(); }, true);
 box.addEventListener('mouseenter', stop);
 box.addEventListener('mouseleave', start);
 box.addEventListener('focusin', stop);
