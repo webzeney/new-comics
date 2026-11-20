@@ -53,6 +53,8 @@ jobs:
           PYTHONPATH: src
           AMAZON_CREATORS_ID: ${{ secrets.AMAZON_CREATORS_ID }}
           AMAZON_CREATORS_SECRET: ${{ secrets.AMAZON_CREATORS_SECRET }}
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+          RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
           AMAZON_TAG: ${{ vars.AMAZON_TAG }}
           MINUTES: ${{ inputs.minutes }}
           RECHECK: ${{ inputs.recheck }}

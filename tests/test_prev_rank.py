@@ -46,5 +46,15 @@ class PrevRankTest(unittest.TestCase):
         self.assertEqual(amazonlink.prev_targets(conn, now, 10), [])
 
 
+class FakeRakuten:
+    def search(self, **kw):
+        return {"Items": [{"title": "死んだ石井の大群（2）", "isbn": "9784065400000"}, {"title": "死んだ石井の大群（3）", "isbn": "9784065400017"}]}
+
+
+class RakutenFallbackTest(unittest.TestCase):
+    def test_rakuten_prev(self):
+        self.assertEqual(amazonlink.rakuten_prev(FakeRakuten(), "死んだ石井の大群", 2), "4065400007")
+
+
 if __name__ == "__main__":
     unittest.main()

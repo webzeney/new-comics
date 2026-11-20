@@ -7,7 +7,7 @@
    ない本（Amazon が ISBN-10 ではない ASIN で登録している本）は、ISBN-13 で探して EAN が同じ紙の本を同じ本とみなす（books.asin）。
    商品ページがあった本は確かめ直さない。見つからなかった本は ISBN_RECHECK_DAYS 日たったら確かめ直す。
 5. 前の巻の売れ筋順位：発売前で売れ筋順位のない2巻以降の本のうち、前の巻がデータベースにない本は、
-   Amazon で「作品名 前の巻数」の紙の本を探し、その ASIN（books.prev_asin）を残す。順位（books.prev_rank）は書影と同じく毎晩取り直し、
+   Amazon で「作品名 前の巻数」の紙の本を探し、見つからなければ楽天ブックスで前の巻の ISBN を探して、その ASIN（ISBN-10。books.prev_asin）を残す。順位（books.prev_rank）は書影と同じく毎晩取り直し、
    24時間以内のものだけを、その日の新刊の並び順にだけ使う（2026-11-20 運営者の判断）。
 4. 書影と売れ筋順位：紙の本の ASIN が分かる本は、Amazon の書影のアドレスと「コミック」の売れ筋順位を毎晩取り直す
    （books.amazon_image_url・books.amazon_rank。売れ筋順位は、その日の新刊の並び順にだけ使い、画面には出さない。2026-11-09 運営者の判断）。
@@ -203,8 +203,31 @@ def pick_prev(items, series, volume):
 DEBUG = []  # 確認用：探した言葉と、Amazon から返ってきた候補（--prev-debug のときだけ非公開リポジトリに書き出す）
 
 
-def find_prev(conn, api, rows, deadline):
-    counts = {"found": 0, "missing": 0, "error": 0}
+def rakuten_prev(rapi, name, volume):
+    """楽天ブックスで前の巻（紙の本）を探し、ISBN-10（= Amazon の紙の本の ASIN）を返す。なければ None。
+    楽天の情報は、Amazon に問い合わせる ISBN を知るためだけに使い、books の項目には入れない（2026-11-20 運営者の判断）。"""
+    from .fetchers.rakuten import RakutenError
+    for words in (f"{name} {volume}", name):
+        try:
+            data = rapi.search(title=words, hits=30, sort="-releaseDate", outOfStockFlag=1)
+        except (requests.RequestException, RakutenError, ValueError):
+            continue
+        for row in data.get("Items") or []:
+            row = row.get("Item", row) if isinstance(row, dict) else row
+            t = " ".join(x for x in (row.get("title"), row.get("subTitle")) if x)
+            nk = unicodedata.normalize("NFKC", t)
+            isbn = re.sub(r"\D", "", row.get("isbn") or "")
+            if len(isbn) != 13 or any(w in nk for w in SKIP_WORDS):
+                continue
+            if key(name) not in key(t) or not (has_volume(t, volume) or has_roman(t, volume)):
+                continue
+            return isbn13_to_10(isbn)
+    return None
+
+
+def find_prev(conn, api, rows, deadline, rapi=None):
+    """前の巻を探す。Amazon の検索 → 楽天ブックスの検索（ISBN を知るため）の順に試す（2026-11-20 運営者の判断）。"""
+    counts = {"found": 0, "missing": 0, "error": 0, "rakuten": 0}
     for i, r in enumerate(rows, start=1):
         if time.monotonic() > deadline:
             break
@@ -223,11 +246,17 @@ def find_prev(conn, api, rows, deadline):
                           "items": [[it.get("asin"), binding(it), title_of(it)] for it in items]})
             if hit:
                 break
-        if failed and not hit:
+        asin = hit.get("asin") if hit else None
+        if not asin and rapi is not None:
+            asin = rakuten_prev(rapi, name, v)
+            if asin:
+                counts["rakuten"] += 1
+                DEBUG.append({"words": f"楽天：{name} {v}", "hit": asin, "items": []})
+        if failed and not asin:
             counts["error"] += 1
             continue
-        counts["found" if hit else "missing"] += 1
-        conn.execute("UPDATE books SET prev_asin = ?, prev_checked_at = ? WHERE id = ?", (hit.get("asin") if hit else None, db.now_iso(), r["id"]))
+        counts["found" if asin else "missing"] += 1
+        conn.execute("UPDATE books SET prev_asin = ?, prev_checked_at = ? WHERE id = ?", (asin, db.now_iso(), r["id"]))
         if i % 50 == 0:
             conn.commit()
     conn.commit()
@@ -382,6 +411,13 @@ def refresh_images(conn, api, deadline):
     return counts
 
 
+def rakuten_api():
+    import os
+    from .fetchers import rakuten
+    app_id, access_key = os.environ.get("RAKUTEN_APP_ID"), os.environ.get("RAKUTEN_ACCESS_KEY")
+    return rakuten.Api(app_id, access_key) if app_id and access_key else None
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--max-kindle", type=int, default=MAX_KINDLE)
@@ -406,13 +442,13 @@ def main(argv=None):
     limit = args.minutes * 60 if args.minutes else TIME_LIMIT
     start = time.monotonic()
     if args.prev_only:
-        prev = find_prev(conn, api, prev_targets(conn, now, args.max_prev, args.prev_recheck), start + limit)
+        prev = find_prev(conn, api, prev_targets(conn, now, args.max_prev, args.prev_recheck), start + limit, rakuten_api())
         pr = refresh_prev_ranks(conn, api, start + limit + 5 * 60)
         if args.prev_debug:
             import json
             with open(args.prev_debug, "w", encoding="utf-8") as f:
                 json.dump(DEBUG, f, ensure_ascii=False, indent=0)
-        print(f"前の巻の照らし合わせ：見つかった {prev['found']}／見つからない {prev['missing']}／エラー {prev['error']}、"
+        print(f"前の巻の照らし合わせ：見つかった {prev['found']}（うち楽天で ISBN が分かった {prev['rakuten']}）／見つからない {prev['missing']}／エラー {prev['error']}、"
               f"前の巻の売れ筋順位：あり {pr['rank']}／なし {pr['none']}／エラー {pr['error']}（API {api.calls} 回）")
         return 1 if prev["error"] and not (prev["found"] + prev["missing"]) else 0
     if args.images_only:
@@ -436,9 +472,9 @@ def main(argv=None):
     deadline = start + limit
     paper = run(conn, api, "paper", targets(conn, now, "paper", args.max_paper), deadline)
     kindle = run(conn, api, "kindle", targets(conn, now, "kindle", args.max_kindle), deadline)
-    prev = find_prev(conn, api, prev_targets(conn, now, args.max_prev), deadline)
+    prev = find_prev(conn, api, prev_targets(conn, now, args.max_prev), deadline, rakuten_api())
     pr = refresh_prev_ranks(conn, api, deadline)
-    print(f"前の巻の照らし合わせ：見つかった {prev['found']}／見つからない {prev['missing']}／エラー {prev['error']}、"
+    print(f"前の巻の照らし合わせ：見つかった {prev['found']}（うち楽天で ISBN が分かった {prev['rakuten']}）／見つからない {prev['missing']}／エラー {prev['error']}、"
           f"前の巻の売れ筋順位：あり {pr['rank']}／なし {pr['none']}／エラー {pr['error']}")
     left = conn.execute("SELECT COUNT(*) FROM books WHERE (has_ebook = 1 OR has_ebook IS NULL) AND kindle_asin IS NULL AND kindle_checked_at IS NULL").fetchone()[0]
     print(f"Amazon の照らし合わせ：ISBN の分からない本 見つかった {paper['found']}／見つからない {paper['missing']}／エラー {paper['error']}、"
