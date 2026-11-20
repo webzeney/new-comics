@@ -710,6 +710,10 @@ ok.p_dawn = jh >= 5 && jh < 6;
 ok.p_tomorrow = tomorrow > 0;
 ok.p_notoday = today === 0;
 var pool = lines.filter(function (l) { return (l.w.indexOf('p_') === 0) === night && ok[l.w]; });
+if (today === 0) {
+var none = pool.filter(function (l) { return l.w === 'notoday' || l.w === 'p_notoday'; });
+if (none.length) pool = none;
+}
 if (pool.length) {
 var pick = pool[Math.floor(Math.random() * pool.length)];
 var base = box.getAttribute('data-base');

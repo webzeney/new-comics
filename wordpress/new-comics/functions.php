@@ -207,7 +207,7 @@ function nc_nemu_head(): string
     if (is_single()) {
         return '';
     }
-    return nc_nemu('laptop', '漫画のコラムを集めているよ！ 気になる記事から読んでみてね。', 'side');
+    return nc_nemu('laptop', '漫画のコラムを書いているよ！ 気になる記事から読んでみてね。', 'side');
 }
 
 add_action('after_setup_theme', function (): void {
