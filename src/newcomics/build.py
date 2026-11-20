@@ -1879,8 +1879,9 @@ def build_search(site, w):
     order = {b.id: i for i, b in enumerate(sorted(site.books, key=lambda b: (b.first_seen, b.id)))}
     words = search_words(site.books, load_aliases())
     # 売れ筋順の並び順の番号（Amazon の順位の数字は書き出さない。順位のない本は前の巻の順位。2026-11-17 運営者の判断）
-    sales = [(b.amazon_rank or site.prev_rank(b), b.id) for b in site.books]
-    sales_order = {bid: i + 1 for i, (r, bid) in enumerate(sorted(x for x in sales if x[0]))}
+    # ONE PIECE の本編（TOP_SERIES）は、売れ筋順でも必ず先頭にする（順位がなくても。2026-11-21 運営者の判断）
+    sales = [(not site.is_top(b), b.amazon_rank or site.prev_rank(b) or 0, b.id) for b in site.books if site.is_top(b) or b.amazon_rank or site.prev_rank(b)]
+    sales_order = {bid: i + 1 for i, (_, r, bid) in enumerate(sorted(sales))}
     # ここ2週間で発売日が変わった・決まった本（お気に入りのページで目立たせる。2026-11-13 運営者の判断）
     recent = {}
     since = site.today - timedelta(days=CHANGE_DAYS)
