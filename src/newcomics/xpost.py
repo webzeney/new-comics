@@ -17,6 +17,7 @@ import re
 import secrets
 import sys
 import time
+import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import quote
@@ -30,7 +31,9 @@ POST_URL = "https://api.x.com/2/tweets"
 MEDIA_URL = "https://api.x.com/2/media/upload"
 LIMIT = 280      # X の文字数の上限（全角は2、URL は23として数える）
 URL_WEIGHT = 23
-HASHTAGS = "#漫画 #新刊"
+HASHTAGS = "#新刊"
+TAG_WORKS = 2    # その日の人気の作品（投稿の並びの上から）を、作品名のハッシュタグにする数（2026-11-20 運営者の判断）
+TAG_MAX = 16     # 作品名のハッシュタグがこれより長いときは付けない
 NAME_MAX = 24   # 書名がこれより長いときは「…」で切る（1件で枠を使い切らないように）
 
 
@@ -57,12 +60,59 @@ def short(b):
     return f"{name} {vol}巻" if vol else name
 
 
+EDITION = re.compile(r"(永久愛蔵版|愛蔵版|新装版|完全版|文庫版|ワイド版|特装版|限定版|通常版|豪華版|上巻|中巻|下巻|コミック)")
+
+
+def load_xtags():
+    """ハッシュタグの対応表（xtags.tsv）。書名に含まれる文字 → ハッシュタグ。"""
+    out = []
+    path = Path(__file__).with_name("xtags.tsv")
+    for line in path.read_text(encoding="utf-8").splitlines()[1:]:
+        cols = line.split("\t")
+        if len(cols) >= 2 and cols[0].strip() and cols[1].strip().startswith("#"):
+            out.append((cols[0].strip(), cols[1].strip()))
+    return out
+
+
+XTAGS = load_xtags()
+
+
+def work_tag(b):
+    """作品名のハッシュタグ。対応表（xtags.tsv）にあればそれを使う。なければ巻数・~副題~・版の名前・空白・記号を外して作る。
+    作れないとき・長すぎるときは None。"""
+    for key, tag in XTAGS:
+        if key in b.title:
+            return tag
+    main, _ = title_parts(b)
+    name = re.sub(r"\s*[~〜～][^~〜～]+[~〜～]\s*", " ", main or b.title)
+    name = re.sub(r"[（(【\[].*?[）)】\]]", "", name)
+    name = unicodedata.normalize("NFKC", name)
+    name = re.split(r"(?<=\D)\s*\d+(?:\s|$)", name)[0]  # 巻数より後ろ（副題など）は外す
+    tag = re.sub(r"(?<=\D)\d+$", "", "".join(re.findall(r"\w", EDITION.sub("", name))))
+    if not tag or tag.isdigit() or len(tag) > TAG_MAX:
+        return None
+    return "#" + tag
+
+
+def hashtags(books):
+    """「#新刊」と、その日の人気の作品（投稿の並びの上から）の作品名のハッシュタグ。"""
+    tags = []
+    for b in books:
+        t = work_tag(b)
+        if t and t not in tags and t != "#新刊":
+            tags.append(t)
+        if len(tags) >= TAG_WORKS:
+            break
+    return " ".join([HASHTAGS] + tags)
+
+
 def compose(site, day, base):
     books = site.by_date.get(day) or []
     if not books:
         return None
     head = f"【今日{md(day)}（{dow(day)}）発売の漫画新刊】{len(books)}点"
     url = f"{base}/date/{day.isoformat()}/"
+    tags = hashtags(books)
     lines = []
     seen = set()
     for b in books:  # サイトと同じ並び（出版社の順 → 売れている順）
@@ -72,13 +122,13 @@ def compose(site, day, base):
         rest = len(books) - len(lines) - 1
         trial = lines + [f"・{name}"]
         tail = [f"ほか{rest}点"] if rest > 0 else []
-        text = "\n".join([head, ""] + trial + tail + ["", url, HASHTAGS])
+        text = "\n".join([head, ""] + trial + tail + ["", url, tags])
         if weight(text) > LIMIT:
             continue
         lines = trial
         seen.add(name)
     rest = len(books) - len(lines)
-    return "\n".join([head, ""] + lines + ([f"ほか{rest}点"] if rest > 0 else []) + ["", url, HASHTAGS])
+    return "\n".join([head, ""] + lines + ([f"ほか{rest}点"] if rest > 0 else []) + ["", url, tags])
 
 
 def oauth_header(method, url, keys):
