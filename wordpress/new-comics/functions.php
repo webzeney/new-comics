@@ -79,15 +79,27 @@ function nc_half_size(string $file): string
     return $size ? ' width="' . intdiv($size[0], 2) . '" height="' . intdiv($size[1], 2) . '"' : '';
 }
 
-/* 看板キャラクター（櫻塚こはる）。平日は制服、土日と祝日は私服（main.js が data-kumiko-weekend で差し替える） */
-function nc_nemu(string $pose, string $text, string $mod = ''): string
+/* 夜10時〜朝6時（日本時間）に替えるパジャマのポーズ（昼のポーズ → 夜のポーズ。夜の絵は {夜のポーズ}_p.webp。2026-11-21 運営者の判断） */
+const NC_NIGHT_POSE = [
+    'wave' => 'goodnight', 'wink' => 'goodnight', 'peace' => 'goodnight', 'point' => 'phone', 'reach' => 'bed-read',
+    'loupe' => 'shelf', 'lean' => 'shelf', 'shinkan' => 'shinkan', 'board' => 'shinkan', 'books' => 'books', 'bag' => 'books',
+    'calendar' => 'calendar', 'clock' => 'books', 'sorry' => 'bow', 'knees' => 'bow', 'angry' => 'bow', 'sit' => 'bow', 'bow' => 'bow',
+    'phone' => 'phone', 'laptop' => 'laptop', 'fumu' => 'mug', 'cheer' => 'stretch', 'jump' => 'stretch', 'surprise' => 'clock',
+    'shelf' => 'shelf', 'shh' => 'shh', 'pug' => 'pug', 'pug2' => 'pug', 'read' => 'bed-read', 'cry' => 'blanket',
+];
+
+/* 看板キャラクター（櫻塚こはる）。平日は制服、土日と祝日は私服（main.js が data-kumiko-weekend で差し替える）。
+   夜10時〜朝6時はパジャマの絵（data-kumiko-night）と、$night_text があれば夜のセリフ（data-kumiko-night-text）にする */
+function nc_nemu(string $pose, string $text, string $mod = '', string $night_text = ''): string
 {
     $pose = preg_match('/^[a-z0-9]+$/', $pose) ? $pose : 'point';
     $base = nc_site_url() . '/assets/img/kumiko/' . $pose;
     $size = nc_half_size('kumiko/' . $pose . '_u.webp');
+    $night = NC_NIGHT_POSE[$pose] ?? '';
     return '<div class="kumiko' . ($mod ? ' kumiko--' . implode(' kumiko--', array_map('esc_attr', explode(' kumiko--', $mod))) : '') . '">'
-        . '<img src="' . esc_url($base . '_u.webp') . '" srcset="' . esc_url($base . '_u.webp') . ' 2x"' . $size . ' data-kumiko-weekend="' . esc_url($base . '_c.webp') . '" alt="" class="kumiko__image" loading="lazy">'
-        . '<p class="kumiko__bubble">' . $text . '</p></div>';
+        . '<img src="' . esc_url($base . '_u.webp') . '" srcset="' . esc_url($base . '_u.webp') . ' 2x"' . $size . ' data-kumiko-weekend="' . esc_url($base . '_c.webp') . '"'
+        . ($night ? ' data-kumiko-night="' . esc_url(nc_site_url() . '/assets/img/kumiko/' . $night . '_p.webp') . '"' : '') . ' alt="" class="kumiko__image" loading="lazy">'
+        . '<p class="kumiko__bubble"' . ($night_text ? ' data-kumiko-night-text="' . esc_attr($night_text) . '"' : '') . '>' . $text . '</p></div>';
 }
 
 /* 記事の本文に [koharu pose="cheer"]セリフ[/koharu] と書くと、こはるが吹き出しで話す（前の名前の [nemu] も使える）。
@@ -199,15 +211,15 @@ add_action('pre_get_posts', function (WP_Query $q): void {
 function nc_nemu_head(): string
 {
     if (is_category('news')) {
-        return nc_nemu('wave', '漫画新刊JPの新しい機能や、見せ方を変えたことをお知らせするよ！', 'side');
+        return nc_nemu('wave', '漫画新刊JPの新しい機能や、見せ方を変えたことをお知らせするよ！', 'side', 'こんばんは！ 漫画新刊JPの新しい機能や、見せ方を変えたことをお知らせするよ');
     }
     if (is_single() && has_category('news')) {
-        return nc_nemu('surprise', 'お知らせだよ！ 新しくなったところ、ぜひ使ってみてね。', 'side');
+        return nc_nemu('surprise', 'お知らせだよ！ 新しくなったところ、ぜひ使ってみてね。', 'side', 'お知らせだよ！ 寝る前にちょっとだけ、新しくなったところを見ていってね');
     }
     if (is_single()) {
         return '';
     }
-    return nc_nemu('laptop', '漫画のコラムを書いているよ！ 気になる記事から読んでみてね。', 'side');
+    return nc_nemu('laptop', '漫画のコラムを書いているよ！ 気になる記事から読んでみてね。', 'side', '夜ふかしのおともに、漫画のコラムを書いているよ。気になる記事から読んでみてね');
 }
 
 add_action('after_setup_theme', function (): void {
