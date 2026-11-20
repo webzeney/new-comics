@@ -25,7 +25,7 @@
 <input id="q" name="q" type="search" placeholder="作品名・出版社・レーベルなど" class="search_form__input">
 <button type="submit" class="search_form__button">検索する</button>
 </div>
-<button type="button" class="search_form__more_toggle" aria-expanded="false" aria-controls="search-more-top" data-search-more-toggle>条件で探す<span aria-hidden="true" class="search_form__more_arrow">▼</span></button>
+<button type="button" class="search_form__more_toggle" aria-expanded="false" aria-controls="search-more-top" data-search-more-toggle><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" class="search_form__more_icon"><path d="M2 4h12M2 8h12M2 12h12" stroke="#222222" stroke-width="1.8" stroke-linecap="round"></path><circle cx="5" cy="4" r="1.9" fill="#FFFFFF" stroke="#B5302A" stroke-width="1.8"></circle><circle cx="11" cy="8" r="1.9" fill="#FFFFFF" stroke="#B5302A" stroke-width="1.8"></circle><circle cx="7" cy="12" r="1.9" fill="#FFFFFF" stroke="#B5302A" stroke-width="1.8"></circle></svg>条件で探す<span aria-hidden="true" class="search_form__more_arrow">▼</span></button>
 <div id="search-more-top" class="search_form__more" data-search-more>
 <div class="search_form__more_inner">
 <div class="search_form__filters">
@@ -62,7 +62,7 @@
 </div>
 </form>
 {% if site.tags %}
-<div class="search_tags">
+<div class="search_tags search_tags--first">
 <span class="search_tags__heading">TAGS</span>
 <div class="search_tags__list">
 {% for tag in site.tags %}
