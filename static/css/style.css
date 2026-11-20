@@ -31,11 +31,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .sidemenu__item{border-bottom:1px dashed #EBCFC9}
 .sidemenu__link{display:flex;align-items:center;justify-content:space-between;min-height:44px;text-decoration:none;font-weight:700;font-size:14px;color:#222222}
 .sidemenu__link--current{color:#B5302A}
-.sidemenu__tags{display:flex;flex-direction:column;gap:10px}
 .sidemenu__heading{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:12px;letter-spacing:0.16em;color:#B5302A}
-.sidemenu__taglist{display:flex;flex-wrap:wrap;gap:6px}
-.sidemenu__tag{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;border-radius:999px;background:#FFF0EC;color:#222222;text-decoration:none;font-size:12px;font-weight:500}
-.sidemenu__tag--current{font-weight:700;background:#222222;color:#FFFFFF}
 .sidemenu__contact{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border-radius:999px;background:#222222;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px}
 /* ==========================================================================
 パネル・見出し・パンくず
@@ -220,6 +216,13 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .search_form__select{height:44px;padding:0 12px;border:1px solid #D9CFC6;border-radius:10px;font-size:14px;font-family:inherit;color:#222222;background:#FFF8F5}
 .search_form__check{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;font-weight:500;cursor:pointer}
 .search_form__checkbox{width:18px;height:18px;accent-color:#222222}
+/* ==========================================================================
+トップの検索のタグ
+========================================================================== */
+.search_tags{display:flex;flex-direction:column;gap:10px}
+.search_tags__heading{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:12px;letter-spacing:0.16em;color:#B5302A}
+.search_tags__list{display:flex;flex-wrap:wrap;gap:6px}
+.search_tags__tag{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;border-radius:999px;background:#FFF0EC;color:#222222;text-decoration:none;font-size:12px;font-weight:500}
 /* ==========================================================================
 トップ：カレンダー・明日の案内
 ========================================================================== */

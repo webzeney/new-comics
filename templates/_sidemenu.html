@@ -37,14 +37,6 @@
 <img src="{{ root }}assets/img/kumiko/x_follow_u.webp" srcset="{{ root }}assets/img/kumiko/x_follow_u.webp 2x" {{ kumiko_size("x_follow_u") }} alt="" class="sidemenu__x_image" loading="lazy">
 <span class="sidemenu__x_button">Xでフォローする</span>
 </a>
-<div class="sidemenu__tags">
-<span class="sidemenu__heading">TAGS</span>
-<div class="sidemenu__taglist">
-{% for tag in site.tags %}
-<a href="{{ tag.url }}" class="sidemenu__tag{% if tag.key == page.tag %} sidemenu__tag--current{% endif %}"{% if tag.key == page.tag %} aria-current="page"{% endif %}>#{{ tag.label }}</a>
-{% endfor %}
-</div>
-</div>
 <a href="{{ root }}contact/" class="sidemenu__contact"{% if page.footer == 'contact' %} aria-current="page"{% endif %}>お問い合わせ</a>
 </div>
 <button type="button" class="totop" data-totop>

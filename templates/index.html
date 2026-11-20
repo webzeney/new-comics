@@ -56,6 +56,16 @@
 </div>
 <label class="search_form__check"><input type="checkbox" name="ebook" value="1" class="search_form__checkbox">電子書籍版ありのみ</label>
 </form>
+{% if site.tags %}
+<div class="search_tags">
+<span class="search_tags__heading">TAGS</span>
+<div class="search_tags__list">
+{% for tag in site.tags %}
+<a href="{{ tag.url }}" class="search_tags__tag">#{{ tag.label }}</a>
+{% endfor %}
+</div>
+</div>
+{% endif %}
 </div>
 </section>
 <div class="top_side{% if pickup %} top_side--pickup{% endif %}">
