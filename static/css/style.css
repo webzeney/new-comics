@@ -220,6 +220,11 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .search_form__check{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;font-weight:500;cursor:pointer}
 .search_form__checkbox{width:18px;height:18px;accent-color:#222222}
 /* ==========================================================================
+検索の「条件で探す」（スマホだけ閉じておける）
+========================================================================== */
+.search_form__more_toggle{display:none}
+.search_form__more_inner{display:flex;flex-direction:column;gap:12px}
+/* ==========================================================================
 トップの検索のタグ
 ========================================================================== */
 .search_form__check--inline{align-self:end;min-height:44px}
@@ -802,6 +807,12 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .page_head--nemu,.release__head--nemu{flex-wrap:wrap}
 .kumiko--side{flex:1 1 100%}
 .top_search .search_form__filters{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.search_form__more_toggle{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 18px;border:0;border-radius:999px;background:#FFF0EC;color:#222222;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.search_form__more_arrow{font-size:10px;transition:transform .2s}
+.search_form__more_toggle[aria-expanded="true"] .search_form__more_arrow{transform:rotate(180deg)}
+.search_form__more{display:grid;grid-template-rows:0fr;visibility:hidden;margin-top:-12px;transition:grid-template-rows .25s,visibility .25s,margin-top .25s}
+.search_form__more--open{grid-template-rows:1fr;visibility:visible;margin-top:0}
+.search_form__more_inner{min-height:0;overflow:hidden}
 .search_tags{flex-direction:column;gap:10px}
 .top_search__frame .search_tags+.search_tags{margin-top:0}
 .search_tags__heading{min-height:0}

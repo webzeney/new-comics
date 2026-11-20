@@ -25,6 +25,9 @@
 <input id="q" name="q" type="search" placeholder="作品名・出版社・レーベルなど" class="search_form__input">
 <button type="submit" class="search_form__button">検索する</button>
 </div>
+<button type="button" class="search_form__more_toggle" aria-expanded="false" aria-controls="search-more-top" data-search-more-toggle>条件で探す<span aria-hidden="true" class="search_form__more_arrow">▼</span></button>
+<div id="search-more-top" class="search_form__more" data-search-more>
+<div class="search_form__more_inner">
 <div class="search_form__filters">
 <div class="search_form__field">
 <label for="f-pub" class="search_form__label">出版社</label>
@@ -54,6 +57,8 @@
 </select>
 </div>
 <label class="search_form__check search_form__check--inline"><input type="checkbox" name="ebook" value="1" class="search_form__checkbox">電子書籍版ありのみ</label>
+</div>
+</div>
 </div>
 </form>
 {% if site.tags %}

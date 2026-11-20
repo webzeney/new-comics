@@ -13,6 +13,9 @@
 <input id="q" name="q" type="search" value="{{ search.q }}" class="search_form__input search_form__input--page">
 <button type="submit" class="search_form__button">再検索</button>
 </div>
+<button type="button" class="search_form__more_toggle" aria-expanded="false" aria-controls="search-more-page" data-search-more-toggle>条件で探す<span aria-hidden="true" class="search_form__more_arrow">▼</span></button>
+<div id="search-more-page" class="search_form__more" data-search-more>
+<div class="search_form__more_inner">
 <div class="search_form__filters">
 <div class="search_form__field">
 <label for="f-pub" class="search_form__label">出版社</label>
@@ -28,6 +31,8 @@
 </div>
 </div>
 <label class="search_form__check"><input type="checkbox" name="ebook" value="1" class="search_form__checkbox"{% if search.ebook %} checked{% endif %}>電子書籍版ありのみ</label>
+</div>
+</div>
 </form>
 <div class="conditions" data-conditions hidden>
 <span class="conditions__label">検索条件</span>

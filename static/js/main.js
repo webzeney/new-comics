@@ -44,6 +44,21 @@ a.setAttribute('aria-label', a.getAttribute('title') + 'で予約');
 });
 };
 
+/* 検索の「条件で探す」の開閉（スマホ）。条件を選んでいるときは、初めから開いておく */
+function initSearchMore() {
+$$('[data-search-more-toggle]').forEach(function (button) {
+var box = document.getElementById(button.getAttribute('aria-controls'));
+if (!box) return;
+function setOpen(open) {
+button.setAttribute('aria-expanded', open ? 'true' : 'false');
+box.classList.toggle('search_form__more--open', open);
+}
+button.addEventListener('click', function () { setOpen(button.getAttribute('aria-expanded') !== 'true'); });
+var used = $$('select', box).some(function (s) { return s.value; }) || $$('input[type="checkbox"]', box).some(function (c) { return c.checked; });
+if (used) setOpen(true);
+});
+}
+
 /* サイドメニューの開閉（スマホ） */
 function initSidemenu() {
 var button = $('.sidemenu__toggle');
@@ -859,5 +874,6 @@ initVolumeSort();
 initReleaseToday();
 initCalendarDialog();
 if (window.NewComicsSearch) window.NewComicsSearch();
+initSearchMore();
 });
 })();
