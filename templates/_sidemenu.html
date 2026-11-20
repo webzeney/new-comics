@@ -4,7 +4,9 @@
 <span class="sidemenu__name">漫画新刊JP</span>
 <span class="sidemenu__en">NEW COMICS JP</span>
 </a>
-<button type="button" class="sidemenu__toggle" aria-expanded="false" aria-controls="sidemenu-body" data-open-label="メニューを閉じる" data-closed-label="メニューを開く"><span class="sidemenu__toggle_label">メニューを開く</span><span aria-hidden="true" class="sidemenu__arrow">▼</span></button>
+<a href="{{ root or './' }}search/" class="sidemenu__search" aria-label="検索する"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="#222222" stroke-width="2.2"></circle><path d="M13 13l5 5" stroke="#222222" stroke-width="2.2" stroke-linecap="round"></path></svg></a>
+<button type="button" class="sidemenu__toggle" aria-expanded="false" aria-controls="sidemenu-body" data-open-label="メニューを閉じる" data-closed-label="メニューを開く"><span class="sidemenu__toggle_label">メニューを開く</span><span aria-hidden="true" class="sidemenu__arrow">▼</span><span aria-hidden="true" class="sidemenu__bars"><span class="sidemenu__bar"></span><span class="sidemenu__bar"></span><span class="sidemenu__bar"></span></span></button>
+<div class="sidemenu__overlay" data-sidemenu-overlay hidden></div>
 <div id="sidemenu-body" class="sidemenu__body sidemenu__body--closed">
 <nav aria-label="メインメニュー">
 <ul class="sidemenu__list">

@@ -50,11 +50,20 @@ var button = $('.sidemenu__toggle');
 var body = $('#sidemenu-body');
 if (!button || !body) return;
 var label = $('.sidemenu__toggle_label', button);
-button.addEventListener('click', function () {
-var open = button.getAttribute('aria-expanded') !== 'true';
+var overlay = $('[data-sidemenu-overlay]');
+function setOpen(open) {
 button.setAttribute('aria-expanded', open ? 'true' : 'false');
 body.classList.toggle('sidemenu__body--closed', !open);
 label.textContent = open ? button.dataset.openLabel : button.dataset.closedLabel;
+if (overlay) overlay.hidden = !open;
+document.documentElement.classList.toggle('is_menu_open', open);
+}
+button.addEventListener('click', function () {
+setOpen(button.getAttribute('aria-expanded') !== 'true');
+});
+if (overlay) overlay.addEventListener('click', function () { setOpen(false); });
+document.addEventListener('keydown', function (e) {
+if (e.key === 'Escape' && button.getAttribute('aria-expanded') === 'true') { setOpen(false); button.focus(); }
 });
 }
 
