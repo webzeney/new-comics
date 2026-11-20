@@ -219,10 +219,13 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 /* ==========================================================================
 トップの検索のタグ
 ========================================================================== */
-.search_tags{display:flex;flex-direction:column;gap:10px}
-.search_tags__heading{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:12px;letter-spacing:0.16em;color:#B5302A}
+.search_form__check--inline{align-self:end;min-height:44px}
+.top_search .search_form__filters{grid-template-columns:repeat(3,minmax(0,1fr)) auto}
+.top_search__frame .search_tags+.search_tags{margin-top:-8px}
+.search_tags{display:flex;align-items:flex-start;gap:12px}
+.search_tags__heading{flex:0 0 auto;min-height:30px;display:inline-flex;align-items:center;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:12px;letter-spacing:0.16em;color:#B5302A}
 .search_tags__list{display:flex;flex-wrap:wrap;gap:6px}
-.search_tags__tag{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;border-radius:999px;background:#FFF0EC;color:#222222;text-decoration:none;font-size:12px;font-weight:500}
+.search_tags__tag{display:inline-flex;align-items:center;min-height:30px;padding:0 12px;border-radius:999px;background:#FFF0EC;color:#222222;text-decoration:none;font-size:12px;font-weight:500}
 /* ==========================================================================
 トップ：カレンダー・明日の案内
 ========================================================================== */
@@ -795,6 +798,11 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .kumiko__bubble{padding:12px 14px;font-size:13px}
 .page_head--nemu,.release__head--nemu{flex-wrap:wrap}
 .kumiko--side{flex:1 1 100%}
+.top_search .search_form__filters{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.search_tags{flex-direction:column;gap:10px}
+.top_search__frame .search_tags+.search_tags{margin-top:0}
+.search_tags__heading{min-height:0}
+.search_tags__tag{min-height:32px}
 .doc__media{grid-template-columns:minmax(0,1fr);gap:16px}
 .doc__media .doc__figure{align-items:center}
 .doc__media .doc__caption{text-align:center}
