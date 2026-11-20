@@ -147,7 +147,7 @@ def main():
         page.evaluate("f => localStorage.setItem('nc_favorites', JSON.stringify(f))", favs)
         page.reload(wait_until="networkidle")
         page.wait_for_timeout(1200)
-        shot(page, "favorites_list", "[data-fav-list]")
+        shot(page, "favorites_list", "[data-fav-nemu]", until="[data-fav-books] > li:first-child")
         if page.locator("[data-fav-changes]:not([hidden])").count():
             shot(page, "favorites_changes", "[data-fav-changes]", until="[data-fav-books] > li:first-child")
         page.click("[data-fav-transfer-open]")

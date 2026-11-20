@@ -110,30 +110,9 @@ $('[data-fav-nemu-text]').textContent = text;
 
 function render() {
 var favs = load();
-$$('.fav_chip', listBox).forEach(function (el) { el.remove(); });
+// 登録中の作品の一覧は出さない（数が多くなると見にくいため。お気に入りから外すのは作品のページで行う。2026-11-21 運営者の判断）
 listBox.hidden = favs.length === 0;
 updateTransfer();
-favs.forEach(function (f) {
-var wrap = document.createElement('span');
-wrap.className = 'fav_chip';
-var a = document.createElement('a');
-a.href = f.url;
-a.className = 'fav_chip__link';
-a.textContent = f.name;
-var x = document.createElement('button');
-x.type = 'button';
-x.className = 'fav_chip__remove';
-x.setAttribute('aria-label', f.name + 'をお気に入りから外す');
-x.textContent = '×';
-x.addEventListener('click', function () {
-save(load().filter(function (g) { return String(g.id) !== String(f.id); }));
-if (window.NewComicsTrack) window.NewComicsTrack('favorite', { fav_action: 'remove' });
-render();
-});
-wrap.appendChild(a);
-wrap.appendChild(x);
-listBox.insertBefore(wrap, $('[data-fav-transfer-open]'));
-});
 booksBox.textContent = '';
 if (!items) return;
 var ids = favs.map(function (f) { return String(f.id); });
