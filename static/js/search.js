@@ -16,7 +16,8 @@ return String.fromCharCode(c.charCodeAt(0) + 0x60);
 function readParams() {
 var p = new URLSearchParams(location.search);
 return {
-q: p.get('q') || '',
+q: p.get('q') || p.get('k') || '',
+qk: !p.get('q') && !!p.get('k'),
 pub: p.get('pub') || '',
 label: p.get('label') || '',
 month: p.get('month') || '',
@@ -28,7 +29,7 @@ page: Math.max(1, parseInt(p.get('page') || '1', 10) || 1)
 
 function writeParams(state) {
 var p = new URLSearchParams();
-if (state.q) p.set('q', state.q);
+if (state.q) p.set(state.qk ? 'k' : 'q', state.q);
 if (state.pub) p.set('pub', state.pub);
 if (state.label) p.set('label', state.label);
 if (state.month) p.set('month', state.month);
@@ -241,6 +242,7 @@ if (items) render();
 
 form.addEventListener('submit', function (e) {
 e.preventDefault();
+if (form.q.value.trim() !== state.q) state.qk = false;
 state.q = form.q.value.trim();
 state.pub = form.pub.value;
 state.label = form.label.value;

@@ -62,6 +62,11 @@ CREATE TABLE IF NOT EXISTS page_views (
   views INTEGER NOT NULL,
   updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS search_terms (
+  term TEXT PRIMARY KEY,
+  count INTEGER NOT NULL,
+  updated_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_books_series ON books(series_id);
 CREATE TABLE IF NOT EXISTS tags (
   id INTEGER PRIMARY KEY,

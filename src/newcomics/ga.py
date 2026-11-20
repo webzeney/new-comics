@@ -1,4 +1,4 @@
-"""Google アナリティクス（GA4）から、書籍ページがよく見られている本を読み込む。
+"""Google アナリティクス（GA4）から、書籍ページがよく見られている本と、サイト内でよく検索されたキーワードを読み込む。
 
 サービスアカウントの鍵（環境変数 GA_SERVICE_ACCOUNT_JSON）とプロパティID（GA_PROPERTY_ID）を使い、
 直近 DAYS 日の /book/ で始まるページの表示回数を Data API で取り出す。鍵の中身はログに出さない。
@@ -49,6 +49,35 @@ def book_views(creds, prop, days=DAYS, limit=LIMIT):
     return views
 
 
+def search_terms(creds, prop, days=DAYS, limit=LIMIT):
+    """{検索キーワード: 回数}。GA4 のサイト内検索（検索結果のページのアドレスの q）で記録されたもの。
+    トップの「よく検索されているワード」から開いた検索は q ではなく k を使うので、ここには入らない（2026-11-21 運営者の判断）。"""
+    body = {
+        "dateRanges": [{"startDate": f"{days}daysAgo", "endDate": "yesterday"}],
+        "dimensions": [{"name": "searchTerm"}],
+        "metrics": [{"name": "eventCount"}],
+        "dimensionFilter": {"filter": {"fieldName": "eventName", "stringFilter": {"matchType": "EXACT", "value": "view_search_results"}}},
+        "orderBys": [{"metric": {"metricName": "eventCount"}, "desc": True}],
+        "limit": limit,
+    }
+    res = requests.post(f"https://analyticsdata.googleapis.com/v1beta/properties/{prop}:runReport",
+                        headers={"Authorization": f"Bearer {creds.token}"}, json=body, timeout=60)
+    res.raise_for_status()
+    terms = {}
+    for row in res.json().get("rows", []):
+        term = row["dimensionValues"][0]["value"].strip()
+        if term and term != "(not set)":
+            terms[term] = terms.get(term, 0) + int(row["metricValues"][0]["value"])
+    return terms
+
+
+def save_terms(conn, terms, now):
+    """検索キーワードの回数を入れ替える（データベースは非公開。サイトに出すのは、載っている作品名などと一致するものだけ）。"""
+    conn.execute("DELETE FROM search_terms")
+    conn.executemany("INSERT INTO search_terms (term, count, updated_at) VALUES (?, ?, ?)", [(k, n, now) for k, n in terms.items()])
+    conn.commit()
+
+
 def save(conn, views, now):
     """ランキング用に、書籍ページの表示回数を入れ替える。"""
     conn.execute("DELETE FROM page_views")
@@ -63,8 +92,13 @@ def main():
         print("アナリティクス：GA_SERVICE_ACCOUNT_JSON / GA_PROPERTY_ID が未設定のため省略します")
         return 0
     views = book_views(creds, prop)
-    save(db.connect(), views, db.now_iso())
+    conn = db.connect()
+    save(conn, views, db.now_iso())
     print(f"アナリティクス：直近{DAYS}日に見られた書籍ページ {len(views)} 件、表示回数の合計 {sum(views.values())}")
+    terms = search_terms(creds, prop)
+    save_terms(conn, terms, db.now_iso())
+    # キーワードそのものは公開のログに出さない（件数だけ）
+    print(f"アナリティクス：直近{DAYS}日の検索キーワード {len(terms)} 種類、検索の回数の合計 {sum(terms.values())}")
     return 0
 
 

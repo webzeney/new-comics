@@ -779,6 +779,42 @@ def load_kumiko_lines():
     return out
 
 
+POPULAR_MIN = 3  # この回数以上検索された言葉だけを出す
+POPULAR_MAX = 5  # 出すのは上位いくつまで
+
+
+def popular_words(site, root=""):
+    """トップの「よく検索されているワード」。GA4 で直近30日によく検索された言葉のうち、このサイトに載っている作品名・出版社名・
+    レーベル名と一致するもの（略称の対応表の呼び方は、その作品名にまとめる）だけを、回数の多い順に出す（2026-11-21 運営者の判断）。
+    ほかの言葉（成人向け・ネタバレ・人の名前など）は出さない。リンクは検索の回数に数えないよう q ではなく k で開く。"""
+    try:
+        rows = site.conn.execute("SELECT term, count FROM search_terms").fetchall()
+    except sqlite3.OperationalError:
+        return []
+    if not rows:
+        return []
+    canon = {}
+    for b in site.dated:
+        for name in (b.label, b.publisher):
+            if name:
+                canon.setdefault(search_key(name), name)
+    for b in site.dated:
+        if b.series_id in site.series:
+            name = site.series[b.series_id]["name"]
+            canon[search_key(name)] = name
+    for key, names in load_aliases():
+        if key in canon:
+            for n in names:
+                canon.setdefault(search_key(n), canon[key])
+    counts = defaultdict(int)
+    for term, n in rows:
+        name = canon.get(search_key(term))
+        if name:
+            counts[name] += n
+    words = sorted((x for x in counts.items() if x[1] >= POPULAR_MIN), key=lambda x: (-x[1], x[0]))[:POPULAR_MAX]
+    return [{"label": name, "url": f"{root}search/?k={quote(name)}"} for name, _ in words]
+
+
 def build_top(site, w):
     root = ""
     today, tomorrow = site.today, site.today + timedelta(days=1)
@@ -822,6 +858,7 @@ def build_top(site, w):
         "features": load_features(site.env, base=site_base(site)),
         "news": load_news(site.env, base=site_base(site)),
         "kumiko_lines": load_kumiko_lines(),
+        "popular_words": popular_words(site, root),
         "today_count": sum(1 for b in site.dated if b.release == today),
         "tomorrow_count": sum(1 for b in site.dated if b.release == tomorrow),
         "news_url": NEWS_PATH,

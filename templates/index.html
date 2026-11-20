@@ -66,6 +66,16 @@
 </div>
 </div>
 {% endif %}
+{% if popular_words %}
+<div class="search_tags">
+<span class="search_tags__heading">POPULAR WORDS</span>
+<div class="search_tags__list">
+{% for word in popular_words %}
+<a href="{{ word.url }}" class="search_tags__tag">{{ word.label }}</a>
+{% endfor %}
+</div>
+</div>
+{% endif %}
 </div>
 </section>
 <div class="top_side{% if pickup %} top_side--pickup{% endif %}">
