@@ -118,7 +118,8 @@ def report(prop, month):
     fav_people = dict((d[0], n) for d, n in fav_people)
     cals, err_cal = safe(client, prop, s, e, ["customEvent:service"], event="calendar_subscribe")
     feeds, err_feed = safe(client, prop, s, e, ["customEvent:feed"], event="rss_subscribe", limit=20)
-    name = lambda table_, v: table_.get(v, v or "（不明）")
+    # 項目を GA4 に登録する前（2026-11-22 より前）の記録は (not set) になる
+    name = lambda table_, v: "（登録前の記録）" if v == "(not set)" else table_.get(v, v or "（不明）")
     both = lambda ev: f"{events.get(ev, 0)}回（{people.get(ev, 0)}人）"
     lines = [
         f"# {y}年{m}月のレポート（{s}〜{e}）", "",
@@ -143,7 +144,7 @@ def report(prop, month):
         "## カレンダー登録",
         err_cal or table(["種類", "回数"], [[name(SERVICE, d[0]), n] for d, n in cals]), "",
         "## RSS の登録（多い順に20件）",
-        err_feed or table(["RSS", "回数"], [[d[0] or "（不明）", n] for d, n in feeds]), "",
+        err_feed or table(["RSS", "回数"], [[name({}, d[0]), n] for d, n in feeds]), "",
         "※ 人数は、同じブラウザを1人として数えたものです（GA4 の総ユーザー数）。",
         "※ ブラウザの広告ブロックなどで記録されない操作があるため、実際の数より少なめに出ます。",
         "※ 書店・お気に入りの操作などの内訳は、GA4 に項目を登録した日からの記録だけが数えられます。",
