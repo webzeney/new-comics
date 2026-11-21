@@ -832,6 +832,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .top_search .search_form__filters{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .top_three .updates_panel__link{flex-basis:100%;order:3}
 .top_three .updates_panel__detail{order:2;margin-left:auto;font-size:13px}
+.news_panel__item:nth-child(n+4){display:none}
 .top_search__frame{gap:16px}
 .search_tags--first{margin-top:0}
 .search_form__more_toggle{align-self:stretch;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border:2px solid #222222;border-radius:12px;background:#FFFFFF;color:#222222;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}

@@ -516,8 +516,9 @@ def load_cache(base, path, limit):
     return []
 
 
-def load_news(env, limit=3, base=None):
-    """お知らせの新しい記事（日付・題名・アドレス）。取れないときは前回の公開分を使う。"""
+def load_news(env, limit=5, base=None):
+    """お知らせの新しい記事（日付・題名・アドレス）。取れないときは前回の公開分を使う。
+    トップには PC で5件、スマホで3件まで出す（2026-11-22 運営者の判断）。"""
     api = env.get("FEATURE_API")
     if not api:
         return []
