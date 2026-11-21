@@ -1,10 +1,11 @@
 """アナリティクス（GA4）の操作の記録から、先月のレポートを作る（2026-11-16 運営者の判断）。
 
-毎月1日に GitHub Actions から動かし、非公開リポジトリ（new-comics-data）の Issue にする。
+毎月1日に GitHub Actions から動かし、非公開リポジトリ（new-comics-data）の reports/YYYY-MM.md に保存する
+（前は Issue にしていたが、保存に使う鍵に Issue を作る権限がないため、ファイルにした。2026-11-22）。
 認証情報は、毎晩の読み込み（newcomics.ga）と同じ Secrets の GA_SERVICE_ACCOUNT_JSON（サービスアカウントの鍵 JSON）と、
 Variables の GA_PROPERTY_ID から読む（前の名前 GA4_SA_KEY・GA4_PROPERTY_ID も読める）。
 
-  python tools/ga_report.py              先月のレポートを作って Issue にする
+  python tools/ga_report.py --out-dir data/reports   先月のレポートを作ってファイルに保存する
   python tools/ga_report.py --month 2026-11 --print   指定の月のレポートを表示だけする
   python tools/ga_report.py --setup      レポートに使う項目（カスタムディメンション）を GA4 に登録する（最初に1回）
 """
@@ -162,7 +163,8 @@ def post_issue(title, body):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--month", help="YYYY-MM（省略すると先月）")
-    ap.add_argument("--print", action="store_true", help="Issue にせず表示だけする")
+    ap.add_argument("--print", action="store_true", help="保存せず表示だけする")
+    ap.add_argument("--out-dir", help="レポートを {月}.md として保存するフォルダ")
     ap.add_argument("--setup", action="store_true", help="カスタムディメンションを登録する")
     args = ap.parse_args()
     prop = env_prop()
@@ -179,6 +181,12 @@ def main():
     title, body = report(prop, month)
     if args.print:
         print(body)
+    elif args.out_dir:
+        from pathlib import Path
+        path = Path(args.out_dir) / f"{month}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body + "\n", encoding="utf-8")
+        print("保存しました：", path.name)
     else:
         post_issue(title, body)
 
