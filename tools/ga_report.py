@@ -1,7 +1,8 @@
 """アナリティクス（GA4）の操作の記録から、先月のレポートを作る（2026-11-16 運営者の判断）。
 
 毎月1日に GitHub Actions から動かし、非公開リポジトリ（new-comics-data）の Issue にする。
-認証情報は Secrets の GA4_SA_KEY（サービスアカウントの鍵 JSON）と、Variables の GA4_PROPERTY_ID から読む。
+認証情報は、毎晩の読み込み（newcomics.ga）と同じ Secrets の GA_SERVICE_ACCOUNT_JSON（サービスアカウントの鍵 JSON）と、
+Variables の GA_PROPERTY_ID から読む（前の名前 GA4_SA_KEY・GA4_PROPERTY_ID も読める）。
 
   python tools/ga_report.py              先月のレポートを作って Issue にする
   python tools/ga_report.py --month 2026-11 --print   指定の月のレポートを表示だけする
@@ -35,8 +36,16 @@ SERVICE = {"apple": "iPhone・Mac", "google": "Googleカレンダー", "google_o
 SCOPES = ["https://www.googleapis.com/auth/analytics.readonly", "https://www.googleapis.com/auth/analytics.edit"]
 
 
+def env_key():
+    return os.environ.get("GA_SERVICE_ACCOUNT_JSON") or os.environ.get("GA4_SA_KEY")
+
+
+def env_prop():
+    return os.environ.get("GA_PROPERTY_ID") or os.environ.get("GA4_PROPERTY_ID")
+
+
 def credentials():
-    info = json.loads(os.environ["GA4_SA_KEY"])
+    info = json.loads(env_key())
     return service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
 
 
@@ -56,7 +65,7 @@ def setup(prop):
         print("登録しました：", name)
 
 
-def run(client, prop, start, end, dims, metric="eventCount", event=None, limit=50):
+def run(client, prop, start, end, dims, metric="eventCount", event=None, limit=50, path=None):
     from google.analytics.data_v1beta.types import (DateRange, Dimension, Filter, FilterExpression, Metric, OrderBy, RunReportRequest)
     req = RunReportRequest(
         property=f"properties/{prop}", date_ranges=[DateRange(start_date=start, end_date=end)],
@@ -65,8 +74,20 @@ def run(client, prop, start, end, dims, metric="eventCount", event=None, limit=5
     )
     if event:
         req.dimension_filter = FilterExpression(filter=Filter(field_name="eventName", string_filter=Filter.StringFilter(value=event)))
+    if path:
+        req.dimension_filter = FilterExpression(filter=Filter(field_name="pagePath", string_filter=Filter.StringFilter(
+            value=path, match_type=Filter.StringFilter.MatchType.CONTAINS)))
     res = client.run_report(req)
     return [([v.value for v in r.dimension_values], int(float(r.metric_values[0].value))) for r in res.rows]
+
+
+def safe(client, prop, start, end, dims, metric="eventCount", event=None, limit=50):
+    """項目（カスタムディメンション）が GA4 に登録されていないときなどは、その欄だけ空にして続ける。"""
+    try:
+        return run(client, prop, start, end, dims, metric, event, limit), None
+    except Exception as exc:  # noqa: BLE001
+        print(f"取れなかった欄：{dims} {event or ''}（{type(exc).__name__}）")
+        return [], "（この欄は取れませんでした。GA4 に項目が登録されていない可能性があります。ga-report の setup を動かしてください）"
 
 
 def table(head, rows):
@@ -85,35 +106,46 @@ def report(prop, month):
     total = run(client, prop, s, e, [], "screenPageViews")
     users = run(client, prop, s, e, [], "activeUsers")
     events = dict((d[0], n) for d, n in run(client, prop, s, e, ["eventName"]))
-    stores = run(client, prop, s, e, ["customEvent:store", "customEvent:buy_type"], event="store_click")
-    pages = run(client, prop, s, e, ["customEvent:page_type"], event="store_click", limit=20)
-    favs = run(client, prop, s, e, ["customEvent:fav_action"], event="favorite")
-    cals = run(client, prop, s, e, ["customEvent:service"], event="calendar_subscribe")
-    feeds = run(client, prop, s, e, ["customEvent:feed"], event="rss_subscribe", limit=20)
+    # 操作ごとの人数（同じブラウザを1人と数える。GA4 の totalUsers）
+    people = dict((d[0], n) for d, n in run(client, prop, s, e, ["eventName"], "totalUsers"))
+    fav_page = run(client, prop, s, e, [], "screenPageViews", path="/favorites")
+    fav_page = fav_page[0][1] if fav_page else 0
+    stores, err_store = safe(client, prop, s, e, ["customEvent:store", "customEvent:buy_type"], event="store_click")
+    pages, err_page = safe(client, prop, s, e, ["customEvent:page_type"], event="store_click", limit=20)
+    favs, err_fav = safe(client, prop, s, e, ["customEvent:fav_action"], event="favorite")
+    fav_people, _ = safe(client, prop, s, e, ["customEvent:fav_action"], "totalUsers", event="favorite")
+    fav_people = dict((d[0], n) for d, n in fav_people)
+    cals, err_cal = safe(client, prop, s, e, ["customEvent:service"], event="calendar_subscribe")
+    feeds, err_feed = safe(client, prop, s, e, ["customEvent:feed"], event="rss_subscribe", limit=20)
     name = lambda table_, v: table_.get(v, v or "（不明）")
+    both = lambda ev: f"{events.get(ev, 0)}回（{people.get(ev, 0)}人）"
     lines = [
         f"# {y}年{m}月のレポート（{s}〜{e}）", "",
         "## 全体",
         table(["項目", "数"], [
             ["ページが見られた回数", total[0][1] if total else 0],
             ["見た人の数（アクティブユーザー）", users[0][1] if users else 0],
-            ["書店のボタンが押された回数", events.get("store_click", 0)],
-            ["お気に入りの操作", events.get("favorite", 0)],
-            ["カレンダー登録", events.get("calendar_subscribe", 0)],
-            ["RSS の登録", events.get("rss_subscribe", 0)],
-            ["まとめてカートに入れる", events.get("cart_add", 0)],
+            ["書店のボタンが押された", both("store_click")],
+            ["お気に入りの操作", both("favorite")],
+            ["お気に入りのページが見られた回数", fav_page],
+            ["カレンダー登録", both("calendar_subscribe")],
+            ["RSS の登録", both("rss_subscribe")],
+            ["まとめてカートに入れる", both("cart_add")],
+            ["サイト内の検索", both("view_search_results")],
         ]), "",
         "## 書店のボタン（書店・予約か購入か）",
-        table(["書店", "予約か購入か", "回数"], [[name(STORE, d[0]), name(BUY, d[1]), n] for d, n in stores]), "",
+        err_store or table(["書店", "予約か購入か", "回数"], [[name(STORE, d[0]), name(BUY, d[1]), n] for d, n in stores]), "",
         "## 書店のボタンが押されたページ",
-        table(["ページの種類", "回数"], [[name(PAGE, d[0]), n] for d, n in pages]), "",
+        err_page or table(["ページの種類", "回数"], [[name(PAGE, d[0]), n] for d, n in pages]), "",
         "## お気に入り",
-        table(["操作", "回数"], [[name(FAV, d[0]), n] for d, n in favs]), "",
+        err_fav or table(["操作", "回数", "人数"], [[name(FAV, d[0]), n, fav_people.get(d[0], 0)] for d, n in favs]), "",
         "## カレンダー登録",
-        table(["種類", "回数"], [[name(SERVICE, d[0]), n] for d, n in cals]), "",
+        err_cal or table(["種類", "回数"], [[name(SERVICE, d[0]), n] for d, n in cals]), "",
         "## RSS の登録（多い順に20件）",
-        table(["RSS", "回数"], [[d[0] or "（不明）", n] for d, n in feeds]), "",
+        err_feed or table(["RSS", "回数"], [[d[0] or "（不明）", n] for d, n in feeds]), "",
+        "※ 人数は、同じブラウザを1人として数えたものです（GA4 の総ユーザー数）。",
         "※ ブラウザの広告ブロックなどで記録されない操作があるため、実際の数より少なめに出ます。",
+        "※ 書店・お気に入りの操作などの内訳は、GA4 に項目を登録した日からの記録だけが数えられます。",
     ]
     return f"{y}年{m}月のアクセスと操作のレポート", "\n".join(lines)
 
@@ -133,9 +165,9 @@ def main():
     ap.add_argument("--print", action="store_true", help="Issue にせず表示だけする")
     ap.add_argument("--setup", action="store_true", help="カスタムディメンションを登録する")
     args = ap.parse_args()
-    prop = os.environ.get("GA4_PROPERTY_ID")
-    if not prop or not os.environ.get("GA4_SA_KEY"):
-        raise SystemExit("GA4_PROPERTY_ID と GA4_SA_KEY が登録されていません")
+    prop = env_prop()
+    if not prop or not env_key():
+        raise SystemExit("GA_PROPERTY_ID と GA_SERVICE_ACCOUNT_JSON が登録されていません")
     if args.setup:
         setup(prop)
         return
