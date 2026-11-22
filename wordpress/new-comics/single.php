@@ -2,7 +2,8 @@
 <?php while (have_posts()): the_post(); $cat = nc_category(); ?>
 <div class="article_wrap">
 <article aria-labelledby="page-title" class="panel">
-<?php nc_breadcrumb([['トップ', nc_site_url() . '/'], ['特集', home_url('/')], [get_the_title(), null]]); ?>
+<?php $news_cat = has_category('news') ? get_category_by_slug('news') : null; ?>
+<?php nc_breadcrumb([['トップ', nc_site_url() . '/'], $news_cat ? ['お知らせ', get_category_link($news_cat)] : ['特集', home_url('/')], [get_the_title(), null]]); ?>
 <div class="article">
 <?php $nemu_head = nc_nemu_head(); ?>
 <div class="page_head<?php echo $nemu_head ? ' page_head--nemu' : ''; ?>">
