@@ -19,7 +19,7 @@
 <?php the_content(); ?>
 </div>
 <p class="article__note">発売日・価格は変更される場合があります。最新の情報は各出版社・販売店でご確認ください。</p>
-<a href="<?php echo esc_url(home_url('/')); ?>" class="article__back">特集の一覧へ</a>
+<a href="<?php echo esc_url($news_cat ? get_category_link($news_cat) : home_url('/')); ?>" class="article__back"><?php echo $news_cat ? 'お知らせの一覧へ' : '特集の一覧へ'; ?></a>
 </div>
 </article>
 <?php if ($GLOBALS['nc_toc']): ?><aside class="article_wrap__side"><nav class="article_toc article_toc--side" aria-label="もくじ" data-toc><p class="article_toc__title">もくじ</p><?php echo $GLOBALS['nc_toc']; ?></nav></aside><?php endif; ?>
