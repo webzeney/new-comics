@@ -40,13 +40,53 @@
 {% endif %}
 </div>
 {% if book.change %}<p class="book__notice">発売日が変更されました（<span class="en">{{ book.change.old }}</span> → <span class="en">{{ book.change.new }}</span>）</p>{% endif %}
+{% if boost.now %}
+<div class="now_read">
+<span class="now_read__badge">発売中</span>
+<p class="now_read__title">電子版なら、今すぐ続きが読めるよ</p>
+<div class="now_read__buttons">
+{% if boost.now.kindle %}<a href="{{ boost.now.kindle }}" data-ga-store="kindle" class="now_read__button" aria-label="Kindleで購入" rel="sponsored noopener" target="_blank">Kindleで今すぐ読む</a>{% endif %}
+{% if boost.now.kobo %}<a href="{{ boost.now.kobo }}" data-ga-store="kobo" class="now_read__button now_read__button--light" aria-label="楽天Koboで購入" rel="sponsored noopener" target="_blank">楽天Koboで読む</a>{% endif %}
+{% if boost.now.trial %}<a href="{{ boost.now.trial }}" data-ga-store="kindle" class="now_read__button now_read__button--light" aria-label="Kindleで試し読み" rel="sponsored noopener" target="_blank">Kindleで試し読み</a>{% endif %}
+</div>
+</div>
+{% endif %}
 <div class="book__buy">
+{% if boost.upcoming %}
+<div class="countdown" hidden>
+<span class="countdown__badge">予約受付中</span>
+<span class="countdown__text">発売まであと<span class="countdown__num" data-countdown></span>日</span>
+</div>
+{{ kumiko(root, 'point', '人気の本は発売日に品切れになることもあるから、早めの予約がおすすめだよ！', mod='tip') }}
+{% endif %}
 <span class="book__buy_title">{{ buy_title }}</span>
 {{ store_buttons(book.stores, '') }}
 <span class="book__buy_note">価格・発売日・在庫は各販売店のページでご確認ください。</span>
 </div>
+{% if boost.collect %}
+<div class="collect">
+<span class="collect__title">{{ boost.collect.name }} を1巻からそろえる</span>
+<div class="collect__buttons">
+<a href="{{ boost.collect.prev.url }}" class="collect__button collect__button--main"{% if boost.collect.prev.outside %} data-ga-store="amazon" aria-label="Amazonで前の巻を購入" rel="sponsored noopener" target="_blank"{% endif %}><span class="collect__long">前の巻（<span class="en">{{ boost.collect.prev.vol }}</span>巻）を見る</span><span class="collect__short">前の巻</span></a>
+<a href="{{ boost.collect.amazon }}" data-ga-store="amazon" class="collect__button" aria-label="Amazonで1巻から購入" rel="sponsored noopener" target="_blank"><span class="collect__long">1巻からそろえる（Amazon）</span><span class="collect__short">Amazon</span></a>
+<a href="{{ boost.collect.rakuten }}" data-ga-store="{{ 'kobo' if book.ebook_only else 'rakuten' }}" class="collect__button" aria-label="楽天で1巻から購入" rel="sponsored noopener" target="_blank"><span class="collect__long">1巻からそろえる（楽天）</span><span class="collect__short">楽天</span></a>
+</div>
+<span class="collect__note">押すと、販売サイトでこの作品の一覧が開きます</span>
+</div>
+{% endif %}
+{% if boost.next and (boost.next.url or book.follow) %}
+<div class="next_vol">
+{% if boost.next.url %}
+<p class="next_vol__text">次の巻（<span class="en">{{ boost.next.vol }}</span>巻）は{% if boost.next.date %}<span class="en">{{ boost.next.date }}</span>発売{% else %}発売日未定{% endif %}</p>
+<a href="{{ boost.next.url }}" class="next_vol__button">次の巻を見る</a>
+{% else %}
+<p class="next_vol__text">次の巻（<span class="en">{{ boost.next.vol }}</span>巻）の発売日が決まったら、すぐにお知らせ</p>
+<a href="#follow" class="next_vol__button">お知らせを受け取る</a>
+{% endif %}
+</div>
+{% endif %}
 {% if book.follow %}
-<div class="follow">
+<div id="follow" class="follow">
 <div class="follow__head">
 <span class="follow__label">NEW RELEASE ALERT</span>
 <p class="follow__title">{% if book.follow.released %}{% if book.follow.next_vol %}<span class="en">{{ book.follow.next_vol }}</span>巻以降の{% else %}次の巻の{% endif %}発売日も、<em>あなたのカレンダーに自動で届く</em>{% else %}この巻も、次の巻も、<em>発売日をカレンダーでお知らせ</em>{% endif %}</p>
@@ -70,7 +110,7 @@
 <p class="x_follow"><span class="x_follow__text">毎朝6時、今日の新刊をXでもお知らせ</span><a href="{{ site.x.url }}" class="x_follow__link" target="_blank" rel="noopener">{{ site.x.handle }} をフォロー</a></p>
 </div>
 {% endif %}
-{% if book.ebook_stores %}
+{% if book.ebook_stores and not boost.now %}
 <div class="ebook_links">
 <span class="ebook_links__title">電子書籍で読む</span>
 <div class="ebook_links__list">
@@ -82,6 +122,17 @@
 {% endif %}
 </div>
 </div>
+{% if boost.bar %}
+<div class="buy_bar"{% if book.release_iso %} data-release="{{ book.release_iso }}"{% endif %}>
+<div class="buy_bar__info">
+<span class="buy_bar__date">{{ boost.bar.date }}</span>
+{% if boost.bar.status %}<span class="buy_bar__status">{{ boost.bar.status }}{% if boost.upcoming %}<span class="buy_bar__days" hidden>・あと<span class="en" data-countdown></span>日</span>{% endif %}</span>{% endif %}
+</div>
+{% for s in boost.bar.buttons %}
+<a href="{{ s.url }}" data-ga-store="{{ s.kind }}" class="buy_bar__button buy_bar__button--{{ s.kind }}" aria-label="{{ s.label }}" rel="sponsored noopener" target="_blank">{{ s.text }}</a>
+{% endfor %}
+</div>
+{% endif %}
 </section>
 {% if book.follow %}{{ alarm_dialog(book.follow.name) }}
 {% endif %}{% if summary %}

@@ -154,6 +154,9 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .bookrow__title{font-size:15px;font-weight:900;text-decoration:none;line-height:1.45}
 .bookrow__meta{font-size:12px;color:#5A5148}
 .bookrow__stores{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,76px);gap:6px}
+.bookrow:has(.bookrow__fav){position:relative;padding-right:44px}
+.bookrow__fav{position:absolute;top:12px;right:0;width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;box-sizing:border-box;border:2px solid #222222;border-radius:50%;background:#FFFFFF;color:#D9483B;font-family:inherit;font-size:16px;line-height:1;cursor:pointer}
+.bookrow__fav[aria-pressed="true"]{background:#FFF0EC}
 .group{margin-top:20px}
 .group__title{display:flex;align-items:center;gap:10px;margin:0;padding:8px 14px;border-radius:10px;background:#FFF6EC;font-size:16px;font-weight:900}
 .group__date{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:20px;letter-spacing:0.1em}
@@ -302,6 +305,8 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .pickup__head{display:flex;align-items:baseline;gap:10px}
 .pickup__en{font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:13px;letter-spacing:0.16em;color:#B5302A}
 .pickup__title{margin:0;font-size:18px;font-weight:900}
+.pickup__all{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#222222;white-space:nowrap}
+.pickup_page__calendar{margin-top:16px}
 .pickup__slides{display:grid;touch-action:pan-y}
 .pickup__slide{grid-area:1/1;min-width:0}
 .pickup__slide[hidden]{display:block;visibility:hidden}
@@ -772,6 +777,34 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .ebook_links__list{display:inline-grid;grid-template-columns:repeat(2,1fr);gap:8px;align-self:flex-start}
 .ebook_links__link{justify-content:center}
 /* ==========================================================================
+予約・購入の後押し（書籍ページ）
+========================================================================== */
+.countdown{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:15px;font-weight:700}
+.countdown[hidden]{display:none}
+.countdown__badge,.now_read__badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;background:#D9483B;color:#FFFFFF;font-size:12px;font-weight:700}
+.countdown__num{margin:0 2px;font-family:'Yusei Magic',sans-serif;font-weight:400;font-size:26px;line-height:1;letter-spacing:0.1em;color:#D9483B}
+.kumiko--tip{margin:0 0 4px;gap:10px}
+.kumiko--tip .kumiko__image{width:52px;height:auto}
+.kumiko--tip .kumiko__bubble{padding:8px 12px;border-radius:14px;font-size:12px;line-height:1.5}
+.now_read{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:14px;border:2px solid #2E8B57;border-radius:16px;background:#EEF7F1}
+.now_read__badge{background:#2E8B57}
+.now_read__title{margin:0;font-size:15px;font-weight:900}
+.now_read__buttons{display:flex;flex-wrap:wrap;gap:8px}
+.now_read__button{display:inline-flex;align-items:center;min-height:42px;padding:0 16px;box-sizing:border-box;border:2px solid #222222;border-radius:999px;background:#222222;color:#FFFFFF;font-size:13px;font-weight:700;text-decoration:none}
+.now_read__button--light{background:#FFFFFF;color:#222222}
+.collect{padding:14px;border:2px dashed #EFA59B;border-radius:16px;background:#FFF8F5}
+.collect__title{display:block;margin:0 0 10px;font-size:15px;font-weight:900}
+.collect__buttons{display:flex;flex-wrap:wrap;gap:8px}
+.collect__button{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;box-sizing:border-box;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-size:13px;font-weight:700;text-decoration:none}
+.collect__button--main{background:#222222;color:#FFFFFF}
+.collect__short{display:none}
+.collect__note{display:block;margin-top:8px;font-size:11px;color:#666666}
+.next_vol{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:#FFF0EC}
+.next_vol__text{flex:1;margin:0;font-size:13px;font-weight:700;line-height:1.5}
+.follow{scroll-margin-top:90px}
+.next_vol__button{display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border-radius:999px;background:#D9483B;color:#FFFFFF;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.buy_bar{display:none}
+/* ==========================================================================
 お気に入り・カレンダー追加・RSS
 ========================================================================== */
 .fav_button{align-self:flex-start;box-sizing:content-box;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:2px solid #222222;border-radius:999px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:#FFFFFF;color:#222222}
@@ -824,6 +857,24 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 スマホ（幅720px以下）
 ========================================================================== */
 @media (max-width: 720px){
+.bookrow:has(.bookrow__fav){padding-right:0}
+.bookrow:has(.bookrow__fav) .bookrow__info{padding-right:40px}
+.collect{padding:10px 12px;border-radius:14px}
+.collect__title{margin:0 0 8px;font-size:13px}
+.collect__buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.collect__button{justify-content:center;min-height:36px;padding:0 4px;font-size:12px;white-space:nowrap}
+.collect__long,.collect__note{display:none}
+.collect__short{display:inline}
+.buy_bar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;align-items:center;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#FFFFFF;box-shadow:0 -2px 0 #222222;transform:translateY(110%);transition:transform 0.25s ease}
+.buy_bar--show{transform:none}
+.buy_bar__info{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.buy_bar__date{font-size:14px;font-weight:900;white-space:nowrap}
+.buy_bar__status{font-size:11px;font-weight:700;color:#D9483B}
+.buy_bar__days[hidden]{display:none}
+.buy_bar__button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 14px;border-radius:999px;background:#222222;color:#FFFFFF;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+.buy_bar__button--rakuten,.buy_bar__button--kobo{background:#BF0000}
+.has_buy_bar .page__main{padding-bottom:72px}
+.has_buy_bar .totop_sp{bottom:84px}
 .navi{grid-template-columns:minmax(0,1fr);gap:16px}
 .kumiko{gap:14px}
 .kumiko__bubble{padding:12px 14px;font-size:13px}

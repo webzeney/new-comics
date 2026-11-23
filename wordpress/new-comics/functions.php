@@ -71,6 +71,42 @@ add_shortcode('books', function ($atts): string {
     return '<ul class="article__books">' . "\n" . implode("\n", $rows) . "\n" . '</ul>';
 });
 
+/* 特集記事の最後の「この記事で紹介した本」。本文の [books isbn="…"] の本を、出てきた順に重ねずに並べる（2026-11-24 運営者の判断） */
+function nc_article_books(): string
+{
+    if (has_category('news')) {
+        return '';
+    }
+    if (!preg_match_all('/\[books\s+isbn=["\'\x{201D}\x{2033}]?([^"\'\]\x{201D}\x{2033}]+)/u', (string) get_post_field('post_content', get_the_ID()), $m)) {
+        return '';
+    }
+    $dir = dirname(rtrim(ABSPATH, '/')) . '/assets/partials/bookrow/';
+    $rows = [];
+    foreach ($m[1] as $list) {
+        foreach (preg_split('/[\s,、]+/u', $list, -1, PREG_SPLIT_NO_EMPTY) as $key) {
+            $key = preg_replace('/-/', '', $key);
+            if (!preg_match('/^[0-9A-Za-z]+$/', $key) || isset($rows[$key]) || !is_file($dir . $key . '.html')) {
+                continue;
+            }
+            $rows[$key] = trim((string) file_get_contents($dir . $key . '.html'));
+        }
+    }
+    if (!$rows) {
+        return '';
+    }
+    $out = '<section aria-labelledby="article-books-title" class="article_books">' . "\n"
+        . '<div class="heading">' . "\n" . '<span class="heading__en">BOOKS</span>' . "\n"
+        . '<h2 id="article-books-title" class="section_head__title">この記事で紹介した本</h2>' . "\n" . '</div>' . "\n"
+        . '<ul class="booklist article_books__list">' . "\n" . implode("\n", $rows) . "\n" . '</ul>' . "\n";
+    if (strpos(implode('', $rows), 'data-fav-id=') !== false) {
+        $out .= '<div class="next_vol" data-fav-all-box>' . "\n"
+            . '<p class="next_vol__text">紹介した本の新刊を、まとめてお気に入りに入れる</p>' . "\n"
+            . '<button type="button" class="next_vol__button" data-fav-all data-label-done="お気に入りに入れました">まとめて♡する</button>' . "\n"
+            . '</div>' . "\n";
+    }
+    return $out . '</section>';
+}
+
 /* 看板キャラクターなどの画像は2倍の大きさで作っているので、表示する幅と高さ（半分）を属性で書く。
    srcset の 2x だけでは、画素の細かくない画面で2倍の大きさに出てしまうため */
 function nc_half_size(string $file): string

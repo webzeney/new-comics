@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% from "_parts.html" import ad, breadcrumb, bookrow, cart_intro, cart_bar, kumiko %}
+{% block content %}
+<section aria-labelledby="pickup-title" class="panel panel--head">
+{{ breadcrumb(crumbs) }}
+<div class="page_head">
+<div class="heading">
+<span class="heading__en">PICK UP</span>
+<h1 id="pickup-title" class="heading__title"><span class="en">{{ month }}</span>月の注目の新刊</h1>
+</div>
+</div>
+{{ kumiko(root, 'shinkan', tip, mod='tip') }}
+{{ cart_intro("気になる本にチェックを入れると、まとめてAmazonのカートに入れられます。予約中の本もOKです。", "すべて選ぶ") }}
+<ul class="booklist">
+{% for b in books %}
+{{ bookrow(b, b.label or b.pub, b.meta, pick=True) }}
+{% endfor %}
+</ul>
+<div class="next_vol pickup_page__calendar">
+<p class="next_vol__text"><span class="en">{{ month }}</span>月の新刊の発売日を、カレンダーでまとめてチェック</p>
+<a href="{{ calendar_url }}" class="next_vol__button">カレンダーを見る</a>
+</div>
+</section>
+{{ ad() -}}
+{{ cart_bar(cart) }}
+{% endblock %}

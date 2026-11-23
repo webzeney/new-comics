@@ -47,7 +47,8 @@
 <a href="{{ b.url }}" class="bookrow__title">{{ b.title }}</a>
 <span class="bookrow__meta">{{ meta }}</span>
 </div>
-<div class="bookrow__stores">
+{% if b.fav %}<button type="button" aria-pressed="false" aria-label="{{ b.fav.name }}をお気に入りに追加" class="bookrow__fav" data-fav-id="{{ b.fav.id }}" data-fav-name="{{ b.fav.name }}" data-fav-url="{{ b.fav.url }}" data-fav-icon-on="♥" data-fav-icon-off="♡"><span aria-hidden="true" class="fav_button__icon">♡</span></button>
+{% endif %}<div class="bookrow__stores">
 {{ store_tiles(b.stores, 'bookrow__store') }}
 </div>
 </li>

@@ -18,6 +18,7 @@
 <div class="article__body">
 <?php the_content(); ?>
 </div>
+<?php echo nc_article_books(); ?>
 <p class="article__note">発売日・価格は変更される場合があります。最新の情報は各出版社・販売店でご確認ください。</p>
 <a href="<?php echo esc_url($news_cat ? get_category_link($news_cat) : home_url('/')); ?>" class="article__back"><?php echo $news_cat ? 'お知らせの一覧へ' : '特集の一覧へ'; ?></a>
 </div>

@@ -370,6 +370,8 @@ class Site:
             "url": self.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "ebook": b.has_ebook and not b.ebook_only, "eo": b.ebook_only,
             "first": b.is_first, "meta": self.meta(b, keys), "stores": self.stores(b), "image": b.image, "alt": self.alt(b),
             "asin": self.amazon_asin(b),
+            # 一覧の本の右上のお気に入り（♡）のボタン（2026-11-24 運営者の判断）
+            "fav": {"id": b.series_id, "name": self.series[b.series_id]["name"], "url": f"/series/{b.series_id}/"} if b.series_id in self.series else None,
         }
 
     def holiday(self, d):
@@ -417,6 +419,7 @@ def build(conn, out_dir, today, env):
     build_dates(site, w)
     build_today(site, w)
     build_week(site, w)
+    build_pickup(site, w)
     build_books(site, w)
     build_series(site, w)
     build_listings(site, w)
@@ -732,7 +735,35 @@ PICKUP_FILE = "featured.tsv"
 
 
 def load_pickup(site):
-    """トップの「○月注目の新刊」。運営者が非公開リポジトリの featured.tsv に書いた本を、書いた順に出す（2026-11-17 運営者の判断）。
+    """その月の注目の新刊（load_pickup_months の今月の分）。"""
+    return load_pickup_months(site).get(f"{site.today.year}-{site.today.month:02d}", [])
+
+
+def build_pickup(site, w):
+    """月ごとの「○月の注目の新刊」のページ（pickup/YYYY-MM/。2026-11-24 運営者の判断）。featured.tsv に書いた月ごとに作る。"""
+    root = "../../"
+    for month, books in load_pickup_months(site).items():
+        y, m = map(int, month.split("-"))
+        upcoming = any(b.release and b.release > site.today for b in books)
+        ctx = {
+            "crumbs": crumbs(root, (f"{m}月の注目の新刊", None)),
+            "month": m,
+            "books": [site.row(root, b) for b in books],
+            "tip": f"{m}月はビッグタイトルが目白押し！ 予約しておけば発売日に届くよ" if upcoming else f"{m}月に注目していた新刊だよ。気になる本は、今からでも読めるよ",
+            "calendar_url": f"{root}calendar/{y}/{m:02d}/",
+            "cart": site.cart(),
+        }
+        page = page_defaults(
+            title=f"{y}年{m}月の注目の漫画新刊｜{SITE_NAME}",
+            description=f"{y}年{m}月に発売される漫画・コミックの新刊から、注目の作品を紹介しています。予約・購入はAmazon・楽天ブックス・セブンネットで。",
+            jsonld=jsonld(breadcrumb_ld(site_base(site), [("トップ", "/"), (f"{m}月の注目の新刊", f"/pickup/{month}/")])),
+            lastmod=lastmod(site, books) if books else None,
+        )
+        w.write(f"pickup/{month}/index.html", "pickup.html", page, **ctx)
+
+
+def load_pickup_months(site):
+    """「○月注目の新刊」。運営者が非公開リポジトリの featured.tsv に書いた本を、書いた順に出す（2026-11-17 運営者の判断）。
     1列目は本のページのアドレスか ISBN、2列目は掲載する月（2026-11 の形）。その月の1日から末日まで出す。
     列の区切りはタブか空白。発売日より前は「予約受付中」、発売日からは「発売中」。"""
     path = site.env.get("PICKUP_FILE") or str(Path(site.env.get("NEWCOMICS_DB", "data/newcomics.sqlite")).parent / PICKUP_FILE)
@@ -740,8 +771,7 @@ def load_pickup(site):
         return []
     by_key = {b.key: b for b in site.books}
     by_isbn = {b.isbn13: b for b in site.books if b.isbn13}
-    month = f"{site.today.year}-{site.today.month:02d}"
-    out, missing, no_month = [], 0, 0
+    out, missing, no_month = {}, 0, 0
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         cols = line.split()
         if not cols or cols[0].startswith("#") or cols[0] == "本":
@@ -755,8 +785,9 @@ def load_pickup(site):
         if not mm:
             no_month += 1
             continue
-        if f"{mm.group(1)}-{int(mm.group(2)):02d}" == month and b not in out:
-            out.append(b)
+        books = out.setdefault(f"{mm.group(1)}-{int(mm.group(2)):02d}", [])
+        if b not in books:
+            books.append(b)
     if missing or no_month:
         print(f"注目の新刊：見つからない本 {missing} 件・掲載する月のない行 {no_month} 件")
     return out
@@ -849,6 +880,7 @@ def build_top(site, w):
         "tomorrow": tomorrow_card(site, tomorrow),
         "releases": [release(today, "今日"), release(tomorrow, "明日")],
         "pickup_month": today.month,
+        "pickup_url": f"pickup/{today.year}-{today.month:02d}/",
         "pickup": [{
             "url": site.book_url(root, b), "title": b.title, "pub": b.publisher, "label": b.label, "author": site.author_text(b),
             "date": f"{b.release.year}年{b.release.month}月{b.release.day}日" if b.release else "発売日未定",
@@ -995,7 +1027,8 @@ def calendar_context(site, root, y, m, months):
 
 def compact_row(site, root, b):
     stores = {s["kind"]: s["url"] for s in site.stores(b)}
-    return {"url": site.book_url(root, b), "d": b.release.isoformat() if b.release else None, "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook) and not b.ebook_only, "eo": b.ebook_only, "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b)}
+    return {"url": site.book_url(root, b), "d": b.release.isoformat() if b.release else None, "title": b.title, "pub": b.publisher, "meta": site.meta(b, ("author", "label", "price")), "ebook": bool(b.has_ebook) and not b.ebook_only, "eo": b.ebook_only, "first": b.is_first, "stores": stores, "i": b.image, "ia": site.alt(b),
+            **({"fv": [b.series_id, site.series[b.series_id]["name"]]} if b.series_id in site.series else {})}
 
 
 # ---- 日別一覧 ----
@@ -1281,6 +1314,67 @@ def author_works(site, root, b):
     }
 
 
+def buy_boost(site, root, b, volumes, stores, ebook_stores, released):
+    """書籍詳細ページの、買う人を後押しする部分（2026-11-24 運営者の判断）。
+
+    - upcoming：発売前の本。「予約受付中｜発売まであと○日」（日数は毎晩の転送を増やさないよう main.js が data-release から出す）とこはるのひとこと
+    - now：発売済みで電子版のある本。「電子版なら、今すぐ続きが読めるよ」と Kindle・楽天Kobo のボタン
+    - collect：2巻以降の本。「{作品名}を1巻からそろえる」（前の巻・Amazon と楽天の作品名の検索結果）
+    - next：次の巻。データベースにあればそのページへ、なければ新刊のお知らせ（カレンダー）の案内へ
+    - bar：スマホの画面の下に固定する、発売日と2つの書店のボタン
+    """
+    upcoming = bool(b.release and b.release > site.today)
+    info = site.series.get(b.series_id) if b.series_id else None
+    vol = int(b.volume) if str(b.volume or "").isdigit() else None
+    out = {"upcoming": upcoming, "now": None, "collect": None, "next": None, "bar": None}
+    kindle = next((s for s in ebook_stores if s["name"] == "Kindle"), None)
+    kobo = next((s for s in ebook_stores if s["name"] == "楽天Kobo"), None)
+    if released and not b.ebook_only and (kindle or kobo):
+        out["now"] = {"kindle": kindle["url"] if kindle else None, "kobo": kobo["url"] if kobo else None,
+                      # 試し読みは Kindle版の商品ページで読めるので、商品ページが分かっている本だけに出す
+                      "trial": kindle["url"] if kindle and b.kindle_asin else None}
+    if info and vol and vol >= 2:
+        name = info["name"]
+        q = unicodedata.normalize("NFKC", name)
+        prev = [x for x in volumes if str(x.volume).isdigit() and int(x.volume) < vol]
+        prev = max(prev, key=lambda x: int(x.volume)) if prev else None
+        if prev:
+            prev_link = {"url": site.book_url(root, prev), "vol": int(prev.volume), "outside": False}
+        else:
+            prev_link = {"url": site.amazon_url(search=f"{q} {vol - 1}", index="digital-text" if b.ebook_only else "stripbooks"), "vol": vol - 1, "outside": True}
+        if b.ebook_only:
+            amazon, rakuten = site.amazon_url(search=q, index="digital-text"), site.rakuten_search_url(q, "&g=101")
+        else:
+            amazon, rakuten = site.amazon_url(search=q), site.rakuten_search_url(q)
+        out["collect"] = {"name": name, "prev": prev_link, "amazon": amazon, "rakuten": rakuten}
+    if info and vol:
+        nxt = next((x for x in volumes if str(x.volume).isdigit() and int(x.volume) == vol + 1), None)
+        if nxt:
+            out["next"] = {"vol": vol + 1, "url": site.book_url(root, nxt), "date": md(nxt.release) if nxt.release else None}
+        else:
+            out["next"] = {"vol": vol + 1, "url": None, "date": None}
+    # スマホの下の固定の帯：発売前は2つの書店で予約、発売済みで Kindle版のある本は「Kindleで読む」と「楽天で買う」
+    first = [s for s in stores if s["kind"] in ("amazon", "rakuten", "kindle", "kobo")][:2]
+    if first:
+        verb = "予約" if upcoming else "買う"
+        buttons = []
+        if released and kindle and not b.ebook_only:
+            buttons.append({"kind": "kindle", "url": kindle["url"], "text": "Kindleで読む", "label": "Kindleで購入"})
+            rk = next((s for s in stores if s["kind"] == "rakuten"), None)
+            if rk:
+                buttons.append({"kind": "rakuten", "url": rk["url"], "text": "楽天で買う", "label": "楽天ブックスで購入"})
+        else:
+            for s in first:
+                short = {"amazon": "Amazon", "rakuten": "楽天", "kindle": "Kindle", "kobo": "楽天Kobo"}[s["kind"]]
+                # 電子版（Kindle・楽天Kobo）は、発売済みなら「で読む」
+                word = "読む" if not upcoming and s["kind"] in ("kindle", "kobo") else verb
+                buttons.append({"kind": s["kind"], "url": s["url"], "text": f"{short}で{word}",
+                                "label": f"{s['name']}で{'予約' if upcoming else '購入'}"})
+        out["bar"] = {"date": f"{b.release.month}/{b.release.day}（{dow(b.release)}）発売" if b.release else "発売日未定",
+                      "status": "予約受付中" if upcoming else ("発売中" if released else ""), "buttons": buttons}
+    return out
+
+
 def build_books(site, w):
     root = "../../"
     site.pub_month = Counter((x.publisher, x.release.year, x.release.month) for x in site.dated if x.release)
@@ -1315,6 +1409,9 @@ def build_books(site, w):
         else:
             crumb.append((b.title, None))
         cover = site.main_cover(b)
+        stores = site.stores(b)
+        ebook_stores = site.ebook_stores(b)
+        released = bool(b.release and b.release <= site.today)
         ctx = {
             "crumbs": crumbs(root, *crumb),
             "book": {
@@ -1322,7 +1419,7 @@ def build_books(site, w):
                 "label": b.label, "label_url": f"{root}label/{b.label_id}/" if b.label_id else "", "ebook": b.has_ebook, "ebook_only": b.ebook_only,
                 "title_main": main, "volume": vol, "authors": authors_ctx(root, b),
                 "date": f"{b.release.year}.{b.release.month}.{b.release.day}" if b.release else None, "dow": dow(b.release) if b.release else "",
-                "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": site.stores(b), "ebook_stores": site.ebook_stores(b), "isbn": b.isbn13,
+                "price": f"{b.price:,}" if b.price else None, "change": last_change(site, b), "stores": stores, "ebook_stores": ebook_stores, "isbn": b.isbn13,
                 "image": cover[0], "cover_url": cover[1], "alt": site.alt(b),
                 # 楽天ブックスの紹介文（楽天へのリンクはすぐ下の「楽天ブックス」のボタン。2026-11-09 運営者の判断）
                 "caption": b.caption,
@@ -1333,6 +1430,7 @@ def build_books(site, w):
                                next_vol=(int(b.volume) + 1) if str(b.volume or "").isdigit() else None) if b.series_id in site.series else None,
             },
             "series": series,
+            "boost": buy_boost(site, root, b, volumes, stores, ebook_stores, released),
             "sameday": sameday,
             "summary": book_summary(site, b, main, vol, volumes),
             "summary_pose": "fumu" if not b.release else ("shinkan" if b.release > site.today else ("clock" if b.release == site.today else "books")),

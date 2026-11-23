@@ -19,8 +19,9 @@ document.addEventListener('click', function (e) {
 var a = e.target.closest ? e.target.closest('a') : null;
 if (!a) return;
 var store = a.getAttribute('data-ga-store') || a.getAttribute('data-store');
-if (store && (a.classList.contains('store_tile') || a.classList.contains('store_button'))) {
-track('store_click', { store: store, buy_type: /予約$/.test(a.getAttribute('aria-label') || '') ? 'reserve' : 'purchase' });
+if (store && (a.classList.contains('store_tile') || a.classList.contains('store_button') || a.hasAttribute('data-ga-store'))) {
+var place = a.closest('.buy_bar') ? 'buy_bar' : a.closest('.collect') ? 'collect' : a.closest('.now_read') ? 'now_read' : a.closest('.bookrow') ? 'list' : 'main';
+track('store_click', { store: store, buy_type: /予約$/.test(a.getAttribute('aria-label') || '') ? 'reserve' : 'purchase', place: place });
 } else if (/feed\.xml$/.test(a.getAttribute('href') || '')) {
 track('rss_subscribe', { feed: a.getAttribute('href').replace(/^(\.\.\/)+/, '').replace(/^\//, '').replace(/\/?feed\.xml$/, '') });
 } else if (/calendar\.google\.com\/calendar\/render/.test(a.href)) {
@@ -240,6 +241,8 @@ if (!b.eo) $('[data-field="ebookonly"]', li).remove();
 if (!b.first) $('[data-field="first"]', li).remove();
 $$('[data-store]', li).forEach(function (a) { var url = b.stores[a.dataset.store]; if (url) { a.href = url; } else { a.remove(); } });
 window.NewComicsReserve(li, b.d);
+var fav = $('[data-fav-id]', li);
+if (b.fv) { fav.dataset.favId = b.fv[0]; fav.dataset.favName = b.fv[1]; fav.dataset.favUrl = '/series/' + b.fv[0] + '/'; fav.setAttribute('aria-label', b.fv[1] + 'をお気に入りに追加'); bindFav(fav); } else { fav.remove(); }
 var pick = $('[data-cart-pick]', li);
 var asin = (b.stores.amazon || '').match(/\/dp\/([0-9A-Z]{10})/);
 if (asin) { pick.value = asin[1]; pick.setAttribute('aria-label', (b.ia || b.title) + 'をカートに入れる本に選ぶ'); } else { var none = document.createElement('span'); none.className = 'pick pick--none'; none.setAttribute('aria-hidden', 'true'); pick.parentNode.replaceWith(none); }
@@ -334,6 +337,34 @@ var box = $('.book__fact--date[data-release]');
 if (!box || !$('.book__bubble--today')) return;
 box.classList.add('book__fact--today');
 $('.book__fact_label', box).insertAdjacentHTML('beforeend', '<span class="book__fact_today">本日発売</span>');
+}
+
+/* 本のページ：発売までの日数（日本時間の日付で数える。毎晩の転送を増やさないよう、ページには書かずにここで出す） */
+function initCountdown() {
+var nums = document.querySelectorAll('[data-countdown]');
+var bar = $('.buy_bar');
+var box = $('.book__fact--date[data-release]') || bar;
+if (!nums.length || !box) return;
+var r = (box.getAttribute('data-release') || '').split('-');
+if (r.length !== 3) return;
+var jst = new Date(Date.now() + 9 * 3600000);
+var today = Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate());
+var days = Math.round((Date.UTC(+r[0], +r[1] - 1, +r[2]) - today) / 86400000);
+if (days < 1) return;
+nums.forEach(function (n) { n.textContent = days; });
+document.querySelectorAll('.countdown, .buy_bar__days').forEach(function (el) { el.hidden = false; });
+}
+
+/* 本のページ：スマホの画面の下の購入の帯（ページの中の購入のボタンが見えている間は隠す） */
+function initBuyBar() {
+var bar = $('.buy_bar');
+var buy = $('.book__buy .store_buttons');
+if (!bar) return;
+document.body.classList.add('has_buy_bar');
+if (!buy || !('IntersectionObserver' in window)) { bar.classList.add('buy_bar--show'); return; }
+new IntersectionObserver(function (es) {
+es.forEach(function (e) { bar.classList.toggle('buy_bar--show', !e.isIntersecting); });
+}).observe(buy);
 }
 
 /* 本のページ：新刊のお知らせをカレンダーで受け取る案内 */
@@ -486,8 +517,7 @@ try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]') || []; } catch (e
 function saveFavs(list) {
 try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); } catch (e) {}
 }
-function initFavButtons() {
-$$('[data-fav-id]').forEach(function (b) {
+function bindFav(b) {
 var id = String(b.dataset.favId);
 var label = $('.fav_button__label', b);
 var icon = $('.fav_button__icon', b);
@@ -495,7 +525,7 @@ function paint() {
 var on = loadFavs().some(function (f) { return String(f.id) === id; });
 b.setAttribute('aria-pressed', on ? 'true' : 'false');
 if (label) label.textContent = on ? (b.dataset.favLabelOn || 'お気に入りに登録済み') : (b.dataset.favLabelOff || 'この作品をお気に入りに追加');
-if (icon) icon.textContent = on ? '★' : '☆';
+if (icon) icon.textContent = on ? (b.dataset.favIconOn || '★') : (b.dataset.favIconOff || '☆');
 }
 b.addEventListener('click', function () {
 var list = loadFavs();
@@ -507,8 +537,32 @@ document.dispatchEvent(new CustomEvent('fav:change'));
 });
 document.addEventListener('fav:change', paint);
 paint();
+}
+function initFavButtons() {
+$$('[data-fav-id]').forEach(bindFav);
+/* 特集記事の「この記事で紹介した本」：紹介した本の作品をまとめてお気に入りに入れる */
+$$('[data-fav-all]').forEach(function (btn) {
+var box = btn.closest('section') || document;
+btn.addEventListener('click', function () {
+var list = loadFavs();
+var added = 0;
+$$('.bookrow__fav[data-fav-id]', box).forEach(function (b) {
+var id = String(b.dataset.favId);
+if (list.some(function (f) { return String(f.id) === id; })) return;
+list.push({ id: id, name: b.dataset.favName, url: b.dataset.favUrl });
+added++;
+});
+if (added) {
+saveFavs(list);
+track('favorite', { fav_action: 'bulk_add' });
+document.dispatchEvent(new CustomEvent('fav:change'));
+}
+btn.textContent = btn.dataset.labelDone || btn.textContent;
+btn.disabled = true;
+});
 });
 }
+window.NewComicsBindFav = bindFav;
 
 /* 本のページ：発売日をカレンダー（.ics）に追加 */
 function initIcs() {
@@ -887,6 +941,8 @@ initMonthTabs();
 initSlider();
 initVolumeSort();
 initReleaseToday();
+initCountdown();
+initBuyBar();
 initCalendarDialog();
 if (window.NewComicsSearch) window.NewComicsSearch();
 initSearchMore();

@@ -26,13 +26,15 @@ DIMENSIONS = [
     ("fav_action", "お気に入りの操作"),
     ("service", "カレンダーの種類"),
     ("feed", "RSS の種類"),
+    ("place", "ボタンの場所"),
 ]
 STORE = {"amazon": "Amazon", "rakuten": "楽天ブックス", "seven": "セブンネット", "kindle": "Kindle", "kobo": "楽天Kobo"}
 BUY = {"reserve": "予約", "purchase": "購入"}
 PAGE = {"top": "トップ", "book": "書籍", "date": "日ごと", "today": "今日発売", "week": "今週発売", "calendar": "カレンダー", "publisher": "出版社",
         "label": "レーベル", "genre": "ジャンル", "tag": "タグ", "author": "著者", "series": "作品", "search": "検索", "favorites": "お気に入り",
         "publisher_month": "出版社の月別", "label_month": "レーベルの月別", "genre_month": "ジャンルの月別", "updates": "発売日の変更・決定", "feature": "特集"}
-FAV = {"add": "追加", "remove": "削除", "import": "引き継ぎで追加"}
+PLACE = {"main": "本のページの購入ボタン", "buy_bar": "スマホの下の帯", "collect": "1巻からそろえる", "now_read": "電子版で今すぐ読む", "list": "一覧の本"}
+FAV = {"add": "追加", "remove": "削除", "import": "引き継ぎで追加", "bulk_add": "特集記事でまとめて追加"}
 SERVICE = {"apple": "iPhone・Mac", "google": "Googleカレンダー", "google_one_book": "この巻だけ（Google）", "ics_one_book": "この巻だけ（iPhone・その他）"}
 SCOPES = ["https://www.googleapis.com/auth/analytics.readonly", "https://www.googleapis.com/auth/analytics.edit"]
 
@@ -113,6 +115,7 @@ def report(prop, month):
     fav_page = fav_page[0][1] if fav_page else 0
     stores, err_store = safe(client, prop, s, e, ["customEvent:store", "customEvent:buy_type"], event="store_click")
     pages, err_page = safe(client, prop, s, e, ["customEvent:page_type"], event="store_click", limit=20)
+    places, err_place = safe(client, prop, s, e, ["customEvent:place"], event="store_click", limit=20)
     favs, err_fav = safe(client, prop, s, e, ["customEvent:fav_action"], event="favorite")
     fav_people, _ = safe(client, prop, s, e, ["customEvent:fav_action"], "totalUsers", event="favorite")
     fav_people = dict((d[0], n) for d, n in fav_people)
@@ -139,6 +142,8 @@ def report(prop, month):
         err_store or table(["書店", "予約か購入か", "回数"], [[name(STORE, d[0]), name(BUY, d[1]), n] for d, n in stores]), "",
         "## 書店のボタンが押されたページ",
         err_page or table(["ページの種類", "回数"], [[name(PAGE, d[0]), n] for d, n in pages]), "",
+        "## 書店のボタンの場所（2026-11-24 から）",
+        err_place or table(["場所", "回数"], [[name(PLACE, d[0]), n] for d, n in places]), "",
         "## お気に入り",
         err_fav or table(["操作", "回数", "人数"], [[name(FAV, d[0]), n, fav_people.get(d[0], 0)] for d, n in favs]), "",
         "## カレンダー登録",
