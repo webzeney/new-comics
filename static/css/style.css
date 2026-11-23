@@ -792,6 +792,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .now_read__buttons{display:flex;flex-wrap:wrap;gap:8px}
 .now_read__button{display:inline-flex;align-items:center;min-height:42px;padding:0 16px;box-sizing:border-box;border:2px solid #222222;border-radius:999px;background:#222222;color:#FFFFFF;font-size:13px;font-weight:700;text-decoration:none}
 .now_read__button--light{background:#FFFFFF;color:#222222}
+.now_read__short{display:none}
 .collect{padding:14px;border:2px dashed #EFA59B;border-radius:16px;background:#FFF8F5}
 .collect__title{display:block;margin:0 0 10px;font-size:15px;font-weight:900}
 .collect__buttons{display:flex;flex-wrap:wrap;gap:8px}
@@ -857,6 +858,13 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 スマホ（幅720px以下）
 ========================================================================== */
 @media (max-width: 720px){
+.now_read{align-items:stretch;padding:10px 12px;border-radius:14px}
+.now_read__badge{align-self:flex-start}
+.now_read__title{font-size:13px}
+.now_read__buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:6px}
+.now_read__button{justify-content:center;min-height:36px;padding:0 4px;font-size:12px;white-space:nowrap}
+.now_read__long{display:none}
+.now_read__short{display:inline}
 .bookrow:has(.bookrow__fav){padding-right:0}
 .bookrow:has(.bookrow__fav) .bookrow__info{padding-right:40px}
 .collect{padding:10px 12px;border-radius:14px}
