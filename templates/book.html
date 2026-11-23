@@ -52,17 +52,6 @@
 {{ store_buttons(book.stores, '') }}
 <span class="book__buy_note">価格・発売日・在庫は各販売店のページでご確認ください。</span>
 </div>
-{% if boost.now %}
-<div class="now_read">
-<span class="now_read__badge">発売中</span>
-<p class="now_read__title">電子版なら、今すぐ続きが読めるよ</p>
-<div class="now_read__buttons">
-{% if boost.now.kindle %}<a href="{{ boost.now.kindle }}" data-ga-store="kindle" class="now_read__button" aria-label="Kindleで購入" rel="sponsored noopener" target="_blank"><span class="now_read__long">Kindleで今すぐ読む</span><span class="now_read__short">Kindle</span></a>{% endif %}
-{% if boost.now.kobo %}<a href="{{ boost.now.kobo }}" data-ga-store="kobo" class="now_read__button now_read__button--light" aria-label="楽天Koboで購入" rel="sponsored noopener" target="_blank"><span class="now_read__long">楽天Koboで読む</span><span class="now_read__short">楽天Kobo</span></a>{% endif %}
-{% if boost.now.trial %}<a href="{{ boost.now.trial }}" data-ga-store="kindle" class="now_read__button now_read__button--light" aria-label="Kindleで試し読み" rel="sponsored noopener" target="_blank"><span class="now_read__long">Kindleで試し読み</span><span class="now_read__short">試し読み</span></a>{% endif %}
-</div>
-</div>
-{% endif %}
 {% if boost.next and (boost.next.url or book.follow) %}
 <div class="next_vol">
 {% if boost.next.url %}
@@ -72,6 +61,17 @@
 <p class="next_vol__text">次の巻（<span class="en">{{ boost.next.vol }}</span>巻）の発売日が決まったら、すぐにお知らせ</p>
 <a href="#follow" class="next_vol__button">お知らせを受け取る</a>
 {% endif %}
+</div>
+{% endif %}
+{% if boost.now %}
+<div class="now_read">
+<span class="now_read__badge">発売中</span>
+<p class="now_read__title">電子版なら、今すぐ続きが読めるよ</p>
+<div class="now_read__buttons">
+{% if boost.now.kindle %}<a href="{{ boost.now.kindle }}" data-ga-store="kindle" class="now_read__button" aria-label="Kindleで購入" rel="sponsored noopener" target="_blank"><span class="now_read__long">Kindleで今すぐ読む</span><span class="now_read__short">Kindle</span></a>{% endif %}
+{% if boost.now.kobo %}<a href="{{ boost.now.kobo }}" data-ga-store="kobo" class="now_read__button now_read__button--light" aria-label="楽天Koboで購入" rel="sponsored noopener" target="_blank"><span class="now_read__long">楽天Koboで読む</span><span class="now_read__short">楽天Kobo</span></a>{% endif %}
+{% if boost.now.trial %}<a href="{{ boost.now.trial }}" data-ga-store="kindle" class="now_read__button now_read__button--light" aria-label="Kindleで試し読み" rel="sponsored noopener" target="_blank"><span class="now_read__long">Kindleで試し読み</span><span class="now_read__short">試し読み</span></a>{% endif %}
+</div>
 </div>
 {% endif %}
 {% if boost.collect %}
