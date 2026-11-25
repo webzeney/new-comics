@@ -237,4 +237,8 @@
 </div>
 </section>
 {% endif %}
+<div class="beta_peek" data-beta data-base="{{ root }}assets/img/beta/" hidden>
+<button type="button" class="beta_peek__button" data-beta-next aria-label="ベタのひとことを変える"><img src="{{ root }}assets/img/beta/normal.webp" width="72" height="70" alt="ベタ" class="beta_peek__image" loading="lazy" data-beta-image></button>
+<p class="beta_peek__bubble">ワフッ！<span class="beta_peek__say" data-beta-text></span><span class="beta_peek__by">通訳：<a href="{{ root }}about/#koharu" data-beta-profile>こはる</a></span><button type="button" class="beta_peek__close" data-beta-close aria-label="閉じる">×</button></p>
+</div>
 {% endblock %}

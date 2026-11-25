@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, arrow, store_tiles, kind_badge, cover_photo, kumiko, update_detail %}
+{% from "_parts.html" import ad, arrow, store_tiles, kind_badge, cover_photo, kumiko, kumiko_name, update_detail %}
 {% block content %}
 <div aria-label="本日発売" class="ticker">
 <span class="ticker__label">TODAY</span>
@@ -149,7 +149,10 @@
 </div>
 </div>
 <div class="kumiko kumiko--side" data-kumiko-random data-lines='{{ kumiko_lines|tojson }}' data-today="{{ today_count }}" data-tomorrow="{{ tomorrow_count }}" data-base="{{ root }}assets/img/kumiko/">
+<div class="kumiko__figure">
 <img src="{{ root }}assets/img/kumiko/point_u.webp" srcset="{{ root }}assets/img/kumiko/point_u.webp 2x" {{ kumiko_size("point_u") }} data-kumiko-weekend="{{ root }}assets/img/kumiko/point_c.webp" alt="" class="kumiko__image" data-kumiko-image>
+{{ kumiko_name(root) }}
+</div>
 <p class="kumiko__bubble" data-kumiko-text>下の一覧で、今日と明日の新刊をまとめて見られるよ！</p>
 </div>
 </div>

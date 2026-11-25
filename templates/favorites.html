@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, cart_intro, cart_bar, kumiko %}
+{% from "_parts.html" import ad, breadcrumb, cart_intro, cart_bar, kumiko, kumiko_name %}
 {% block content %}
 <section aria-labelledby="fav-title" class="panel panel--head">
 {{ breadcrumb(crumbs) }}
@@ -40,7 +40,10 @@
 <h2 id="fav-list-title" class="section_head__title">お気に入りの新刊<span class="heading__count" data-fav-count>0点</span></h2>
 </div>
 <div class="kumiko kumiko--intro kumiko--fav" data-fav-nemu data-base="{{ root }}assets/img/kumiko/">
+<div class="kumiko__figure">
 <img src="{{ root }}assets/img/kumiko/point_u.webp" srcset="{{ root }}assets/img/kumiko/point_u.webp 2x" {{ kumiko_size("point_u") }} data-kumiko-weekend="{{ root }}assets/img/kumiko/point_c.webp" data-kumiko-night="{{ root }}assets/img/kumiko/phone_p.webp" alt="" class="kumiko__image" data-kumiko-image>
+{{ kumiko_name(root) }}
+</div>
 <p class="kumiko__bubble" data-fav-nemu-text>お気に入りに登録した作品は、まだないみたい。気になる作品で「お気に入りに追加」を押すと、ここに新刊が集まるよ！</p>
 </div>
 <div data-fav-cart hidden>

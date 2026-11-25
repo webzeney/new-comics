@@ -18,6 +18,7 @@ window.NewComicsTrack = track;
 document.addEventListener('click', function (e) {
 var a = e.target.closest ? e.target.closest('a') : null;
 if (!a) return;
+if (a.hasAttribute('data-koharu-name')) track('koharu_name_click');
 var store = a.getAttribute('data-ga-store') || a.getAttribute('data-store');
 if (store && (a.classList.contains('store_tile') || a.classList.contains('store_button') || a.hasAttribute('data-ga-store'))) {
 var place = a.closest('.next_books') ? 'next_books' : a.closest('.buy_bar') ? 'buy_bar' : a.closest('.collect') ? 'collect' : a.closest('.now_read') ? 'now_read' : a.closest('.bookrow') ? 'list' : 'main';
@@ -391,6 +392,45 @@ if (!buy || !('IntersectionObserver' in window)) { bar.classList.add('buy_bar--s
 new IntersectionObserver(function (es) {
 es.forEach(function (e) { bar.classList.toggle('buy_bar--show', !e.isIntersecting); });
 }).observe(buy);
+}
+
+/* 本のページ：ベタがときどき左下から顔を出す（5回に1回。夜10時〜朝6時は出ない。閉じたらその日はもう出さない） */
+function initBeta() {
+var box = $('[data-beta]');
+if (!box || kumikoNight()) return;
+var day = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+try { if (localStorage.getItem('nc_beta_closed') === day) return; } catch (e) {}
+if (Math.random() >= 0.2) return;
+var lines = ['今日の新刊、もう見た？', 'この本、気になるの？', '次の巻も楽しみだね', 'お気に入りに入れておくと、新刊を見逃さないよ', 'こはるのお散歩、まだかなぁ', 'この表紙、いいにおいがしそう'];
+var faces = ['normal', 'happy', 'tilt', 'wink'];
+var img = $('[data-beta-image]', box);
+var text = $('[data-beta-text]', box);
+var base = box.getAttribute('data-base');
+var i = Math.floor(Math.random() * lines.length);
+function show() {
+img.src = base + faces[Math.floor(Math.random() * faces.length)] + '.webp';
+text.textContent = '「' + lines[i % lines.length] + '」だって';
+}
+show();
+setTimeout(function () {
+box.hidden = false;
+requestAnimationFrame(function () { requestAnimationFrame(function () { box.classList.add('beta_peek--show'); }); });
+track('beta', { beta_action: 'show' });
+}, 3000);
+$('[data-beta-next]', box).addEventListener('click', function () {
+i++;
+show();
+track('beta', { beta_action: 'tap' });
+});
+$('[data-beta-profile]', box).addEventListener('click', function () {
+track('beta', { beta_action: 'profile' });
+});
+$('[data-beta-close]', box).addEventListener('click', function () {
+box.classList.remove('beta_peek--show');
+setTimeout(function () { box.hidden = true; }, 400);
+try { localStorage.setItem('nc_beta_closed', day); } catch (e) {}
+track('beta', { beta_action: 'close' });
+});
 }
 
 /* 本のページ：新刊のお知らせをカレンダーで受け取る案内 */
@@ -970,6 +1010,7 @@ initReleaseToday();
 initCountdown();
 initFeatureLatest();
 initBuyBar();
+initBeta();
 initCalendarDialog();
 if (window.NewComicsSearch) window.NewComicsSearch();
 initSearchMore();
