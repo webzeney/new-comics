@@ -332,7 +332,7 @@ input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid 
 .top_side--pickup .pickup__dots{grid-area:dots;gap:6px}
 .top_side--pickup .pickup__dot{width:9px;height:9px}
 .top_side--pickup .pickup__slides{grid-area:slides;align-self:center}
-.top_side--pickup .pickup__link{grid-template-columns:88px minmax(0,1fr);gap:16px}
+.top_side--pickup .pickup__link{grid-template-columns:clamp(96px,8.9vw,128px) minmax(0,1fr);gap:16px}
 .top_side--pickup .pickup__cover{box-shadow:3px 3px 0 #222222}
 .top_side--pickup .calendar_card{padding:12px 16px;gap:6px}
 .top_side--pickup .calendar_card__num{font-size:40px}
