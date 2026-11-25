@@ -111,7 +111,8 @@ def compose(site, day, base):
     if not books:
         return None
     head = f"【今日{md(day)}（{dow(day)}）発売の漫画新刊】{len(books)}点"
-    url = f"{base}/date/{day.isoformat()}/"
+    # X から来た人をアナリティクスで数えられるように印を付ける（2026-11-25 運営者の判断）
+    url = f"{base}/date/{day.isoformat()}/?utm_source=x&utm_medium=social&utm_campaign=daily"
     tags = hashtags(books)
     lines = []
     seen = set()
@@ -157,8 +158,22 @@ def upload(path, keys):
     return media_id
 
 
-def post(text, keys, media_id=None, quote=None):
+def split_link(text):
+    """毎朝の投稿の本文からサイトへのリンクを外し、返信に回す（本文にリンクがある投稿は表示されにくいため。2026-11-25 運営者の判断）。"""
+    lines = text.split("\n")
+    links = [l for l in lines if l.startswith("http")]
+    if not links:
+        return text, None
+    body = "\n".join(l for l in lines if not l.startswith("http"))
+    while "\n\n\n" in body:
+        body = body.replace("\n\n\n", "\n\n")
+    return body, links[0]
+
+
+def post(text, keys, media_id=None, quote=None, reply_to=None):
     body = {"text": text}
+    if reply_to:
+        body["reply"] = {"in_reply_to_tweet_id": str(reply_to)}
     if quote:  # ほかのポストを引用する（公式の書影の公開などを、画像を写さずに紹介する）
         body["quote_tweet_id"] = str(quote)
     if media_id:
@@ -237,6 +252,8 @@ def main(argv=None):
             print(f"画像を作れませんでした（文面だけで投稿します）：{e}")
             image = None
     if args.dry_run:
+        body, link = split_link(text)
+        print("--- 本文 ---\n" + body + ("\n--- 返信 ---\n▼今日の新刊の一覧はこちら\n" + link if link else ""))
         print("（確認だけのため投稿していません）")
         return 0
     if not all(keys.values()):
@@ -248,7 +265,14 @@ def main(argv=None):
             media_id = upload(image, keys)
         except Exception as e:  # アップロードに失敗しても、文面だけで投稿する
             print(f"画像をアップロードできませんでした（文面だけで投稿します）：{e}")
-    print("投稿しました：", post(text, keys, media_id), "（画像あり）" if media_id else "（画像なし）")
+    body, link = split_link(text)
+    first = post(body, keys, media_id)
+    print("投稿しました：", first, "（画像あり）" if media_id else "（画像なし）")
+    if link:
+        try:
+            print("リンクを返信しました：", post(f"▼今日の新刊の一覧はこちら\n{link}", keys, reply_to=first))
+        except SystemExit as e:  # 返信に失敗しても、本文の投稿はそのまま
+            print(f"リンクの返信に失敗しました：{e}")
     return 0
 
 

@@ -1314,6 +1314,31 @@ def author_works(site, root, b):
     }
 
 
+def book_title(b, name):
+    """書籍詳細ページのタイトル。検索する人の言葉（「○巻 発売日」）に合わせる（2026-11-25 運営者の判断）。"""
+    if b.release:
+        return f"{name}の発売日は{b.release.year}年{b.release.month}月{b.release.day}日（{dow(b.release)}）【{b.publisher}】｜{SITE_NAME}"
+    return f"{name}の発売日（未定）【{b.publisher}】｜{SITE_NAME}"
+
+
+def book_description(site, b, name, volumes):
+    """書籍詳細ページの説明文。発売日・定価・前の巻の発売日・書店をまとめる（2026-11-25 運営者の判断）。"""
+    when = f"{b.release.year}年{b.release.month}月{b.release.day}日（{dow(b.release)}）" if b.release else "未定"
+    parts = [f"{name}（{b.publisher}）の発売日は{when}。"]
+    price = site.price_text(b)
+    if price:
+        parts.append(f"{price}。")
+    vol = int(b.volume) if str(b.volume or "").isdigit() else None
+    prev = [x for x in volumes if str(x.volume).isdigit() and vol and int(x.volume) == vol - 1 and x.release]
+    if prev:
+        p = prev[0]
+        parts.append(f"前の巻（{vol - 1}巻）は{p.release.year}年{p.release.month}月{p.release.day}日発売。")
+    stores = "Amazon・楽天Kobo" if b.ebook_only else "Amazon・楽天ブックス・セブンネット"
+    upcoming = b.release and b.release > site.today
+    parts.append(f"{stores}で{'予約受付中' if upcoming else '購入できます'}。")
+    return "".join(parts).replace("。。", "。")
+
+
 def buy_boost(site, root, b, volumes, stores, ebook_stores, released):
     """書籍詳細ページの、買う人を後押しする部分（2026-11-24 運営者の判断）。
 
@@ -1445,8 +1470,8 @@ def build_books(site, w):
             ld_crumbs.append((main, f"/series/{b.series_id}/"))
         ld_crumbs.append((b.title, f"/book/{b.key}/"))
         page = page_defaults(
-            title=f"{display_title(b, main, vol)}（{b.publisher}）{when}｜{SITE_NAME}",
-            description=f"{display_title(b, main, vol)}（{b.publisher}）は{when}。{site.price_text(b)}。予約・購入はAmazon・楽天ブックス・セブンネットで。".replace("。。", "。"),
+            title=book_title(b, display_title(b, main, vol)),
+            description=book_description(site, b, display_title(b, main, vol), volumes),
             jsonld=jsonld(book_ld(site, b), breadcrumb_ld(site_base(site), ld_crumbs)),
             lastmod=lastmod(site, [b]),
         )
@@ -1540,6 +1565,54 @@ def listing_ctx(site, root, books, keys, crumb, listing, label_links=(), others=
         "past": listing_past(site, root, books, keys),
         **listing_common(site, books),
     }
+
+
+NEXT_BOOKS = 10
+
+
+def next_books(site, root, books):
+    """レーベルのページの「次の発売日の新刊」（その日の新刊の並び順で上から NEXT_BOOKS 冊。2026-11-25 運営者の判断）。"""
+    upcoming = [b for b in books if b.release and b.release >= site.today]
+    if not upcoming:
+        return None
+    day = min(b.release for b in upcoming)
+    same = sorted((b for b in books if b.release == day), key=site.new_release_key)
+    items = []
+    for b in same[:NEXT_BOOKS]:
+        row = site.row(root, b)
+        store = next((x for x in row["stores"] if x["kind"] in ("amazon", "kindle")), None) or (row["stores"][0] if row["stores"] else None)
+        items.append({**row, "store": store})
+    return {"md": md(day), "dow": dow(day), "today": day == site.today, "count": len(same), "books": items,
+            "month_no": day.month}
+
+
+def label_description(site, l, books):
+    """レーベルのページの説明文。次の発売日と主な作品を入れて、毎日いまの内容にする（2026-11-25 運営者の判断）。"""
+    upcoming = [b for b in books if b.release and b.release >= site.today]
+    head = f"{l['pub']}「{l['name']}」の新刊発売予定。"
+    if not upcoming:
+        return head + "これまでに発売された本をまとめています。"
+    day = min(b.release for b in upcoming)
+    same = sorted((b for b in books if b.release == day), key=site.new_release_key)
+    names = []
+    for b in same:
+        info = site.series.get(b.series_id) if b.series_id else None
+        name = f"『{info['name']}』{b.volume}巻" if info and b.volume else f"『{b.title}』"
+        if name not in names:
+            names.append(name)
+        if len(names) >= 2:
+            break
+    common = listing_common(site, books)
+    works = "、".join(names) + ("など" if len(same) > len(names) else "")
+    return (f"{head}次は{day.month}月{day.day}日（{dow(day)}）に{works}{len(same)}点。"
+            f"{common['upcoming']['until']}月までの{common['upcoming']['count']}点を発売日順に毎日更新。")
+
+
+def label_calendar_links(site, lid):
+    """レーベルのカレンダーを購読するリンク（2026-11-25 運営者の判断）。"""
+    base = site_base(site)
+    webcal = "webcal://" + base.split("://", 1)[-1] + f"/label/{lid}/calendar.ics"
+    return {"webcal": webcal, "google": "https://calendar.google.com/calendar/r?cid=" + quote(webcal, safe="")}
 
 
 def listing_common(site, books):
@@ -1674,7 +1747,10 @@ def build_listings(site, w):
             subject=f"{l['pub']}の{l['name']}",
             month_pages=True,
         )
-        page = page_defaults(title=f"{l['name']}（{l['pub']}）の漫画新刊発売予定｜{SITE_NAME}", description=f"{l['pub']}のレーベル「{l['name']}」から発売される漫画の新刊の発売予定と、これまでに発売された本をまとめています。", menu="label", lastmod=lastmod(site, books),
+        ctx["next_books"] = next_books(site, root, books)
+        ctx["keep"] = {"name": l["name"], **label_calendar_links(site, l["id"])}
+        write_label_calendar(site, w, l, books)
+        page = page_defaults(title=f"{l['name']}（{l['pub']}）の漫画新刊発売予定｜{SITE_NAME}", description=label_description(site, l, books), menu="label", lastmod=lastmod(site, books),
                              feed={"title": f"{l['name']}（{l['pub']}）の新刊（{SITE_NAME}）", "url": "feed.xml"})
         ctx["rss"] = {"url": "feed.xml", "name": f"{l['name']}の新刊"}
         w.write(f"label/{l['id']}/index.html", "listing.html", page, **ctx)
@@ -1904,6 +1980,15 @@ def build_series_calendars(site, w, site_url):
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(series_calendar(site.series[sid]["name"], dated, base, amazon_url=lambda b: next(
             (s["url"] for s in site.stores(b) if s["kind"] == "amazon"), None)).encode("utf-8"))
+
+
+def write_label_calendar(site, w, l, books):
+    """レーベルのカレンダー（label/{id}/calendar.ics）。予定のリンク先はこのサイトの本のページ（2026-11-25 運営者の判断）。"""
+    since = site.today - timedelta(days=60)
+    dated = [b for b in books if b.release and b.release >= since]
+    target = Path(w.out) / "label" / str(l["id"]) / "calendar.ics"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(series_calendar(l["name"], dated, site_base(site)).encode("utf-8"))
 
 
 # ---- お気に入り ----

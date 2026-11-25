@@ -33,9 +33,9 @@ BUY = {"reserve": "予約", "purchase": "購入"}
 PAGE = {"top": "トップ", "book": "書籍", "date": "日ごと", "today": "今日発売", "week": "今週発売", "calendar": "カレンダー", "publisher": "出版社",
         "label": "レーベル", "genre": "ジャンル", "tag": "タグ", "author": "著者", "series": "作品", "search": "検索", "favorites": "お気に入り",
         "publisher_month": "出版社の月別", "label_month": "レーベルの月別", "genre_month": "ジャンルの月別", "updates": "発売日の変更・決定", "feature": "特集"}
-PLACE = {"main": "本のページの購入ボタン", "buy_bar": "スマホの下の帯", "collect": "1巻からそろえる", "now_read": "電子版で今すぐ読む", "list": "一覧の本"}
+PLACE = {"main": "本のページの購入ボタン", "buy_bar": "スマホの下の帯", "collect": "1巻からそろえる", "now_read": "電子版で今すぐ読む", "list": "一覧の本", "next_books": "レーベルの次の発売日の新刊"}
 FAV = {"add": "追加", "remove": "削除", "import": "引き継ぎで追加", "bulk_add": "特集記事でまとめて追加"}
-SERVICE = {"apple": "iPhone・Mac", "google": "Googleカレンダー", "google_one_book": "この巻だけ（Google）", "ics_one_book": "この巻だけ（iPhone・その他）"}
+SERVICE = {"apple": "iPhone・Mac", "google": "Googleカレンダー", "google_one_book": "この巻だけ（Google）", "ics_one_book": "この巻だけ（iPhone・その他）", "label_apple": "レーベル（iPhone・Mac）", "label_google": "レーベル（Google）"}
 SCOPES = ["https://www.googleapis.com/auth/analytics.readonly", "https://www.googleapis.com/auth/analytics.edit"]
 
 

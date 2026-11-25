@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "_parts.html" import ad, breadcrumb, bookrow, rss_icon, kumiko %}
+{% from "_parts.html" import ad, breadcrumb, bookrow, rss_icon, kumiko, cover_photo %}
 {% macro date_groups(dates) %}
 {% for g in dates %}
 <div class="group">
@@ -42,9 +42,39 @@
 <span class="stat__value"><span class="stat__num stat__num--34">{{ upcoming.count }}</span><span class="stat__unit">点</span></span>
 </div>
 </div>
+{% if next_books is defined and next_books %}
+<div class="next_books">
+<div class="next_books__head">
+<span class="next_books__badge">{{ '今日発売' if next_books.today else '予約受付中' }}</span>
+<h2 class="next_books__title"><span class="en">{{ next_books.md }}</span>（{{ next_books.dow }}）発売の新刊</h2>
+<a href="#month-panel-{{ next_books.month_no }}" class="next_books__more" data-month-jump="{{ next_books.month_no }}"><span><span class="en">{{ next_books.count }}</span>点すべて見る</span><span aria-hidden="true">›</span></a>
+</div>
+<ol class="next_books__list">
+{% for b in next_books.books %}
+<li class="next_books__item">
+<a href="{{ b.url }}" class="next_books__cover cover_link"><span class="cover">{{ cover_photo(b.image, b.alt) }}</span></a>
+<span class="next_books__rank">No.<span class="en">{{ loop.index }}</span></span>
+<a href="{{ b.url }}" class="next_books__name">{{ b.title }}</a>
+{% if b.store %}<a href="{{ b.store.url }}" data-ga-store="{{ b.store.kind }}" class="next_books__button" aria-label="{{ b.store.name }}で{{ '購入' if next_books.today else '予約' }}" rel="sponsored noopener" target="_blank">{{ b.store.short if b.store.kind != 'amazon' else 'Amazon' }}で{{ '買う' if next_books.today else '予約' }}</a>{% endif %}
+</li>
+{% endfor %}
+</ol>
+</div>
+{% endif %}
 {% set intro_pose = {"publisher": "point", "label": "loupe", "genre": "reach"}.get(listing.kind) %}
 {% if intro and intro_pose %}{{ kumiko(root, intro_pose, intro, mod="intro") }}{% elif intro %}<p class="page_intro">{{ intro }}</p>{% endif %}
-{% if rss is defined %}
+{% if keep is defined %}
+<div class="keep_box">
+<p class="keep_box__title">{{ keep.name }}の新刊を見逃さない</p>
+<p class="keep_box__lead">発売日がカレンダーに自動で入ります。毎朝6時にXでも今日の新刊をお知らせ。</p>
+<div class="keep_box__buttons">
+<a href="{{ keep.webcal }}" class="keep_box__button keep_box__button--main" data-cal-label="label_apple">iPhone・Mac</a>
+<a href="{{ keep.google }}" class="keep_box__button keep_box__button--main" data-cal-label="label_google" target="_blank" rel="noopener">Googleカレンダー</a>
+<a href="{{ site.x.url }}" class="keep_box__button" target="_blank" rel="noopener">Xをフォロー</a>
+<a href="{{ rss.url }}" class="keep_box__button">{{ rss_icon() }}RSS</a>
+</div>
+</div>
+{% elif rss is defined %}
 <p class="rss_follow"><a href="{{ rss.url }}" class="chip_link chip_link--rss">{{ rss_icon() }}RSSで受け取る</a><span class="rss_follow__text">{{ rss.name }}がサイトに載ると、RSSリーダーに届きます</span></p>
 {% endif %}
 {% if label_links %}

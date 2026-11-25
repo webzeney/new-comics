@@ -20,12 +20,17 @@ var a = e.target.closest ? e.target.closest('a') : null;
 if (!a) return;
 var store = a.getAttribute('data-ga-store') || a.getAttribute('data-store');
 if (store && (a.classList.contains('store_tile') || a.classList.contains('store_button') || a.hasAttribute('data-ga-store'))) {
-var place = a.closest('.buy_bar') ? 'buy_bar' : a.closest('.collect') ? 'collect' : a.closest('.now_read') ? 'now_read' : a.closest('.bookrow') ? 'list' : 'main';
+var place = a.closest('.next_books') ? 'next_books' : a.closest('.buy_bar') ? 'buy_bar' : a.closest('.collect') ? 'collect' : a.closest('.now_read') ? 'now_read' : a.closest('.bookrow') ? 'list' : 'main';
 track('store_click', { store: store, buy_type: /予約$/.test(a.getAttribute('aria-label') || '') ? 'reserve' : 'purchase', place: place });
 } else if (/feed\.xml$/.test(a.getAttribute('href') || '')) {
 track('rss_subscribe', { feed: a.getAttribute('href').replace(/^(\.\.\/)+/, '').replace(/^\//, '').replace(/\/?feed\.xml$/, '') });
 } else if (/calendar\.google\.com\/calendar\/render/.test(a.href)) {
 track('calendar_subscribe', { service: 'google_one_book' });
+} else if (a.hasAttribute('data-cal-label')) {
+track('calendar_subscribe', { service: a.getAttribute('data-cal-label') });
+} else if (a.hasAttribute('data-month-jump')) {
+var tab = document.getElementById('month-tab-' + a.getAttribute('data-month-jump'));
+if (tab) { e.preventDefault(); tab.click(); var head = tab.closest('.section_head'); if (head) head.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 } else if (a.hasAttribute('data-cart-go')) {
 track('cart_add', { items: $$('[data-cart-pick]:checked').length });
 }
