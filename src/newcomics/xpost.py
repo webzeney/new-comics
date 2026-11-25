@@ -157,8 +157,10 @@ def upload(path, keys):
     return media_id
 
 
-def post(text, keys, media_id=None):
+def post(text, keys, media_id=None, quote=None):
     body = {"text": text}
+    if quote:  # ほかのポストを引用する（公式の書影の公開などを、画像を写さずに紹介する）
+        body["quote_tweet_id"] = str(quote)
     if media_id:
         body["media"] = {"media_ids": media_id if isinstance(media_id, list) else [media_id]}
     r = requests.post(POST_URL, json=body, headers={"Authorization": oauth_header("POST", POST_URL, keys)}, timeout=30)
@@ -183,6 +185,7 @@ def main(argv=None):
     ap.add_argument("--check", action="store_true", help="認証情報と投稿先のアカウントだけを確かめる")
     ap.add_argument("--text", help="新刊の代わりに、この文面を投稿する（お知らせ用）")
     ap.add_argument("--no-image", action="store_true", help="画像を付けずに投稿する")
+    ap.add_argument("--quote", help="引用するポストの番号（URL の status/ のあとの数字）")
     ap.add_argument("--image", action="append", default=[], help="お知らせ（--text）に付ける画像（4枚まで。何度でも指定できる）")
     ap.add_argument("--image-out", help="作った画像をこの場所に保存する（確認用）")
     args = ap.parse_args(argv)
@@ -200,17 +203,19 @@ def main(argv=None):
         print(f"（文字数の目安 {weight(text)}／{LIMIT}）")
         if weight(text) > LIMIT:
             raise SystemExit("文字数が多すぎます")
+        if args.quote and args.image:
+            raise SystemExit("引用と画像は同時に付けられません")
         if len(args.image) > 4:
             raise SystemExit("画像は4枚までです")
         for path in args.image:
             if not Path(path).is_file():
                 raise SystemExit(f"画像が見つかりません：{Path(path).name}")
         if args.dry_run or not all(keys.values()):
-            print(f"（投稿していません。画像 {len(args.image)} 枚）")
+            print(f"（投稿していません。画像 {len(args.image)} 枚" + (f"・引用 {args.quote}" if args.quote else "") + "）")
             return 0
         # 画像を付けると決めたお知らせは、画像が1枚でも上げられなければ投稿しない
         media_ids = [upload(path, keys) for path in args.image]
-        print("投稿しました：", post(text, keys, media_ids or None), f"（画像 {len(media_ids)} 枚）")
+        print("投稿しました：", post(text, keys, media_ids or None, args.quote), f"（画像 {len(media_ids)} 枚）" + ("（引用あり）" if args.quote else ""))
         return 0
     day = date.fromisoformat(args.date) if args.date else datetime.now(db.JST).date()
     base = (os.environ.get("SITE_URL") or "https://new-comics.jp").rstrip("/")

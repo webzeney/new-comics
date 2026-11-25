@@ -10,6 +10,10 @@ on:
         description: 付ける画像（非公開リポジトリ new-comics-data の中の場所。カンマ区切りで4枚まで）
         required: false
         default: ""
+      quote:
+        description: 引用するポストの番号（URL の status/ のあとの数字。空なら引用しない）
+        required: false
+        default: ""
       dry_run:
         description: 確認だけ（投稿しない）
         type: boolean
@@ -44,9 +48,11 @@ jobs:
           TEXT: ${{ inputs.text }}
           DRY_RUN: ${{ inputs.dry_run }}
           IMAGES: ${{ inputs.images }}
+          QUOTE: ${{ inputs.quote }}
         run: |
           args=()
           IFS=',' read -ra list <<< "$IMAGES"
           for p in "${list[@]}"; do p="$(echo "$p" | xargs)"; [ -n "$p" ] && args+=(--image "data/$p"); done
+          if [ -n "$QUOTE" ]; then args+=(--quote "$QUOTE"); fi
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           python -m newcomics.xpost --text "$TEXT" "${args[@]}"
