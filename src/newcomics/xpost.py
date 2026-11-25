@@ -160,7 +160,7 @@ def upload(path, keys):
 def post(text, keys, media_id=None):
     body = {"text": text}
     if media_id:
-        body["media"] = {"media_ids": [media_id]}
+        body["media"] = {"media_ids": media_id if isinstance(media_id, list) else [media_id]}
     r = requests.post(POST_URL, json=body, headers={"Authorization": oauth_header("POST", POST_URL, keys)}, timeout=30)
     if r.status_code not in (200, 201):
         raise SystemExit(f"X への投稿に失敗しました（HTTP {r.status_code}）：{r.text[:300]}")
@@ -183,6 +183,7 @@ def main(argv=None):
     ap.add_argument("--check", action="store_true", help="認証情報と投稿先のアカウントだけを確かめる")
     ap.add_argument("--text", help="新刊の代わりに、この文面を投稿する（お知らせ用）")
     ap.add_argument("--no-image", action="store_true", help="画像を付けずに投稿する")
+    ap.add_argument("--image", action="append", default=[], help="お知らせ（--text）に付ける画像（4枚まで。何度でも指定できる）")
     ap.add_argument("--image-out", help="作った画像をこの場所に保存する（確認用）")
     args = ap.parse_args(argv)
     keys = {"api_key": os.environ.get("X_API_KEY"), "api_secret": os.environ.get("X_API_SECRET"),
@@ -199,10 +200,17 @@ def main(argv=None):
         print(f"（文字数の目安 {weight(text)}／{LIMIT}）")
         if weight(text) > LIMIT:
             raise SystemExit("文字数が多すぎます")
+        if len(args.image) > 4:
+            raise SystemExit("画像は4枚までです")
+        for path in args.image:
+            if not Path(path).is_file():
+                raise SystemExit(f"画像が見つかりません：{Path(path).name}")
         if args.dry_run or not all(keys.values()):
-            print("（投稿していません）")
+            print(f"（投稿していません。画像 {len(args.image)} 枚）")
             return 0
-        print("投稿しました：", post(text, keys))
+        # 画像を付けると決めたお知らせは、画像が1枚でも上げられなければ投稿しない
+        media_ids = [upload(path, keys) for path in args.image]
+        print("投稿しました：", post(text, keys, media_ids or None), f"（画像 {len(media_ids)} 枚）")
         return 0
     day = date.fromisoformat(args.date) if args.date else datetime.now(db.JST).date()
     base = (os.environ.get("SITE_URL") or "https://new-comics.jp").rstrip("/")

@@ -6,6 +6,10 @@ on:
       text:
         description: 投稿する文面（改行は \n）
         required: true
+      images:
+        description: 付ける画像（非公開リポジトリ new-comics-data の中の場所。カンマ区切りで4枚まで）
+        required: false
+        default: ""
       dry_run:
         description: 確認だけ（投稿しない）
         type: boolean
@@ -23,6 +27,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: 画像を取ってくる（非公開リポジトリ）
+        if: inputs.images != ''
+        env:
+          DATA_REPO: ${{ github.repository_owner }}/new-comics-data
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+        run: git clone --quiet --depth 1 "https://x-access-token:${DATA_REPO_TOKEN}@github.com/${DATA_REPO}.git" data
       - run: python -m pip install -r requirements.txt
       - name: 投稿
         env:
@@ -33,5 +43,10 @@ jobs:
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
           TEXT: ${{ inputs.text }}
           DRY_RUN: ${{ inputs.dry_run }}
+          IMAGES: ${{ inputs.images }}
         run: |
-          if [ "$DRY_RUN" = "true" ]; then python -m newcomics.xpost --text "$TEXT" --dry-run; else python -m newcomics.xpost --text "$TEXT"; fi
+          args=()
+          IFS=',' read -ra list <<< "$IMAGES"
+          for p in "${list[@]}"; do p="$(echo "$p" | xargs)"; [ -n "$p" ] && args+=(--image "data/$p"); done
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          python -m newcomics.xpost --text "$TEXT" "${args[@]}"
