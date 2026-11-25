@@ -344,6 +344,27 @@ box.classList.add('book__fact--today');
 $('.book__fact_label', box).insertAdjacentHTML('beforeend', '<span class="book__fact_today">本日発売</span>');
 }
 
+/* トップの特集：ページを作った後に公開された記事（朝7時の予約投稿など）も出すため、開いたときに最新の記事を取り直す（2026-11-25 運営者の判断） */
+function initFeatureLatest() {
+var list = $('[data-feature-latest]');
+if (!list || !window.fetch) return;
+var api = list.getAttribute('data-feature-latest');
+var esc = function (t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+var plain = function (h) { var d = document.createElement('div'); d.innerHTML = h; return d.textContent; };
+fetch(api + 'categories?slug=column&_fields=id').then(function (r) { return r.json(); }).then(function (cats) {
+if (!cats || !cats.length) return null;
+return fetch(api + 'posts?per_page=4&categories=' + cats[0].id + '&orderby=date&order=desc&_fields=title,link,date,nc_icon_url').then(function (r) { return r.json(); });
+}).then(function (posts) {
+if (!posts || !posts.length) return;
+list.innerHTML = posts.map(function (p, i) {
+var iso = (p.date || '').slice(0, 10);
+var day = iso.replace(/-/g, '.');
+var icon = p.nc_icon_url ? '<img src="' + esc(p.nc_icon_url) + '" width="64" height="64" alt="" class="feature_panel__icon" loading="lazy">' : '<span class="feature_panel__no">' + ('0' + (i + 1)).slice(-2) + '</span>';
+return '<li class="feature_panel__item"><a href="' + esc(p.link) + '" class="feature_panel__link">' + icon + '<span class="feature_panel__body"><span class="feature_panel__meta">' + (iso ? '<time datetime="' + iso + '" class="feature_panel__date">' + day + '</time>' : '') + '<span class="feature_panel__tag">特集</span></span><span class="feature_panel__text">' + esc(plain((p.title || {}).rendered || '')) + '</span></span></a></li>';
+}).join('');
+}).catch(function () {});
+}
+
 /* 本のページ：発売までの日数（日本時間の日付で数える。毎晩の転送を増やさないよう、ページには書かずにここで出す） */
 function initCountdown() {
 var nums = document.querySelectorAll('[data-countdown]');
@@ -947,6 +968,7 @@ initSlider();
 initVolumeSort();
 initReleaseToday();
 initCountdown();
+initFeatureLatest();
 initBuyBar();
 initCalendarDialog();
 if (window.NewComicsSearch) window.NewComicsSearch();

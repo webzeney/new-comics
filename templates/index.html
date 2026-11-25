@@ -216,7 +216,7 @@
 </div>
 <a href="{{ root }}feature/" class="updates_panel__all">特集の一覧へ</a>
 </div>
-<ul class="feature_panel__list">
+<ul class="feature_panel__list" data-feature-latest="{{ root }}feature/wp-json/wp/v2/">
 {% if not features %}
 <li class="feature_panel__item feature_panel__empty">特集記事は準備中です。</li>
 {% endif %}
