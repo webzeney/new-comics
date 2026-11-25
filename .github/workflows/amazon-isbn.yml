@@ -15,6 +15,10 @@ on:
         description: 書影のアドレスも取り直す
         type: boolean
         default: false
+      images_only:
+        description: 書影のアドレスと売れ筋順位の取り直しだけを行う（書影をすぐ最新にしたいとき）
+        type: boolean
+        default: false
       prev:
         description: 発売前で順位のない本の、前の巻の照らし合わせだけを行う
         type: boolean
@@ -60,8 +64,10 @@ jobs:
           RECHECK: ${{ inputs.recheck }}
           IMAGES: ${{ inputs.images }}
           PREV: ${{ inputs.prev }}
+          IMAGES_ONLY: ${{ inputs.images_only }}
           MAXPREV: ${{ inputs.max_prev }}
         run: |
+          if [ "$IMAGES_ONLY" = "true" ]; then python -m newcomics.amazonlink --images-only --minutes "$MINUTES"; exit $?; fi
           if [ "$PREV" = "true" ]; then python -m newcomics.amazonlink --prev-only --prev-recheck --max-prev "${MAXPREV:-3000}" --minutes "$MINUTES" --prev-debug data/prev-debug.json; exit $?; fi
           python -m newcomics.amazonlink --isbn-only --max-isbn 100000 --minutes "$MINUTES" $( [ "$RECHECK" = "true" ] && echo --recheck ) $( [ "$IMAGES" = "true" ] && echo --images )
       - name: データベースを保存（非公開リポジトリ）
