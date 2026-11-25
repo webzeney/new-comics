@@ -538,6 +538,7 @@ a.kumiko__name:hover{background:#D9483B}
 .series_head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
 .slider{display:flex;align-items:center;gap:10px}
 .slider__button{flex:0 0 44px;height:44px;border:2px solid #222222;border-radius:999px;background:#FFFFFF;color:#222222;font-size:18px;font-weight:900;font-family:inherit;cursor:pointer}
+.slider__button:disabled{opacity:0.3;cursor:default}
 .slider__viewport{flex:1 1 auto;min-width:0;overflow:hidden;padding:4px 4px 12px;touch-action:pan-y}
 .slider__track{list-style:none;margin:0;padding:0;display:flex;gap:14px;transition:transform 0.5s ease}
 .slider__item{flex:0 0 calc((100% - 70px) / 6)}

@@ -1410,14 +1410,16 @@ def build_books(site, w):
         volumes = sorted([x for x in site.series_books.get(b.series_id, []) if x.volume], key=lambda x: x.volume)
         if b.series_id and len(volumes) >= 2:
             latest = volumes[-1]
-            slider = [x for x in volumes if x.id != latest.id]
-            start = 0
-            for i, x in enumerate(slider):
-                if x.id == b.id:
-                    start = max(0, i - 1)
+            one = {}
+            for x in volumes:
+                if x.volume == latest.volume:
+                    continue
+                if x.id == b.id or (x.volume not in one or (one[x.volume].id != b.id and len(x.title) < len(one[x.volume].title))):
+                    one[x.volume] = x
+            slider = [one[k] for k in sorted(one)]
             info = site.series[b.series_id]
             series = {
-                "name": info["name"], "count": latest.volume, "url": f"{root}series/{b.series_id}/", "start": start,
+                "name": info["name"], "count": latest.volume, "url": f"{root}series/{b.series_id}/",
                 "volumes": [{"label": f"{x.volume}巻", "url": site.book_url(root, x), "image": x.image, "cover_url": x.cover_url, "alt": site.alt(x)} for x in slider] if len(slider) >= 2 else [],
                 "forecast": forecast_for(volumes),
             }
